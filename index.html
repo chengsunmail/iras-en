@@ -47,7 +47,7 @@
   "applicationCategory": "EngineeringApplication",
   "applicationSubCategory": "Aquaculture Engineering Design",
   "operatingSystem": "Any (Web Browser)",
-  "softwareVersion": "1.7.0",
+  "softwareVersion": "1.8.0",
   "datePublished": "2026-05-16",
   "inLanguage": "en",
   "license": "https://www.gnu.org/licenses/agpl-3.0.html",
@@ -803,19 +803,19 @@
           <input id="capexFactor" type="number" value="2.2" step="0.1" min="1.5" max="3.5" class="input-ind !py-1.5">
         </div>
         <div>
-          <label class="text-[10px] text-purple-300" title="CAPEX regional factor (back-calculated from real projects): a 10,000t Norwegian salmon RAS ≈ EUR 190M; same scale in lower-cost regions notably less. Real factors ~1.4-2.0×, not 5×. Affects CAPEX only (equipment + project + depreciation); OPEX unchanged.">CAPEX region</label>
+          <label class="text-[10px] text-purple-300" title="CAPEX regional factor. iRAS unit prices are calibrated to the Nordic / Norway market, so 1.0 = Nordic baseline. Lower-cost regions use a factor below 1.0 (equipment + engineering + labor are cheaper). Affects CAPEX only (equipment + project + depreciation); OPEX unchanged.">CAPEX region</label>
           <select id="regionPreset" class="input-ind !py-1.5">
-            <option value="1.0" selected>Baseline (1.0×)</option>
-            <option value="1.1">Southeast Asia (1.1×)</option>
-            <option value="1.5">Chile / South America (1.5×)</option>
-            <option value="1.7">North America (1.7×)</option>
-            <option value="2.0">Nordic / Norway (2.0×)</option>
+            <option value="1.0" selected>Nordic / Norway — baseline (1.0×)</option>
+            <option value="0.85">North America (0.85×)</option>
+            <option value="0.75">Chile / South America (0.75×)</option>
+            <option value="0.6">Southeast Asia (0.6×)</option>
+            <option value="0.5">China (0.5×)</option>
             <option value="custom">⚙️ Custom</option>
           </select>
         </div>
         <div>
-          <label class="text-[10px] text-purple-300" title="Custom regional factor (1.0-3.0). Editing this switches the selector above to Custom.">Regional factor</label>
-          <input id="regionFactor" type="number" value="1.0" step="0.1" min="0.5" max="3" class="input-ind !py-1.5">
+          <label class="text-[10px] text-purple-300" title="Custom regional factor (0.4-1.5). 1.0 = Nordic baseline; lower-cost regions below 1.0. Editing this switches the selector above to Custom.">Regional factor</label>
+          <input id="regionFactor" type="number" value="1.0" step="0.05" min="0.3" max="1.5" class="input-ind !py-1.5">
         </div>
         <div>
           <label class="text-[10px] text-rose-300" title="CAPEX scale-effect exponent (Lang factor)&#10;0.00: off, linear CAPEX&#10;0.10: iRAS default (back-calc. from a 10,000t Norwegian project)&#10;0.20: moderate scale effect&#10;0.30: strong scale effect (standard Lang factor)&#10;&#10;Baseline fixed at 1000 t/yr (calibration scale of iRAS unit prices)&#10;actual = baseline → factor=1.0&#10;actual > baseline → factor < 1 (large projects cheaper)&#10;actual < baseline → factor > 1 (small projects pricier)">Scale exponent</label>
@@ -841,10 +841,10 @@
     <details open>
       <summary class="text-sm text-cyan-300 cursor-pointer mb-2">Operating-cost unit prices</summary>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div><label class="text-[10px] text-slate-400">Electricity EUR/kWh</label><input id="priceElec" type="number" value="0.7" step="0.05" class="input-ind !py-1.5"></div>
-        <div><label class="text-[10px] text-slate-400">Liquid O₂ EUR/kg</label><input id="priceO2" type="number" value="1.2" step="0.1" class="input-ind !py-1.5"></div>
-        <div><label class="text-[10px] text-slate-400">Methanol EUR/kg</label><input id="priceMethanol" type="number" value="3.5" step="0.1" class="input-ind !py-1.5"></div>
-        <div><label class="text-[10px] text-slate-400">NaHCO₃ EUR/kg</label><input id="priceNaHCO3" type="number" value="2.5" step="0.1" class="input-ind !py-1.5"></div>
+        <div><label class="text-[10px] text-slate-400">Electricity EUR/kWh</label><input id="priceElec" type="number" value="0.20" step="0.05" class="input-ind !py-1.5"></div>
+        <div><label class="text-[10px] text-slate-400">Liquid O₂ EUR/kg</label><input id="priceO2" type="number" value="0.4" step="0.1" class="input-ind !py-1.5"></div>
+        <div><label class="text-[10px] text-slate-400">Methanol EUR/kg</label><input id="priceMethanol" type="number" value="0.6" step="0.1" class="input-ind !py-1.5"></div>
+        <div><label class="text-[10px] text-slate-400">NaHCO₃ EUR/kg</label><input id="priceNaHCO3" type="number" value="0.4" step="0.1" class="input-ind !py-1.5"></div>
       </div>
     </details>
     <details class="mt-3">
@@ -874,8 +874,8 @@
             <th class="text-right py-1 px-2">Max daily feed (kg/d)</th>
             <th class="text-right py-1 px-2">Daily cost (EUR)</th>
             <th class="text-right py-1 px-2">EUR/kg fish</th>
-            <th class="text-right py-1 px-2">Equipment</th>
-            <th class="text-right py-1 px-2">Project</th>
+            <th class="text-right py-1 px-2">Equipment (EUR)</th>
+            <th class="text-right py-1 px-2">Project (EUR)</th>
           </tr>
         </thead>
         <tbody id="farmTableBody"></tbody>
@@ -911,7 +911,7 @@
 
   <footer class="text-center text-xs text-slate-500 py-6 space-y-1">
     <div>
-      <span class="text-slate-300 font-semibold">iRAS</span> v1.7 · RAS Engineering Design Platform · Open source · <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" class="text-cyan-400 hover:text-cyan-300 underline">AGPL v3</a>
+      <span class="text-slate-300 font-semibold">iRAS</span> v1.8 · RAS Engineering Design Platform · Open source · <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" class="text-cyan-400 hover:text-cyan-300 underline">AGPL v3</a>
       · <a href="https://github.com/chengsunmail/iras-en" target="_blank" class="text-cyan-400 hover:text-cyan-300 underline">GitHub</a>
       · <a href="#" id="btnAbout" class="text-cyan-400 hover:text-cyan-300 underline no-print">About</a>
     </div>
@@ -936,7 +936,7 @@
       <div class="space-y-4 text-xs text-slate-300 leading-relaxed">
         <div>
           <div class="text-cyan-400 font-bold mb-1">Version</div>
-          <div>Version: v1.7.0 · Released: 2026-05-16</div>
+          <div>Version: v1.8.0 · Released: 2026-06-04</div>
           <div>Author: Cheng Sun · Polarlys Innovation AS (Norway)</div>
           <div>License: AGPL v3</div>
         </div>
@@ -1055,7 +1055,7 @@
 const IRAS_META = {
   name: 'iRAS',
   fullName: 'RAS Engineering Design Platform',
-  version: '1.7.0',
+  version: '1.8.0',
   releaseDate: '2026-05-16',
   author: 'Cheng Sun',
   email: '',
@@ -1099,10 +1099,10 @@ const SPECIES_DB = {
     tanCoef: 0.092,
     o2BaseFactor: 0.32, o2Q10: 2.0, metabRefTemp: 15,
     stages: [
-      { name: '苗种期', name_en: 'Fry/Fingerling', weightStart: 0.1,  weightEnd: 50,   months: 6, FCR: 1.0, protein: 0.50, feedRate: 0.03, peakFactor: 1.5, tempOpt: 12, density: 30, mortality: 0.15, turnover: 4.0, exchangeDaily: 8, feedPrice: 12, salinity: 0 , DOmin_satRatio: 0.75, DOmin_abs: 6.0, o2FishFactor: 0.2, recDepth_m: 1.5 },
-      { name: '幼鱼期', name_en: 'Juvenile', weightStart: 50,   weightEnd: 500,  months: 8, FCR: 1.1, protein: 0.45, feedRate: 0.015, peakFactor: 1.5, tempOpt: 14, density: 50, mortality: 0.08, turnover: 3.0, exchangeDaily: 6, feedPrice: 12, salinity: 0 , DOmin_satRatio: 0.75, DOmin_abs: 6.0, recDepth_m: 3.0 },
-      { name: '中鱼期', name_en: 'Grow-out (mid)', weightStart: 500,  weightEnd: 2000, months: 6, FCR: 1.2, protein: 0.42, feedRate: 0.01, peakFactor: 1.5, tempOpt: 15, density: 60, mortality: 0.04, turnover: 2.5, exchangeDaily: 5, feedPrice: 12, salinity: 12 , DOmin_satRatio: 0.75, DOmin_abs: 6.0, recDepth_m: 5.0 },
-      { name: '成鱼期', name_en: 'Grow-out (market)', weightStart: 2000, weightEnd: 5000, months: 4, FCR: 1.20, protein: 0.40, feedRate: 0.0095, peakFactor: 1.5, tempOpt: 15, density: 70, mortality: 0.03, turnover: 3.0, exchangeDaily: 4, feedPrice: 12, salinity: 30 , DOmin_satRatio: 0.75, DOmin_abs: 6.0, recDepth_m: 7.0 }
+      { name: '苗种期', name_en: 'Fry/Fingerling', weightStart: 0.1,  weightEnd: 50,   months: 6, FCR: 1.0, protein: 0.50, feedRate: 0.03, peakFactor: 1.5, tempOpt: 12, density: 30, mortality: 0.15, turnover: 4.0, exchangeDaily: 8, feedPrice: 1.9, salinity: 0 , DOmin_satRatio: 0.75, DOmin_abs: 6.0, o2FishFactor: 0.2, recDepth_m: 1.5 },
+      { name: '幼鱼期', name_en: 'Juvenile', weightStart: 50,   weightEnd: 500,  months: 8, FCR: 1.1, protein: 0.45, feedRate: 0.015, peakFactor: 1.5, tempOpt: 14, density: 50, mortality: 0.08, turnover: 3.0, exchangeDaily: 6, feedPrice: 1.7, salinity: 0 , DOmin_satRatio: 0.75, DOmin_abs: 6.0, recDepth_m: 3.0 },
+      { name: '中鱼期', name_en: 'Grow-out (mid)', weightStart: 500,  weightEnd: 2000, months: 6, FCR: 1.2, protein: 0.42, feedRate: 0.01, peakFactor: 1.5, tempOpt: 15, density: 60, mortality: 0.04, turnover: 2.5, exchangeDaily: 5, feedPrice: 1.6, salinity: 12 , DOmin_satRatio: 0.75, DOmin_abs: 6.0, recDepth_m: 5.0 },
+      { name: '成鱼期', name_en: 'Grow-out (market)', weightStart: 2000, weightEnd: 5000, months: 4, FCR: 1.20, protein: 0.40, feedRate: 0.0095, peakFactor: 1.5, tempOpt: 15, density: 70, mortality: 0.03, turnover: 3.0, exchangeDaily: 4, feedPrice: 1.5, salinity: 30 , DOmin_satRatio: 0.75, DOmin_abs: 6.0, recDepth_m: 7.0 }
     ]
   },
   turbot: {
@@ -1113,9 +1113,9 @@ const SPECIES_DB = {
     //         tanks measured 50-70 kg/m³; European Stolt Sea Farm 100 kg/m² floor
     //         area ≈ 200-300 kg/m³ by floor area). New 25/50/60 matches mainstream RAS.
     stages: [
-      { name: '苗种期', name_en: 'Fry/Fingerling', weightStart: 3,   weightEnd: 50,   months: 4, FCR: 0.9, protein: 0.55, feedRate: 0.03, peakFactor: 1.5, tempOpt: 16, density: 25, mortality: 0.15, turnover: 3.5, exchangeDaily: 10, feedPrice: 18, salinity: 28 , DOmin_satRatio: 0.7, DOmin_abs: 6.0, recDepth_m: 0.8 },
-      { name: '中鱼期', name_en: 'Grow-out (mid)', weightStart: 50,  weightEnd: 250,  months: 8, FCR: 1.1, protein: 0.50, feedRate: 0.015, peakFactor: 1.5, tempOpt: 16, density: 50, mortality: 0.06, turnover: 2.5, exchangeDaily: 6, feedPrice: 16, salinity: 28 , DOmin_satRatio: 0.7, DOmin_abs: 6.0, recDepth_m: 1.0 },
-      { name: '成鱼期', name_en: 'Grow-out (market)', weightStart: 250, weightEnd: 600,  months: 6, FCR: 1.3, protein: 0.48, feedRate: 0.009, peakFactor: 1.5, tempOpt: 16, density: 60, mortality: 0.03, turnover: 2.0, exchangeDaily: 4, feedPrice: 15, salinity: 28 , DOmin_satRatio: 0.7, DOmin_abs: 6.0, recDepth_m: 1.0 }
+      { name: '苗种期', name_en: 'Fry/Fingerling', weightStart: 3,   weightEnd: 50,   months: 4, FCR: 0.9, protein: 0.55, feedRate: 0.03, peakFactor: 1.5, tempOpt: 16, density: 25, mortality: 0.15, turnover: 3.5, exchangeDaily: 10, feedPrice: 2.6, salinity: 28 , DOmin_satRatio: 0.7, DOmin_abs: 6.0, recDepth_m: 0.8 },
+      { name: '中鱼期', name_en: 'Grow-out (mid)', weightStart: 50,  weightEnd: 250,  months: 8, FCR: 1.1, protein: 0.50, feedRate: 0.015, peakFactor: 1.5, tempOpt: 16, density: 50, mortality: 0.06, turnover: 2.5, exchangeDaily: 6, feedPrice: 2.2, salinity: 28 , DOmin_satRatio: 0.7, DOmin_abs: 6.0, recDepth_m: 1.0 },
+      { name: '成鱼期', name_en: 'Grow-out (market)', weightStart: 250, weightEnd: 600,  months: 6, FCR: 1.3, protein: 0.48, feedRate: 0.009, peakFactor: 1.5, tempOpt: 16, density: 60, mortality: 0.03, turnover: 2.0, exchangeDaily: 4, feedPrice: 2.0, salinity: 28 , DOmin_satRatio: 0.7, DOmin_abs: 6.0, recDepth_m: 1.0 }
     ]
   },
   tilapia: {
@@ -1123,9 +1123,9 @@ const SPECIES_DB = {
     tanCoef: 0.085,
     o2BaseFactor: 0.16, o2Q10: 2.0, metabRefTemp: 28,
     stages: [
-      { name: '苗种期', name_en: 'Fry/Fingerling', weightStart: 1,   weightEnd: 30,  months: 2, FCR: 1.1, protein: 0.40, feedRate: 0.035, peakFactor: 1.5, tempOpt: 28, density: 50, mortality: 0.10, turnover: 6.0, exchangeDaily: 10, feedPrice: 10, salinity: 0 , DOmin_satRatio: 0.6, DOmin_abs: 4.0, o2FishFactor: 0.3, recDepth_m: 1.5 },
-      { name: '中鱼期', name_en: 'Grow-out (mid)', weightStart: 30,  weightEnd: 200, months: 3, FCR: 1.35, protein: 0.35, feedRate: 0.018, peakFactor: 1.5, tempOpt: 28, density: 70, mortality: 0.05, turnover: 6.0, exchangeDaily: 8, feedPrice: 8, salinity: 0 , DOmin_satRatio: 0.6, DOmin_abs: 4.0, recDepth_m: 2.0 },
-      { name: '成鱼期', name_en: 'Grow-out (market)', weightStart: 200, weightEnd: 600, months: 3, FCR: 1.5, protein: 0.30, feedRate: 0.015, peakFactor: 1.5, tempOpt: 28, density: 100, mortality: 0.03, turnover: 6.0, exchangeDaily: 6, feedPrice: 7, salinity: 0 , DOmin_satRatio: 0.6, DOmin_abs: 4.0, recDepth_m: 2.5 }
+      { name: '苗种期', name_en: 'Fry/Fingerling', weightStart: 1,   weightEnd: 30,  months: 2, FCR: 1.1, protein: 0.40, feedRate: 0.035, peakFactor: 1.5, tempOpt: 28, density: 50, mortality: 0.10, turnover: 6.0, exchangeDaily: 10, feedPrice: 1.4, salinity: 0 , DOmin_satRatio: 0.6, DOmin_abs: 4.0, o2FishFactor: 0.3, recDepth_m: 1.5 },
+      { name: '中鱼期', name_en: 'Grow-out (mid)', weightStart: 30,  weightEnd: 200, months: 3, FCR: 1.35, protein: 0.35, feedRate: 0.018, peakFactor: 1.5, tempOpt: 28, density: 70, mortality: 0.05, turnover: 6.0, exchangeDaily: 8, feedPrice: 1.1, salinity: 0 , DOmin_satRatio: 0.6, DOmin_abs: 4.0, recDepth_m: 2.0 },
+      { name: '成鱼期', name_en: 'Grow-out (market)', weightStart: 200, weightEnd: 600, months: 3, FCR: 1.5, protein: 0.30, feedRate: 0.015, peakFactor: 1.5, tempOpt: 28, density: 100, mortality: 0.03, turnover: 6.0, exchangeDaily: 6, feedPrice: 1.0, salinity: 0 , DOmin_satRatio: 0.6, DOmin_abs: 4.0, recDepth_m: 2.5 }
     ]
   },
   grouper: {
@@ -1133,9 +1133,9 @@ const SPECIES_DB = {
     tanCoef: 0.110,
     o2BaseFactor: 0.18, o2Q10: 2.0, metabRefTemp: 27,
     stages: [
-      { name: '苗种期', name_en: 'Fry/Fingerling', weightStart: 1,   weightEnd: 50,   months: 3, FCR: 1.1, protein: 0.55, feedRate: 0.03, peakFactor: 1.5, tempOpt: 27, density: 25, mortality: 0.20, turnover: 4.0, exchangeDaily: 10, feedPrice: 12, salinity: 30 , DOmin_satRatio: 0.7, DOmin_abs: 5.0, o2FishFactor: 0.32, recDepth_m: 1.5 },
-      { name: '幼鱼期', name_en: 'Juvenile', weightStart: 50,  weightEnd: 300,  months: 5, FCR: 1.3, protein: 0.50, feedRate: 0.018, peakFactor: 1.5, tempOpt: 27, density: 40, mortality: 0.10, turnover: 3.0, exchangeDaily: 8, feedPrice: 11, salinity: 30 , DOmin_satRatio: 0.7, DOmin_abs: 5.0, recDepth_m: 2.0 },
-      { name: '成鱼期', name_en: 'Grow-out (market)', weightStart: 300, weightEnd: 1000, months: 4, FCR: 1.4, protein: 0.48, feedRate: 0.012, peakFactor: 1.5, tempOpt: 27, density: 55, mortality: 0.05, turnover: 3.0, exchangeDaily: 6, feedPrice: 11, salinity: 30 , DOmin_satRatio: 0.7, DOmin_abs: 5.0, recDepth_m: 3.0 }
+      { name: '苗种期', name_en: 'Fry/Fingerling', weightStart: 1,   weightEnd: 50,   months: 3, FCR: 1.1, protein: 0.55, feedRate: 0.03, peakFactor: 1.5, tempOpt: 27, density: 25, mortality: 0.20, turnover: 4.0, exchangeDaily: 10, feedPrice: 2.6, salinity: 30 , DOmin_satRatio: 0.7, DOmin_abs: 5.0, o2FishFactor: 0.32, recDepth_m: 1.5 },
+      { name: '幼鱼期', name_en: 'Juvenile', weightStart: 50,  weightEnd: 300,  months: 5, FCR: 1.3, protein: 0.50, feedRate: 0.018, peakFactor: 1.5, tempOpt: 27, density: 40, mortality: 0.10, turnover: 3.0, exchangeDaily: 8, feedPrice: 2.3, salinity: 30 , DOmin_satRatio: 0.7, DOmin_abs: 5.0, recDepth_m: 2.0 },
+      { name: '成鱼期', name_en: 'Grow-out (market)', weightStart: 300, weightEnd: 1000, months: 4, FCR: 1.4, protein: 0.48, feedRate: 0.012, peakFactor: 1.5, tempOpt: 27, density: 55, mortality: 0.05, turnover: 3.0, exchangeDaily: 6, feedPrice: 2.0, salinity: 30 , DOmin_satRatio: 0.7, DOmin_abs: 5.0, recDepth_m: 3.0 }
     ]
   },
   bass: {
@@ -1143,9 +1143,9 @@ const SPECIES_DB = {
     tanCoef: 0.092,
     o2BaseFactor: 0.19, o2Q10: 2.0, metabRefTemp: 25,
     stages: [
-      { name: '苗种期', name_en: 'Fry/Fingerling', weightStart: 1,   weightEnd: 50,  months: 2, FCR: 0.9, protein: 0.50, feedRate: 0.035, peakFactor: 1.5, tempOpt: 25, density: 25, mortality: 0.12, turnover: 4.0, exchangeDaily: 10, feedPrice: 16, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, o2FishFactor: 0.28, recDepth_m: 1.5 },
-      { name: '中鱼期', name_en: 'Grow-out (mid)', weightStart: 50,  weightEnd: 250, months: 4, FCR: 1.1, protein: 0.46, feedRate: 0.018, peakFactor: 1.5, tempOpt: 25, density: 40, mortality: 0.05, turnover: 3.0, exchangeDaily: 6, feedPrice: 14, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, recDepth_m: 2.0 },
-      { name: '成鱼期', name_en: 'Grow-out (market)', weightStart: 250, weightEnd: 600, months: 4, FCR: 1.3, protein: 0.42, feedRate: 0.012, peakFactor: 1.5, tempOpt: 25, density: 50, mortality: 0.03, turnover: 2.5, exchangeDaily: 5, feedPrice: 13, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, recDepth_m: 2.5 }
+      { name: '苗种期', name_en: 'Fry/Fingerling', weightStart: 1,   weightEnd: 50,  months: 2, FCR: 0.9, protein: 0.50, feedRate: 0.035, peakFactor: 1.5, tempOpt: 25, density: 25, mortality: 0.12, turnover: 4.0, exchangeDaily: 10, feedPrice: 2.0, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, o2FishFactor: 0.28, recDepth_m: 1.5 },
+      { name: '中鱼期', name_en: 'Grow-out (mid)', weightStart: 50,  weightEnd: 250, months: 4, FCR: 1.1, protein: 0.46, feedRate: 0.018, peakFactor: 1.5, tempOpt: 25, density: 40, mortality: 0.05, turnover: 3.0, exchangeDaily: 6, feedPrice: 1.7, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, recDepth_m: 2.0 },
+      { name: '成鱼期', name_en: 'Grow-out (market)', weightStart: 250, weightEnd: 600, months: 4, FCR: 1.3, protein: 0.42, feedRate: 0.012, peakFactor: 1.5, tempOpt: 25, density: 50, mortality: 0.03, turnover: 2.5, exchangeDaily: 5, feedPrice: 1.5, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, recDepth_m: 2.5 }
     ]
   },
   eel: {
@@ -1155,9 +1155,9 @@ const SPECIES_DB = {
     // Eel uses powder feed (not pellets), more leftover, higher TSS/DOM; the TSS
     // coefficient 0.30 here is generic (eel may be 0.35-0.40); compensate via exchange/RDF.
     stages: [
-      { name: '白仔期', name_en: 'Glass eel', weightStart: 0.2, weightEnd: 5,   months: 3, FCR: 1.5, protein: 0.50, feedRate: 0.050, peakFactor: 1.5, tempOpt: 28, density: 10, mortality: 0.20, turnover: 3.0, exchangeDaily: 12, feedPrice: 30, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, recDepth_m: 1.0 },
-      { name: '黑仔期', name_en: 'Elver', weightStart: 5,   weightEnd: 50,  months: 4, FCR: 1.5, protein: 0.48, feedRate: 0.025, peakFactor: 1.5, tempOpt: 28, density: 25, mortality: 0.08, turnover: 3.0, exchangeDaily: 8, feedPrice: 22, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, recDepth_m: 1.5 },
-      { name: '养成期', name_en: 'Grow-out', weightStart: 50,  weightEnd: 200, months: 5, FCR: 1.6, protein: 0.45, feedRate: 0.013, peakFactor: 1.5, tempOpt: 26, density: 40, mortality: 0.05, turnover: 2.5, exchangeDaily: 6, feedPrice: 18, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, recDepth_m: 2.0 }
+      { name: '白仔期', name_en: 'Glass eel', weightStart: 0.2, weightEnd: 5,   months: 3, FCR: 1.5, protein: 0.50, feedRate: 0.050, peakFactor: 1.5, tempOpt: 28, density: 10, mortality: 0.20, turnover: 3.0, exchangeDaily: 12, feedPrice: 3.5, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, recDepth_m: 1.0 },
+      { name: '黑仔期', name_en: 'Elver', weightStart: 5,   weightEnd: 50,  months: 4, FCR: 1.5, protein: 0.48, feedRate: 0.025, peakFactor: 1.5, tempOpt: 28, density: 25, mortality: 0.08, turnover: 3.0, exchangeDaily: 8, feedPrice: 2.8, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, recDepth_m: 1.5 },
+      { name: '养成期', name_en: 'Grow-out', weightStart: 50,  weightEnd: 200, months: 5, FCR: 1.6, protein: 0.45, feedRate: 0.013, peakFactor: 1.5, tempOpt: 26, density: 40, mortality: 0.05, turnover: 2.5, exchangeDaily: 6, feedPrice: 2.2, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, recDepth_m: 2.0 }
     ]
   },
   mandarin: {
@@ -1168,8 +1168,8 @@ const SPECIES_DB = {
     // Mandarin fish is piscivorous, high protein demand (48-55%), large TAN production
     // Low density (territorial), should not exceed 35 kg/m³
     stages: [
-      { name: '苗种期', name_en: 'Fry/Fingerling', weightStart: 5,  weightEnd: 50,  months: 2, FCR: 1.0, protein: 0.52, feedRate: 0.035, peakFactor: 1.5, tempOpt: 26, density: 15, mortality: 0.15, turnover: 3.0, exchangeDaily: 10, feedPrice: 22, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, recDepth_m: 1.5 },
-      { name: '养成期', name_en: 'Grow-out', weightStart: 50, weightEnd: 500, months: 6, FCR: 1.2, protein: 0.48, feedRate: 0.015, peakFactor: 1.5, tempOpt: 26, density: 30, mortality: 0.05, turnover: 2.5, exchangeDaily: 6, feedPrice: 18, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, recDepth_m: 2.0 }
+      { name: '苗种期', name_en: 'Fry/Fingerling', weightStart: 5,  weightEnd: 50,  months: 2, FCR: 1.0, protein: 0.52, feedRate: 0.035, peakFactor: 1.5, tempOpt: 26, density: 15, mortality: 0.15, turnover: 3.0, exchangeDaily: 10, feedPrice: 2.6, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, recDepth_m: 1.5 },
+      { name: '养成期', name_en: 'Grow-out', weightStart: 50, weightEnd: 500, months: 6, FCR: 1.2, protein: 0.48, feedRate: 0.015, peakFactor: 1.5, tempOpt: 26, density: 30, mortality: 0.05, turnover: 2.5, exchangeDaily: 6, feedPrice: 2.2, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, recDepth_m: 2.0 }
     ]
   },
   shrimp: {
@@ -1181,9 +1181,9 @@ const SPECIES_DB = {
     // Shrimp traits: very short cycle (3-4 months), low density (by kg/m³), high feed rate (fry 10-15%)
     // Molting debris adds TSS; bottom-drain management is key (not modeled separately here)
     stages: [
-      { name: '苗种期', name_en: 'Fry/Fingerling',   weightStart: 0.01, weightEnd: 1,  months: 1,   FCR: 1.0, protein: 0.45, feedRate: 0.1, peakFactor: 1.5, tempOpt: 30, density: 2,  mortality: 0.30, turnover: 2.0, exchangeDaily: 15, feedPrice: 12, salinity: 15 , DOmin_satRatio: 0.6, DOmin_abs: 4.0, recDepth_m: 1.0 },
-      { name: '养成前期', name_en: 'Early grow-out', weightStart: 1,    weightEnd: 10, months: 1.5, FCR: 1.3, protein: 0.42, feedRate: 0.05, peakFactor: 1.5, tempOpt: 30, density: 8,  mortality: 0.15, turnover: 2.5, exchangeDaily: 10, feedPrice: 8, salinity: 15 , DOmin_satRatio: 0.6, DOmin_abs: 4.0, recDepth_m: 1.2 },
-      { name: '养成后期', name_en: 'Late grow-out', weightStart: 10,   weightEnd: 30, months: 1.5, FCR: 1.6, protein: 0.38, feedRate: 0.03, peakFactor: 1.5, tempOpt: 30, density: 15, mortality: 0.10, turnover: 2.5, exchangeDaily: 8,  feedPrice: 6, salinity: 15 , DOmin_satRatio: 0.6, DOmin_abs: 4.0, recDepth_m: 1.5 }
+      { name: '苗种期', name_en: 'Fry/Fingerling',   weightStart: 0.01, weightEnd: 1,  months: 1,   FCR: 1.0, protein: 0.45, feedRate: 0.1, peakFactor: 1.5, tempOpt: 30, density: 2,  mortality: 0.30, turnover: 2.0, exchangeDaily: 15, feedPrice: 1.5, salinity: 15 , DOmin_satRatio: 0.6, DOmin_abs: 4.0, recDepth_m: 1.0 },
+      { name: '养成前期', name_en: 'Early grow-out', weightStart: 1,    weightEnd: 10, months: 1.5, FCR: 1.3, protein: 0.42, feedRate: 0.05, peakFactor: 1.5, tempOpt: 30, density: 8,  mortality: 0.15, turnover: 2.5, exchangeDaily: 10, feedPrice: 1.2, salinity: 15 , DOmin_satRatio: 0.6, DOmin_abs: 4.0, recDepth_m: 1.2 },
+      { name: '养成后期', name_en: 'Late grow-out', weightStart: 10,   weightEnd: 30, months: 1.5, FCR: 1.6, protein: 0.38, feedRate: 0.03, peakFactor: 1.5, tempOpt: 30, density: 15, mortality: 0.10, turnover: 2.5, exchangeDaily: 8,  feedPrice: 1.0, salinity: 15 , DOmin_satRatio: 0.6, DOmin_abs: 4.0, recDepth_m: 1.5 }
     ]
   },
   custom: {
@@ -1191,7 +1191,7 @@ const SPECIES_DB = {
     tanCoef: 0.092,
     o2BaseFactor: 0.18, o2Q10: 2.0, metabRefTemp: 25,
     stages: [
-      { name: '自定义阶段', name_en: 'Custom stage', weightStart: 100, weightEnd: 1000, months: 6, FCR: 1.3, protein: 0.40, feedRate: 0.015, peakFactor: 1.5, tempOpt: 22, density: 50, mortality: 0.05, turnover: 3.0, exchangeDaily: 5, feedPrice: 12, salinity: 0 , DOmin_satRatio: 0.7, DOmin_abs: 5.0, recDepth_m: 2.0 }
+      { name: '自定义阶段', name_en: 'Custom stage', weightStart: 100, weightEnd: 1000, months: 6, FCR: 1.3, protein: 0.40, feedRate: 0.015, peakFactor: 1.5, tempOpt: 22, density: 50, mortality: 0.05, turnover: 3.0, exchangeDaily: 5, feedPrice: 1.5, salinity: 0 , DOmin_satRatio: 0.7, DOmin_abs: 5.0, recDepth_m: 2.0 }
     ]
   }
 };
@@ -1677,21 +1677,21 @@ const EQUIPMENT_LIMIT_LABELS = {
 // Each entry has: short label, pricing basis unit, default price, recommended range [lo,hi]
 // Price basis: mid-range market 2024-2025
 const EQUIP_PRICES_DEFAULTS = {
-  rdf:       { label: 'Drum filter', label_en: 'Drum filter',       unit: 'EUR/(m³/h)',  price: 500,    lo: 300,  hi: 800   },
-  biofilter: { label: 'MBBR system (media + aeration, excl. tank/blower)', label_en: 'MBBR system (media + aeration, excl. tank/blower)', unit: 'EUR/m³ media', price: 4500,   lo: 3000, hi: 6000  },
-  uv:        { label: 'UV disinfection unit', label_en: 'UV disinfection unit', unit: 'EUR/kW',      price: 10000,  lo: 8000, hi: 15000 },
-  skimmer:   { label: 'Protein skimmer', label_en: 'Protein skimmer',  unit: 'EUR/m³',      price: 25000,  lo: 15000,hi: 40000 },
-  ozone:     { label: 'Ozone generator', label_en: 'Ozone generator',  unit: 'EUR/(kg/d)',  price: 100000, lo: 80000,hi: 150000},
-  aop:       { label: 'AOP reactor', label_en: 'AOP reactor',     unit: 'EUR/m³',      price: 35000,  lo: 20000,hi: 50000 },
-  denitri:   { label: 'Denitrification reactor', label_en: 'Denitrification reactor', unit: 'EUR/m³', price: 5500,   lo: 4000, hi: 8000  },
-  degas:     { label: 'CO₂ stripper', label_en: 'CO₂ stripper',    unit: 'EUR/m²',      price: 20000,  lo: 15000,hi: 30000 },
-  mainPump:  { label: 'Main pump + VFD', label_en: 'Main pump + VFD', unit: 'EUR/kW',      price: 3500,   lo: 2500, hi: 5000  },
-  branchPump:{ label: 'Branch pump (each)', label_en: 'Branch pump (each)', unit: 'EUR/kW',  price: 3000,   lo: 2000, hi: 4000  },
-  blower:    { label: 'Roots blower', label_en: 'Roots blower',   unit: 'EUR/kW',      price: 4000,   lo: 3000, hi: 6000  },
-  o2tower:   { label: 'LOX oxygenation tower', label_en: 'LOX oxygenation tower', unit: 'EUR/(m³/h)', price: 350,    lo: 200,  hi: 500   },
+  rdf:       { label: 'Drum filter', label_en: 'Drum filter',       unit: 'EUR/(m³/h)',  price: 130,    lo: 78,   hi: 208   },
+  biofilter: { label: 'MBBR system (media + aeration, excl. tank/blower)', label_en: 'MBBR system (media + aeration, excl. tank/blower)', unit: 'EUR/m³ media', price: 1169,  lo: 779,  hi: 1558  },
+  uv:        { label: 'UV disinfection unit', label_en: 'UV disinfection unit', unit: 'EUR/kW',      price: 2597,  lo: 2078, hi: 3896  },
+  skimmer:   { label: 'Protein skimmer', label_en: 'Protein skimmer',  unit: 'EUR/m³',      price: 6494,  lo: 3896, hi: 10390 },
+  ozone:     { label: 'Ozone generator', label_en: 'Ozone generator',  unit: 'EUR/(kg/d)',  price: 25974, lo: 20779,hi: 38961 },
+  aop:       { label: 'AOP reactor', label_en: 'AOP reactor',     unit: 'EUR/m³',      price: 9091,  lo: 5195, hi: 12987 },
+  denitri:   { label: 'Denitrification reactor', label_en: 'Denitrification reactor', unit: 'EUR/m³', price: 1429,  lo: 1039, hi: 2078  },
+  degas:     { label: 'CO₂ stripper', label_en: 'CO₂ stripper',    unit: 'EUR/m²',      price: 5195,  lo: 3896, hi: 7792  },
+  mainPump:  { label: 'Main pump + VFD', label_en: 'Main pump + VFD', unit: 'EUR/kW',      price: 909,   lo: 649,  hi: 1299  },
+  branchPump:{ label: 'Branch pump (each)', label_en: 'Branch pump (each)', unit: 'EUR/kW',  price: 779,   lo: 519,  hi: 1039  },
+  blower:    { label: 'Roots blower', label_en: 'Roots blower',   unit: 'EUR/kW',      price: 1039,  lo: 779,  hi: 1558  },
+  o2tower:   { label: 'LOX oxygenation tower', label_en: 'LOX oxygenation tower', unit: 'EUR/(m³/h)', price: 91,     lo: 52,   hi: 130   },
   // LOX tank moved to the section ③ 'site equipment' area (siteEquipConfig.oxygenTank); adjust size/count/price there
-  heatPump:  { label: 'Heat pump (air-source)', label_en: 'Heat pump (air-source)', unit: 'EUR/kW',  price: 2000,   lo: 1500, hi: 3000  },
-  heatExch:  { label: 'Plate heat exchanger', label_en: 'Plate heat exchanger', unit: 'EUR/m²',  price: 1200,   lo: 800,  hi: 2000  }
+  heatPump:  { label: 'Heat pump (air-source)', label_en: 'Heat pump (air-source)', unit: 'EUR/kW',  price: 519,   lo: 390,  hi: 779   },
+  heatExch:  { label: 'Plate heat exchanger', label_en: 'Plate heat exchanger', unit: 'EUR/m²',  price: 312,   lo: 208,  hi: 519   }
 };
 
 // ---------- State ----------
@@ -4172,7 +4172,7 @@ function readEquipPrices() {
   // Depreciation years (equipment/civil separately)
   p.depYearsEquip = parseFloat(document.getElementById('depYearsEquip')?.value) || 8;
   p.depYearsCivil = parseFloat(document.getElementById('depYearsCivil')?.value) || 20;
-  // CAPEX regional factor (baseline=1.0 default, Nordic=5.0; multiplies CAPEX only, not OPEX)
+  // CAPEX regional factor (1.0 = Nordic baseline, since unit prices are Nordic-calibrated; lower-cost regions < 1.0; multiplies CAPEX only, not OPEX)
   p.regionFactor = parseFloat(document.getElementById('regionFactor')?.value) || 1.0;
   // CAPEX scale effect (Lang factor)
   p.scaleRefSize = parseFloat(document.getElementById('scaleRefSize')?.value) || 1000;
@@ -4344,8 +4344,8 @@ function calcCapex(eq, sim, flowData, eqPrices) {
   }
 
   const factor = eqPrices.totalFactor;
-  // Regional factor (baseline 1.0, Nordic 2.0; affects CAPEX only, not OPEX)
-  // Physics: regional differences in equipment/engineering/labor (back-calculated from a Norwegian 10000t project)
+  // Regional factor (1.0 = Nordic baseline; unit prices are calibrated to the Nordic/Norway market, lower-cost regions use < 1.0; affects CAPEX only, not OPEX)
+  // Physics: regional differences in equipment/engineering/labor relative to the Nordic baseline
   const regionFactor = Math.max(eqPrices.regionFactor || 1.0, 0.1);
   // Scale effect (Lang factor) — large projects amortize automation/design/management, lowering unit CAPEX
   // scaleFactor = (reference size / actual size)^exponent
@@ -4508,7 +4508,7 @@ let siteEquipConfig = {
 //   1t=63k, 3t=127k, 5t=177k, 10t=278k, 20t=443k EUR
 function o2TankPriceBySize(size_t) {
   const ref_t = 3;
-  const ref_price = 100000;
+  const ref_price = 25974;
   return Math.round(ref_price * Math.pow(size_t / ref_t, 0.6) / 1000) * 1000;  // round to the nearest thousand
 }
 
@@ -4603,7 +4603,7 @@ function loadStagesFromDB(key) {
       //   preventing different tanCoef across fresh/seawater stages (e.g. salmon fry freshwater / grow-out seawater)
       tanCoef: s.tanCoef != null ? s.tanCoef : sp.tanCoef,
       proc: {...PROCESS_DEFAULTS, o2SatTarget: o2Sat},
-      feedPrice: (typeof s.feedPrice === 'number' && Number.isFinite(s.feedPrice)) ? s.feedPrice : 12
+      feedPrice: (typeof s.feedPrice === 'number' && Number.isFinite(s.feedPrice)) ? s.feedPrice : 1.5
     };
   });
   currentTanCoef = sp.tanCoef;  // kept as the 'current species baseline', used by autoSave / restore
@@ -4851,7 +4851,7 @@ function renderStageBlock(idx, stage) {
         <div><label class="text-[10px] text-slate-400">End weight (g)</label><input data-stage="${idx}" data-field="weightEnd" type="number" step="1" value="${stage.weightEnd}" class="stg-input input-ind !py-1 !text-xs"></div>
         <div><label class="text-[10px] text-slate-400">Duration (mo)</label><input data-stage="${idx}" data-field="months" type="number" step="0.5" value="${stage.months}" class="stg-input input-ind !py-1 !text-xs"></div>
         <div><label class="text-[10px] text-slate-400">FCR</label><input data-stage="${idx}" data-field="FCR" type="number" step="0.01" value="${stage.FCR}" class="stg-input input-ind !py-1 !text-xs"></div>
-        <div><label class="text-[10px] text-amber-300">Feed price (EUR/kg)</label><input data-stage="${idx}" data-field="feedPrice" type="number" step="0.5" value="${(typeof stage.feedPrice === 'number' && Number.isFinite(stage.feedPrice)) ? stage.feedPrice : 12}" class="stg-input input-ind !py-1 !text-xs"></div>
+        <div><label class="text-[10px] text-amber-300">Feed price (EUR/kg)</label><input data-stage="${idx}" data-field="feedPrice" type="number" step="0.1" value="${(typeof stage.feedPrice === 'number' && Number.isFinite(stage.feedPrice)) ? stage.feedPrice : 1.5}" class="stg-input input-ind !py-1 !text-xs"></div>
         <div><label class="text-[10px] text-slate-400">Protein (%)</label><input data-stage="${idx}" data-field="protein" type="number" step="1" value="${(stage.protein*100).toFixed(0)}" class="stg-input input-ind !py-1 !text-xs"></div>
         <div><label class="text-[10px] text-slate-400">Max feed rate (%)</label><input data-stage="${idx}" data-field="feedRate" type="number" step="0.01" value="${(stage.feedRate*100).toFixed(2)}" class="stg-input input-ind !py-1 !text-xs"></div>
         <div><label class="text-[10px] text-slate-400">Peak factor</label><input data-stage="${idx}" data-field="peakFactor" type="number" step="0.1" value="${stage.peakFactor}" class="stg-input input-ind !py-1 !text-xs"></div>
@@ -6471,7 +6471,7 @@ function rebuildStages() {
       stagesState[idx] = {
         ...srcStage,
         proc: keepProc,
-        feedPrice: (typeof srcStage.feedPrice === 'number') ? srcStage.feedPrice : 12
+        feedPrice: (typeof srcStage.feedPrice === 'number') ? srcStage.feedPrice : 1.5
       };
       // Do not rebuild; just refresh the input values
       // Note: three percentage fields display as × 100 in the UI
@@ -6488,7 +6488,7 @@ function rebuildStages() {
       });
       // feedPrice handled separately (may not be in srcStage)
       const fpEl = document.querySelector(`[data-stage="${idx}"][data-field="feedPrice"]`);
-      if (fpEl) fpEl.value = (typeof srcStage.feedPrice === 'number') ? srcStage.feedPrice : 12;
+      if (fpEl) fpEl.value = (typeof srcStage.feedPrice === 'number') ? srcStage.feedPrice : 1.5;
       // tanCoef written to stage.tanCoef (per-stage)
       if (typeof sp.tanCoef === 'number') {
         currentTanCoef = sp.tanCoef;
@@ -6524,10 +6524,10 @@ function recomputeAll() {
   const yieldTons = parseFloat(document.getElementById('inpYield').value) || 0;
   // Single-module capacity cap is deprecated; module count is set entirely by the stage card's 'sets' (subSystemCount)
   const prices = {
-    elecPrice: parseFloat(document.getElementById('priceElec').value) || 0.7,
-    o2Price: parseFloat(document.getElementById('priceO2').value) || 1.2,
-    methanolPrice: parseFloat(document.getElementById('priceMethanol').value) || 3.5,
-    naHCO3Price: parseFloat(document.getElementById('priceNaHCO3').value) || 2.5
+    elecPrice: parseFloat(document.getElementById('priceElec').value) || 0.20,
+    o2Price: parseFloat(document.getElementById('priceO2').value) || 0.4,
+    methanolPrice: parseFloat(document.getElementById('priceMethanol').value) || 0.6,
+    naHCO3Price: parseFloat(document.getElementById('priceNaHCO3').value) || 0.4
   };
 
   const farm = backCalculateFarmSize(yieldTons, stagesState);
@@ -6647,7 +6647,7 @@ function recomputeAll() {
     }
     // eq was already recomputed in pass 3 based on sim_pass2; capex uses it directly
     const capex = calcCapex(eq, sim, flowData, eqPrices);
-    const fp = (typeof stage.feedPrice === 'number' && Number.isFinite(stage.feedPrice)) ? stage.feedPrice : 12;
+    const fp = (typeof stage.feedPrice === 'number' && Number.isFinite(stage.feedPrice)) ? stage.feedPrice : 1.5;
     const cost = calcCostEstimate(load, stage, proc, eq, { ...prices, feedPrice: fp }, sim, capex);
     allResults[idx] = {stage, stageFarm, load, flowData, sim, eq, cost, capex};
 
@@ -6958,7 +6958,7 @@ function renderFarmSummary(farm, results, yieldTons, prices, eqPrices) {
     // Show the regional factor (hidden at default 1.0, highlighted otherwise)
     const r0capex = results && results[0] && results[0].capex;
     const rfDisplay = (r0capex && r0capex.regionFactor && Math.abs(r0capex.regionFactor - 1.0) > 0.05)
-      ? ` · <span class="text-purple-300">region×${r0capex.regionFactor.toFixed(1)}</span>`
+      ? ` · <span class="text-purple-300">region×${r0capex.regionFactor.toFixed(2)}</span>`
       : '';
     const sfDisplay = (r0capex && r0capex.scaleFactor && Math.abs(r0capex.scaleFactor - 1.0) > 0.05)
       ? ` · <span class="text-rose-300">scale×${r0capex.scaleFactor.toFixed(2)}</span>`
@@ -7034,7 +7034,11 @@ function renderFarmSummary(farm, results, yieldTons, prices, eqPrices) {
     }
   }
 
-  const fmtW = n => (n/10000).toFixed(1);
+  const fmtW = n => {
+    if (n >= 1e6) return (n/1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return (n/1e3).toFixed(1) + 'k';
+    return Math.round(n).toLocaleString('en-US');
+  };
   tbody.innerHTML = stagesState.map((st, i) => {
     const f = farm.perStage[i];
     const r = results[i];
@@ -7495,10 +7499,10 @@ function collectState() {
     // Global climate + envelope + heat-pump configuration (project-level constants)
     globalThermalConfig: {...globalThermalConfig},
     prices: {
-      elec: parseFloat(document.getElementById('priceElec').value) || 0.7,
-      o2: parseFloat(document.getElementById('priceO2').value) || 1.2,
-      methanol: parseFloat(document.getElementById('priceMethanol').value) || 3.5,
-      naHCO3: parseFloat(document.getElementById('priceNaHCO3').value) || 2.5
+      elec: parseFloat(document.getElementById('priceElec').value) || 0.20,
+      o2: parseFloat(document.getElementById('priceO2').value) || 0.4,
+      methanol: parseFloat(document.getElementById('priceMethanol').value) || 0.6,
+      naHCO3: parseFloat(document.getElementById('priceNaHCO3').value) || 0.4
     },
     equipPrices: readEquipPrices(),
     capexFactor: parseFloat(document.getElementById('capexFactor')?.value) || 2.2,
@@ -7598,9 +7602,9 @@ function restoreState(state) {
     const presetEl = document.getElementById('regionPreset');
     if (factorEl) factorEl.value = state.regionFactor;
     if (presetEl) {
-      const presets = [1.0, 1.1, 1.5, 1.7, 2.0];
-      const matched = presets.find(p => Math.abs(p - state.regionFactor) < 0.05);
-      presetEl.value = matched != null ? matched.toFixed(1) : 'custom';
+      const presets = ['1.0', '0.85', '0.75', '0.6', '0.5'];
+      const matched = presets.find(p => Math.abs(parseFloat(p) - state.regionFactor) < 0.025);
+      presetEl.value = matched != null ? matched : 'custom';
     }
   }
   // Scale-effect parameters restore
@@ -8045,10 +8049,10 @@ document.getElementById('btnPrint').addEventListener('click', () => {
     regionFactor.addEventListener('input', (e) => {
       // The user changed the factor; check if it matches a preset, otherwise switch to custom
       const v = parseFloat(e.target.value);
-      const presets = [1.0, 1.1, 1.5, 1.7, 2.0];
-      const matched = presets.find(p => Math.abs(p - v) < 0.05);
+      const presets = ['1.0', '0.85', '0.75', '0.6', '0.5'];
+      const matched = presets.find(p => Math.abs(parseFloat(p) - v) < 0.025);
       if (matched != null) {
-        regionPreset.value = matched.toFixed(1);
+        regionPreset.value = matched;
       } else {
         regionPreset.value = 'custom';
       }

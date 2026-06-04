@@ -3,14 +3,14 @@
 > An open-source engineering design platform for Recirculating Aquaculture Systems (RAS)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-![Version](https://img.shields.io/badge/version-1.7.0-green.svg)
+![Version](https://img.shields.io/badge/version-1.8.0-green.svg)
 ![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)
 
 **iRAS** is an open-source engineering tool for designing Recirculating Aquaculture Systems, built for **aquaculture engineers, design firms, and academic researchers**. It covers the full workflow: **process design → P&ID generation → equipment schedule → investment & financial evaluation**.
 
 It runs entirely in the browser — no installation, no backend, no account.
 
-> **English edition.** iRAS (English edition) v1.7.0 was initially ported from the original Chinese edition (v1.7). The two editions are maintained as independent repositories and developed independently from this point onward.
+> **English edition.** iRAS (English edition) was initially ported from the original Chinese edition (v1.7). From v1.8 onward, equipment unit prices and consumable/feed costs are recalibrated to the European (Nordic) market. The two editions are maintained as independent repositories and developed independently.
 
 ---
 
@@ -95,7 +95,7 @@ If you use iRAS in academic work, engineering reports, or commercial projects, p
 
 ```
 Sun, C. (2026). iRAS: A Platform for Recirculating Aquaculture System
-Engineering Design (Version 1.7.0). https://github.com/chengsunmail/iras-en
+Engineering Design (Version 1.8.0). https://github.com/chengsunmail/iras-en
 ```
 
 BibTeX:
@@ -104,7 +104,7 @@ BibTeX:
 @software{iras2026,
   author    = {Sun, Cheng},
   title     = {iRAS: A Platform for Recirculating Aquaculture System Engineering Design},
-  version   = {1.7.0},
+  version   = {1.8.0},
   year      = {2026},
   url       = {https://github.com/chengsunmail/iras-en}
 }
@@ -136,7 +136,7 @@ Developed with AI assistance. The physical models are calibrated against public 
 
 ## Provenance
 
-iRAS (English edition) v1.7.0 is the first public release of the English edition. It was initially ported from the original Chinese edition at version 1.7, which had reached that version through eight prior iterations covering steady-state concentration modeling, the physics framework and CAPEX/OPEX, global climate and two-node thermal balance, parallel multi-module design with P&ID, investment & financial evaluation, document export, site-level equipment, and the v1.7 oxygen-cone topology and system-discharge rework. From this release onward, the English edition is developed independently and will not track the Chinese edition's version line.
+iRAS (English edition) v1.7.0 is the first public release of the English edition. It was initially ported from the original Chinese edition at version 1.7, which had reached that version through eight prior iterations covering steady-state concentration modeling, the physics framework and CAPEX/OPEX, global climate and two-node thermal balance, parallel multi-module design with P&ID, investment & financial evaluation, document export, site-level equipment, and the v1.7 oxygen-cone topology and system-discharge rework. Version 1.8 is the first public release of the English edition. Building on the v1.7 port, it recalibrates all equipment unit prices, consumable costs (oxygen, methanol, sodium bicarbonate), and species feed prices from the original Chinese-market basis to the European (Nordic) market, and reorients the CAPEX regional factor so that 1.0 represents the Nordic baseline (lower-cost regions below 1.0). From this release onward, the English edition is developed independently and will not track the Chinese edition's version line.
 
 ---
 
