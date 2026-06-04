@@ -658,6 +658,7 @@
         <button type="button" id="btnOpenFinance" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40 shrink-0" title="Open the financial evaluation page in a new window (NPV/IRR/sensitivity + Excel export)">💰 Financial evaluation</button>
         <button type="button" id="btnPrint" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40 shrink-0" title="Print / choose &quot;Save as PDF&quot; in the print dialog to export PDF">🖨️ Print</button>
         <button type="button" id="btnHelp" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40">? Help</button>
+        <button type="button" id="btnClearCache" class="no-print text-[10px] px-2 py-1 rounded border border-rose-700/60 text-rose-300 hover:bg-rose-900/30 shrink-0" title="Clear locally saved data (auto-save and cross-page cache) and reload with fresh defaults. Use this after upgrading to a new version if numbers look stale.">🗑️ Clear cache</button>
       </div>
     </div>
     <div class="pb-2 flex items-center gap-2 flex-wrap justify-end no-print">
@@ -669,6 +670,11 @@
 </header>
 
 <main id="mainContent" class="max-w-[1600px] mx-auto px-4 py-6 space-y-6">
+
+  <div class="no-print rounded-lg border border-emerald-500/40 bg-emerald-950/30 px-4 py-2 flex items-center gap-3 text-sm">
+    <span class="font-bold text-emerald-300">iRAS v1.8.0</span>
+    <span class="text-slate-400">Europe-calibrated build — equipment & feed prices in EUR (Nordic baseline)</span>
+  </div>
 
   <div id="printHeader" style="display:none;">
     <h1>iRAS · RAS Engineering Design Report</h1>
@@ -841,7 +847,7 @@
     <details open>
       <summary class="text-sm text-cyan-300 cursor-pointer mb-2">Operating-cost unit prices</summary>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div><label class="text-[10px] text-slate-400">Electricity EUR/kWh</label><input id="priceElec" type="number" value="0.20" step="0.05" class="input-ind !py-1.5"></div>
+        <div><label class="text-[10px] text-slate-400">Electricity EUR/kWh</label><input id="priceElec" type="number" value="0.10" step="0.05" class="input-ind !py-1.5"></div>
         <div><label class="text-[10px] text-slate-400">Liquid O₂ EUR/kg</label><input id="priceO2" type="number" value="0.4" step="0.1" class="input-ind !py-1.5"></div>
         <div><label class="text-[10px] text-slate-400">Methanol EUR/kg</label><input id="priceMethanol" type="number" value="0.6" step="0.1" class="input-ind !py-1.5"></div>
         <div><label class="text-[10px] text-slate-400">NaHCO₃ EUR/kg</label><input id="priceNaHCO3" type="number" value="0.4" step="0.1" class="input-ind !py-1.5"></div>
@@ -1056,7 +1062,7 @@ const IRAS_META = {
   name: 'iRAS',
   fullName: 'RAS Engineering Design Platform',
   version: '1.8.0',
-  releaseDate: '2026-05-16',
+  releaseDate: '2026-06-04',
   author: 'Cheng Sun',
   email: '',
   company: 'Polarlys Innovation AS',
@@ -6524,7 +6530,7 @@ function recomputeAll() {
   const yieldTons = parseFloat(document.getElementById('inpYield').value) || 0;
   // Single-module capacity cap is deprecated; module count is set entirely by the stage card's 'sets' (subSystemCount)
   const prices = {
-    elecPrice: parseFloat(document.getElementById('priceElec').value) || 0.20,
+    elecPrice: parseFloat(document.getElementById('priceElec').value) || 0.10,
     o2Price: parseFloat(document.getElementById('priceO2').value) || 0.4,
     methanolPrice: parseFloat(document.getElementById('priceMethanol').value) || 0.6,
     naHCO3Price: parseFloat(document.getElementById('priceNaHCO3').value) || 0.4
@@ -6955,6 +6961,8 @@ function renderFarmSummary(farm, results, yieldTons, prices, eqPrices) {
   // Investment display (top summary)
   const capexEl = document.getElementById('capexSummaryDisplay');
   if (capexEl) {
+    // Adaptive money format: ≥1M → "12.3M EUR", else "456k EUR"
+    const fmtInv = n => (n >= 1e6) ? (n/1e6).toFixed(1) + 'M EUR' : (n/1e3).toFixed(0) + 'k EUR';
     // Show the regional factor (hidden at default 1.0, highlighted otherwise)
     const r0capex = results && results[0] && results[0].capex;
     const rfDisplay = (r0capex && r0capex.regionFactor && Math.abs(r0capex.regionFactor - 1.0) > 0.05)
@@ -6964,7 +6972,7 @@ function renderFarmSummary(farm, results, yieldTons, prices, eqPrices) {
       ? ` · <span class="text-rose-300">scale×${r0capex.scaleFactor.toFixed(2)}</span>`
       : '';
     capexEl.innerHTML = totalCapexProject > 0
-      ? `Equipment <span class="text-amber-300 font-bold">${(totalCapexEquip/1e3).toFixed(0)}k EUR</span> · total project <span class="text-amber-200 font-bold">${(totalCapexProject/1e3).toFixed(0)}k EUR</span> · annual depr. <span class="text-cyan-300 font-bold">${(totalDepAnnual/1e3).toFixed(0)}k EUR/yr</span>${rfDisplay}${sfDisplay} <span class="text-[10px] text-slate-500">(±40%)</span>`
+      ? `Equipment <span class="text-amber-300 font-bold">${fmtInv(totalCapexEquip)}</span> · total project <span class="text-amber-200 font-bold">${fmtInv(totalCapexProject)}</span> · annual depr. <span class="text-cyan-300 font-bold">${fmtInv(totalDepAnnual)}/yr</span>${rfDisplay}${sfDisplay} <span class="text-[10px] text-slate-500">(±40%)</span>`
       : '—';
   }
 
@@ -7499,7 +7507,7 @@ function collectState() {
     // Global climate + envelope + heat-pump configuration (project-level constants)
     globalThermalConfig: {...globalThermalConfig},
     prices: {
-      elec: parseFloat(document.getElementById('priceElec').value) || 0.20,
+      elec: parseFloat(document.getElementById('priceElec').value) || 0.10,
       o2: parseFloat(document.getElementById('priceO2').value) || 0.4,
       methanol: parseFloat(document.getElementById('priceMethanol').value) || 0.6,
       naHCO3: parseFloat(document.getElementById('priceNaHCO3').value) || 0.4
@@ -7921,6 +7929,26 @@ document.getElementById('btnHelp').addEventListener('click', () => {
 });
 document.getElementById('btnHelpClose')?.addEventListener('click', hideHelp);
 document.getElementById('btnHelpClose2')?.addEventListener('click', hideHelp);
+
+// Clear-cache button: removes locally saved data (auto-save + cross-page cache) and reloads with fresh defaults.
+// Useful after upgrading to a new version, when stale cached numbers (e.g. old prices) would otherwise persist.
+document.getElementById('btnClearCache')?.addEventListener('click', () => {
+  const ok = window.confirm(
+    'Clear locally saved data and reload?\n\n' +
+    'This removes the browser auto-save and cross-page cache for iRAS, then reloads the page with fresh default values. ' +
+    'Your current unsaved design will be lost (export a JSON first if you want to keep it).'
+  );
+  if (!ok) return;
+  try {
+    [IRAS_STORAGE_KEY, PID_SHARE_KEY, EQUIPMENT_SHARE_KEY, FINANCE_SHARE_KEY].forEach(k => {
+      try { localStorage.removeItem(k); } catch (e) { /* ignore per-key errors */ }
+    });
+  } catch (e) {
+    console.warn('[iRAS] Clear cache failed:', e && e.message);
+  }
+  // Reload from the file's own code/defaults (no cached state to restore)
+  window.location.reload();
+});
 
 // Stage card '📋 manual' button → open the help page + scroll to the parameter manual
 // Uses event delegation (buttons are generated dynamically, cannot addEventListener directly)
