@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iRAS Investment & Financial Analysis</title>
+<!--
+  iRAS v1.4: standalone investment & financial-analysis page
+  Data source: localStorage['iRAS_financeExport'] (passed from the "Investment & Financial Analysis" button on the main page)
+  Output: 8 standard financial tables + NPV/IRR + sensitivity analysis + Excel export
+-->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .container { max-width: 1400px; margin: 0 auto; padding: 16px; }
+  header {
+    border-bottom: 2px solid #be185d;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  h1 { color: #fda4af; font-size: 20px; font-weight: 600; margin: 0; }
+  h2 { color: #fda4af; font-size: 16px; margin: 24px 0 8px 0; padding-bottom: 4px; border-bottom: 1px solid #475569; }
+  h3 { color: #fbcfe8; font-size: 14px; margin: 16px 0 6px 0; }
+  .meta { color: #94a3b8; font-size: 12px; }
+  .btn {
+    background: #4c1d24; color: #fda4af; border: 1px solid #be185d;
+    padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;
+  }
+  .btn:hover { background: #6d2235; color: #fed7e2; }
+  .btn-primary { background: #be185d; color: white; border-color: #be185d; }
+  .btn-primary:hover { background: #db2777; color: white; }
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #94a3b8;
+  }
+  .empty .big { font-size: 48px; margin-bottom: 12px; }
+  /* Input area */
+  .input-section {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+  .input-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px 16px;
+  }
+  .input-grid .field { display: flex; flex-direction: column; }
+  .input-grid label {
+    font-size: 11px;
+    color: #cbd5e1;
+    margin-bottom: 3px;
+  }
+  .input-grid label .hint { color: #64748b; font-size: 10px; margin-left: 4px; }
+  .input-grid input, .input-grid select {
+    background: #0f172a;
+    color: #e2e8f0;
+    border: 1px solid #475569;
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+  .input-grid input:focus, .input-grid select:focus {
+    outline: none;
+    border-color: #be185d;
+  }
+  .group-title {
+    grid-column: 1 / -1;
+    color: #fda4af;
+    font-size: 12px;
+    font-weight: 600;
+    border-top: 1px dashed #475569;
+    padding-top: 8px;
+    margin-top: 6px;
+  }
+  .group-title:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+  /* Key indicator cards */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .kpi {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 10px 12px;
+  }
+  .kpi .label { color: #94a3b8; font-size: 11px; margin-bottom: 4px; }
+  .kpi .value { font-size: 20px; font-weight: 600; color: #fbcfe8; font-family: ui-monospace, monospace; }
+  .kpi .unit { font-size: 11px; color: #64748b; margin-left: 4px; }
+  .kpi.good .value { color: #86efac; }
+  .kpi.warn .value { color: #fcd34d; }
+  .kpi.bad .value { color: #fca5a5; }
+  /* Tables */
+  .table-wrapper { overflow-x: auto; margin-bottom: 12px; }
+  table.fin {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    background: #1e293b;
+  }
+  table.fin th, table.fin td {
+    border: 1px solid #334155;
+    padding: 4px 8px;
+    text-align: right;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    white-space: nowrap;
+  }
+  table.fin th {
+    background: #334155;
+    color: #fbcfe8;
+    text-align: center;
+    font-weight: 600;
+    font-family: -apple-system, "PingFang SC", sans-serif;
+  }
+  table.fin td:first-child {
+    text-align: left;
+    background: #1e293b;
+    color: #cbd5e1;
+    font-family: -apple-system, "PingFang SC", sans-serif;
+    position: sticky; left: 0;
+  }
+  table.fin tr.subtotal td { background: #2a3f5f; color: #fed7e2; font-weight: 600; }
+  table.fin tr.total td { background: #4c1d24; color: #fed7e2; font-weight: 700; }
+  table.fin tr:hover td { background: #2a3f5f; }
+  table.fin tr.subtotal:hover td { background: #364860; }
+  table.fin .neg { color: #fca5a5; }
+  table.fin .pos { color: #86efac; }
+  /* Charts */
+  .chart-area {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .chart-row { grid-template-columns: 1fr; } }
+  /* Notes */
+  .note {
+    background: #1e293b;
+    border-left: 3px solid #be185d;
+    padding: 8px 12px;
+    margin: 8px 0;
+    font-size: 11px;
+    color: #cbd5e1;
+  }
+  .note .label { color: #fda4af; font-weight: 600; }
+  /* Print */
+  @media print {
+    body { background: white; color: #111; font-size: 10px; }
+    .no-print { display: none !important; }
+    .input-section, table.fin, .kpi, .chart-area, .note {
+      background: white !important; color: #111 !important; border-color: #999 !important;
+    }
+    h1, h2, h3 { color: #be185d !important; }
+    .kpi .value { color: #be185d !important; }
+    table.fin th { background: #f0f0f0 !important; color: #111 !important; }
+    table.fin td:first-child { background: #fafafa !important; color: #111 !important; }
+    table.fin tr.subtotal td { background: #ffe5ec !important; color: #111 !important; }
+    table.fin tr.total td { background: #fbcfe8 !important; color: #111 !important; }
+    .table-wrapper { overflow: visible; }
+    table.fin { font-size: 9px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>💰 iRAS Investment & Financial Analysis</h1>
+      <div class="meta" id="metaLine">Waiting for data from the main page…</div>
+    </div>
+    <div class="no-print" style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="btn" id="btnRecalc" title="Recalculate with the current inputs">🔄 Recalculate</button>
+      <button class="btn btn-primary" id="btnExportXlsx" title="Export the 8 standard tables to Excel">📊 Export Excel</button>
+      <button class="btn" id="btnPrint" title="Print / Save PDF">🖨️ Print</button>
+    </div>
+  </header>
+
+  <!-- Input area (collapsed by default; recalculates live as the user changes parameters) -->
+  <div class="input-section no-print">
+    <div class="input-grid">
+      <div class="group-title">📈 Sales & capacity</div>
+      <div class="field">
+        <label>Sales price <span class="hint">(EUR/kg)</span></label>
+        <input type="number" id="inpPrice" step="0.5" value="60">
+      </div>
+      <div class="field">
+        <label>Project life <span class="hint">(years)</span></label>
+        <input type="number" id="inpYears" step="1" min="5" max="30" value="15">
+      </div>
+      <div class="field">
+        <label>Year-1 capacity ratio <span class="hint">(%)</span></label>
+        <input type="number" id="inpRamp1" step="5" value="30">
+      </div>
+      <div class="field">
+        <label>Year-2 capacity ratio <span class="hint">(%)</span></label>
+        <input type="number" id="inpRamp2" step="5" value="70">
+      </div>
+      <div class="field">
+        <label>Year-3+ capacity ratio <span class="hint">(%)</span></label>
+        <input type="number" id="inpRamp3" step="5" value="100">
+      </div>
+      <div class="field">
+        <label>Construction period <span class="hint">(years, incl. commissioning)</span></label>
+        <input type="number" id="inpBuildYears" step="0.5" min="0.5" max="3" value="1">
+      </div>
+
+      <div class="group-title">💵 Investment & financing</div>
+      <div class="field">
+        <label>Working capital <span class="hint">(% × annual OPEX)</span></label>
+        <input type="number" id="inpWorkingCap" step="1" min="0" max="50" value="15">
+      </div>
+      <div class="field">
+        <label>Equity ratio <span class="hint">(%)</span></label>
+        <input type="number" id="inpOwnPct" step="5" min="0" max="100" value="30">
+      </div>
+      <div class="field">
+        <label>Loan rate <span class="hint">(%/yr)</span></label>
+        <input type="number" id="inpLoanRate" step="0.1" min="0" max="15" value="5">
+      </div>
+      <div class="field">
+        <label>Repayment method</label>
+        <select id="inpLoanMethod">
+          <option value="equal_principal">Equal principal</option>
+          <option value="equal_payment" selected>Equal installment</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Loan term <span class="hint">(years)</span></label>
+        <input type="number" id="inpLoanYears" step="1" min="1" max="20" value="8">
+      </div>
+
+      <div class="group-title">📊 Evaluation parameters</div>
+      <div class="field">
+        <label>Discount rate <span class="hint">(%/yr, for NPV)</span></label>
+        <input type="number" id="inpDiscount" step="0.5" min="0" max="20" value="8">
+      </div>
+      <div class="field">
+        <label>Income tax rate <span class="hint">(%)</span></label>
+        <input type="number" id="inpTaxRate" step="1" min="0" max="35" value="25">
+      </div>
+      <div class="field">
+        <label>Sales tax & surcharge <span class="hint">(%, use 0 if exempt for agri-products)</span></label>
+        <input type="number" id="inpSalesTax" step="0.1" min="0" max="20" value="0">
+      </div>
+      <div class="field">
+        <label>Repair rate <span class="hint">(% × equipment/yr, default 2%)</span></label>
+        <input type="number" id="inpRepairRate" step="0.5" min="0" max="10" value="2">
+      </div>
+      <div class="field">
+        <label>Admin rate <span class="hint">(% × sales revenue)</span></label>
+        <input type="number" id="inpAdminRate" step="0.5" min="0" max="20" value="3">
+      </div>
+      <div class="field">
+        <label>Labor cost <span class="hint">(EUR/yr, default estimated by scale)</span></label>
+        <input type="number" id="inpLaborCost" step="10000" min="0" value="0">
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content area -->
+  <div id="mainContent">
+    <div class="empty">
+      <div class="big">⏳</div>
+      <div>Click <strong>💰 Investment & Financial Analysis</strong> on the main page to load the design data</div>
+      <!-- v1.5 Bug 37: when pop-ups are blocked / the main page is closed, load a JSON backup manually -->
+      <div style="margin-top: 18px; font-size: 13px; color: #94a3b8;">
+        Or drag a <code>iRAS_financial-analysis_*.json</code> file downloaded from the main page into this area / click the button below to pick a file
+      </div>
+      <div style="margin-top: 12px;">
+        <label style="display: inline-block; padding: 8px 16px; background: #0ea5e9; color: white; border-radius: 6px; cursor: pointer;">
+          📂 Select a JSON file
+          <input type="file" id="inpLoadJson" accept=".json,application/json" style="display: none;">
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- v1.5: shared financial calculation module (shared with report.html, Bug 6 fix) -->
+<script src="finance-core.js"></script>
+<script>
+// ===========================================================================
+//   iRAS Finance — financial-analysis page
+//
+//   Flow: load data → collect user inputs → calc() → render() each table + KPIs + charts
+//   Recalc: user changes inputs → input event → debounced recalculation
+//
+//   v1.5: the core calculations (calculateCore/calculate/buildLoanSchedule/npv/irr/sensitivityAnalysis)
+//         have moved to finance-core.js; only the UI rendering logic remains here.
+// ===========================================================================
+
+const SHARE_KEY = 'iRAS_financeExport';
+const STATE = { data: null, params: null, calc: null };
+
+// ---------------- Data loading ----------------
+function tryLoadFromStorage(label) {
+  try {
+    const stashed = localStorage.getItem(SHARE_KEY) || sessionStorage.getItem(SHARE_KEY);
+    if (stashed) {
+      const parsed = JSON.parse(stashed);
+      // Clear once consumed to avoid stale data (but keep the fallback key for other pages)
+      try { localStorage.removeItem(SHARE_KEY); } catch(e) {}
+      try { sessionStorage.removeItem(SHARE_KEY); } catch(e) {}
+      STATE.data = parsed;
+      bootstrap(label || 'iRAS main-page design');
+      return true;
+    }
+  } catch(e) { console.warn('load fail:', e); }
+  return false;
+}
+
+function bootstrap(srcLabel) {
+  if (!STATE.data || !STATE.data.results) return;
+  const d = STATE.data;
+  document.getElementById('metaLine').textContent =
+    `${d.speciesName || d.species} · ${d.yieldTons} t/yr · ` +
+    `saved ${new Date(d.savedAt).toLocaleString('en-US')} · ` +
+    `source ${srcLabel}`;
+  // v1.5 Bug 32 fix: the sales price defaults only when the user has not customized it (same convention as laborCost)
+  //   The old version overwrote on every bootstrap, losing the custom price when the user updated the design on the main page and came back
+  const priceEl = document.getElementById('inpPrice');
+  if (priceEl) {
+    const defaultPrice = guessDefaultPrice(d.species);
+    const cur = parseFloat(priceEl.value);
+    if (!Number.isFinite(cur) || cur === 0) {
+      priceEl.value = defaultPrice;
+    }
+  }
+  // Labor cost defaults by scale
+  const laborEl = document.getElementById('inpLaborCost');
+  if (laborEl && +laborEl.value === 0) {
+    laborEl.value = estimateLaborCost(d.yieldTons);  // EUR/yr
+  }
+  recalc();
+}
+
+// Default sales price by species (EUR/kg, ex-works, excluding labor/distribution/logistics)
+function guessDefaultPrice(species) {
+  const map = {
+    salmon: 8, turbot: 11, grouper: 18, perch: 7,
+    mandarin: 13, tilapia: 3, eel: 15, shrimp: 8
+  };
+  return map[species] || 7;
+}
+
+// Labor cost estimate (EUR/yr): 50,000 EUR/person/yr, staffed by scale
+function estimateLaborCost(yieldTons) {
+  if (yieldTons < 100) return 250000;     // 5 staff
+  if (yieldTons < 300) return 500000;     // 10 staff
+  if (yieldTons < 1000) return 1000000;   // 20 staff
+  if (yieldTons < 3000) return 2000000;   // 40 staff
+  return 3000000;                          // 60+ staff
+}
+
+function getParams() {
+  const num = (id, def) => {
+    const v = parseFloat(document.getElementById(id).value);
+    return Number.isFinite(v) ? v : def;
+  };
+  return {
+    price:        num('inpPrice', 8),
+    years:        Math.round(num('inpYears', 15)),
+    ramp1:        num('inpRamp1', 30) / 100,
+    ramp2:        num('inpRamp2', 70) / 100,
+    ramp3:        num('inpRamp3', 100) / 100,
+    buildYears:   num('inpBuildYears', 1),
+    workingCap:   num('inpWorkingCap', 15) / 100,
+    ownPct:       num('inpOwnPct', 30) / 100,
+    loanRate:     num('inpLoanRate', 5) / 100,
+    loanMethod:   document.getElementById('inpLoanMethod').value,
+    loanYears:    Math.round(num('inpLoanYears', 8)),
+    discount:     num('inpDiscount', 8) / 100,
+    taxRate:      num('inpTaxRate', 25) / 100,
+    salesTax:     num('inpSalesTax', 0) / 100,
+    repairRate:   num('inpRepairRate', 2) / 100,
+    adminRate:    num('inpAdminRate', 3) / 100,
+    // v1.5 Bug 31: default 0 triggers bootstrap.estimateLaborCost to estimate by scale
+    laborCost:    num('inpLaborCost', 0)  // EUR/yr
+  };
+}
+
+// ---------------- Financial calculation entry (v1.5: delegates to finance-core.js) ----------------
+const calculateCore       = (data, p) => window.iRASFinance.calculateCore(data, p);
+const calculate           = (data, p) => window.iRASFinance.calculate(data, p);
+const buildLoanSchedule   = (L, r, n, m) => window.iRASFinance.buildLoanSchedule(L, r, n, m);
+const npv                 = (cfs, rate) => window.iRASFinance.npv(cfs, rate);
+const irr                 = (cfs) => window.iRASFinance.irr(cfs);
+const sensitivityAnalysis = (data, base) => window.iRASFinance.sensitivityAnalysis(data, base);
+
+
+// ---------------- Rendering ----------------
+const fmt = {
+  wan:  v => isFinite(v) ? Math.round(v).toLocaleString('en-US') : '—',
+  yi:   v => isFinite(v) ? (v / 1e6).toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—',
+  pct:  v => isFinite(v) ? (v * 100).toFixed(2) + '%' : '—',
+  num:  (v, d) => isFinite(v) ? v.toLocaleString('en-US', { maximumFractionDigits: d || 0 }) : '—',
+  yr:   v => isFinite(v) && v > 0 ? v.toFixed(2) + ' yr' : '—'
+};
+
+function recalc() {
+  if (!STATE.data) return;
+  const p = getParams();
+  STATE.params = p;
+  const c = calculate(STATE.data, p);
+  STATE.calc = c;
+  if (c) renderAll(c);
+  else renderEmpty();
+}
+
+function renderEmpty() {
+  document.getElementById('mainContent').innerHTML =
+    '<div class="empty"><div class="big">⚠️</div><div>Calculation failed. Please check that the main-page design is complete (has CAPEX and OPEX data).</div></div>';
+}
+
+function renderAll(c) {
+  const main = document.getElementById('mainContent');
+  let html = '';
+  html += renderKPIs(c);
+  html += renderInvestTable(c);       // Table 1: Investment estimate
+  html += renderFundingTable(c);      // Table 2: Sources & uses of funds + repayment
+  html += renderCostTable(c);         // Table 3: Total cost estimate
+  html += renderRevenueTable(c);      // Table 4: Sales revenue and taxes
+  html += renderProfitTable(c);       // Table 5: Income statement
+  html += renderCashFlowTable(c, 'total');  // Table 6: Cash flow (total investment)
+  html += renderCashFlowTable(c, 'equity'); // Table 7: Cash flow (equity)
+  html += renderSensitivityTable(c);  // Table 8: Sensitivity analysis
+  html += renderCharts(c);            // Charts
+  html += renderNotes(c);
+  main.innerHTML = html;
+  // Bind the SVG charts after rendering (must wait until the DOM is in place)
+  drawCashFlowChart(c);
+  drawSensitivityChart(c);
+  drawCostBreakdownChart(c);
+}
+
+function renderKPIs(c) {
+  const ind = c.indicators;
+  // Color: IRR > discount = good, > 0 but < discount = warn, ≤ 0 = bad
+  const irrTot = ind.irrTotal;
+  const cls = (v, t) => isFinite(v) && v > t ? 'good' : (isFinite(v) && v > 0 ? 'warn' : 'bad');
+  let html = '<div class="kpi-row">';
+  html += `<div class="kpi ${cls(irrTot, c.params.discount)}"><div class="label">Total-investment IRR (after tax)</div><div class="value">${fmt.pct(irrTot)}</div></div>`;
+  html += `<div class="kpi ${cls(ind.irrEquity, c.params.discount)}"><div class="label">Equity IRR</div><div class="value">${fmt.pct(ind.irrEquity)}</div></div>`;
+  html += `<div class="kpi ${ind.npvTotal > 0 ? 'good' : 'bad'}"><div class="label">Total-investment NPV @ ${fmt.pct(c.params.discount)}</div><div class="value">${fmt.wan(ind.npvTotal)}<span class="unit">EUR</span></div></div>`;
+  html += `<div class="kpi"><div class="label">Payback (total investment)</div><div class="value">${fmt.yr(ind.paybackTotal)}</div></div>`;
+  html += `<div class="kpi"><div class="label">Discounted payback (total investment)</div><div class="value">${fmt.yr(ind.paybackTotalDisc)}</div></div>`;
+  html += `<div class="kpi"><div class="label">Break-even point (BEP)</div><div class="value">${ind.bepPct.toFixed(1)}<span class="unit">% of full capacity</span></div></div>`;
+  html += '</div>';
+  return html;
+}
+
+function renderInvestTable(c) {
+  const inv = c.capex;
+  let html = '<h2>Table 1: Investment Estimate</h2>';
+  html += '<div class="table-wrapper"><table class="fin">';
+  html += '<thead><tr><th style="min-width:240px">Item</th><th style="min-width:120px">Amount (EUR)</th><th>% of total investment</th></tr></thead><tbody>';
+  const tot = inv.totalInvest;
+  const pct = v => tot > 0 ? (v/tot*100).toFixed(1) + '%' : '—';
+  html += `<tr><td>1. Equipment procurement</td><td>${fmt.wan(inv.equip)}</td><td>${pct(inv.equip)}</td></tr>`;
+  html += `<tr><td>2. Civil / installation / electrical / automation / design</td><td>${fmt.wan(inv.civil)}</td><td>${pct(inv.civil)}</td></tr>`;
+  html += `<tr class="subtotal"><td>3. Total construction investment (fixed assets)</td><td>${fmt.wan(inv.fixedAsset)}</td><td>${pct(inv.fixedAsset)}</td></tr>`;
+  html += `<tr><td>4. Working capital (${(c.params.workingCap*100).toFixed(0)}% × annual OPEX)</td><td>${fmt.wan(inv.workingCapital)}</td><td>${pct(inv.workingCapital)}</td></tr>`;
+  html += `<tr class="total"><td>5. Total project investment</td><td>${fmt.wan(tot)}</td><td>100.0%</td></tr>`;
+  html += '</tbody></table></div>';
+  return html;
+}
+
+function renderFundingTable(c) {
+  let html = '<h2>Table 2: Sources & Uses of Funds + Repayment Schedule</h2>';
+  html += '<h3>2.1 Sources of funds</h3>';
+  html += '<div class="table-wrapper"><table class="fin">';
+  html += '<thead><tr><th style="min-width:240px">Source</th><th>Amount (EUR)</th><th>Share</th></tr></thead><tbody>';
+  const cap = c.capex;
+  const tot = cap.totalInvest;
+  // v1.5 audit round 3: after the Bug 2 fix, ownEquity = ownEquityFixed + workingCapital, no longer totalInvest × ownPct
+  //   The old version showed (30%) as the equity share of fixedAsset, but the table totals on totalInvest, so the shares (35.4%, 67.7%) were wrong.
+  //   Correct approach: split into 3 rows (fixed-asset equity / fixed-asset loan / working-capital equity) so rows and columns reconcile.
+  const pctOf = v => tot > 0 ? (v / tot * 100).toFixed(1) + '%' : '—';
+  html += `<tr><td>Equity — fixed assets (${(c.params.ownPct*100).toFixed(0)}% × fixed assets)</td><td>${fmt.wan(cap.ownEquityFixed)}</td><td>${pctOf(cap.ownEquityFixed)}</td></tr>`;
+  html += `<tr><td>Equity — working capital (100%)</td><td>${fmt.wan(cap.workingCapital)}</td><td>${pctOf(cap.workingCapital)}</td></tr>`;
+  html += `<tr><td>Bank loan (${((1-c.params.ownPct)*100).toFixed(0)}% × fixed assets, ${(c.params.loanRate*100).toFixed(1)}%/yr, ${c.params.loanYears} yr)</td><td>${fmt.wan(cap.loan)}</td><td>${pctOf(cap.loan)}</td></tr>`;
+  html += `<tr class="subtotal"><td>Subtotal: total equity</td><td>${fmt.wan(cap.ownEquity)}</td><td>${pctOf(cap.ownEquity)}</td></tr>`;
+  html += `<tr class="total"><td>Total</td><td>${fmt.wan(tot)}</td><td>100.0%</td></tr>`;
+  html += '</tbody></table></div>';
+  // Add a small footnote
+  html += `<div style="font-size: 11px; color: #94a3b8; margin: 8px 0 16px;">Note: from v1.5 onward the bank loan covers only the fixed-asset portion (international engineering convention); working capital is 100% self-funded by the project entity. This is why the "equity share ${pctOf(cap.ownEquity)}" is slightly larger than the "equity ratio ${(c.params.ownPct*100).toFixed(0)}%"。</div>`;
+
+  if (c.loanSchedule.length > 0) {
+    html += '<h3>2.2 Repayment schedule (' + (c.params.loanMethod === 'equal_payment' ? 'equal installment' : 'equal principal') + ')</h3>';
+    html += '<div class="table-wrapper"><table class="fin">';
+    html += '<thead><tr><th>Year</th><th>Interest paid (EUR)</th><th>Principal paid (EUR)</th><th>Year total</th><th>Remaining principal</th></tr></thead><tbody>';
+    let totInt = 0, totPrin = 0;
+    c.loanSchedule.forEach(s => {
+      totInt += s.interest; totPrin += s.principal;
+      html += `<tr><td>Year ${s.year}</td><td>${fmt.wan(s.interest)}</td><td>${fmt.wan(s.principal)}</td><td>${fmt.wan(s.interest + s.principal)}</td><td>${fmt.wan(s.balance)}</td></tr>`;
+    });
+    html += `<tr class="total"><td>Total</td><td>${fmt.wan(totInt)}</td><td>${fmt.wan(totPrin)}</td><td>${fmt.wan(totInt + totPrin)}</td><td>—</td></tr>`;
+    html += '</tbody></table></div>';
+  }
+  return html;
+}
+
+function renderCostTable(c) {
+  // Show the cost structure at full capacity (t=3)
+  const sat = c.yearly.find(y => y.ramp >= 0.95) || c.yearly[c.yearly.length-1];
+  let html = '<h2>Table 3: Total Cost Estimate (full-capacity year, EUR/yr)</h2>';
+  html += '<div class="table-wrapper"><table class="fin">';
+  html += '<thead><tr><th style="min-width:240px">Item</th><th>Amount (EUR)</th><th>% of total cost</th></tr></thead><tbody>';
+  const total = sat.opCostTotal + sat.dep + sat.interest;
+  const pct = v => total > 0 ? (v/total*100).toFixed(1) + '%' : '—';
+  html += `<tr><td>1. Operating cost (feed / power / LOX / chemicals, i.e. OPEX)</td><td>${fmt.wan(sat.operatingCost)}</td><td>${pct(sat.operatingCost)}</td></tr>`;
+  html += `<tr><td>2. Repairs (${(c.params.repairRate*100).toFixed(1)}% × equipment)</td><td>${fmt.wan(sat.repairCost)}</td><td>${pct(sat.repairCost)}</td></tr>`;
+  html += `<tr><td>3. Admin (${(c.params.adminRate*100).toFixed(1)}% × sales revenue)</td><td>${fmt.wan(sat.adminCost)}</td><td>${pct(sat.adminCost)}</td></tr>`;
+  html += `<tr><td>4. Labor cost</td><td>${fmt.wan(sat.laborCost)}</td><td>${pct(sat.laborCost)}</td></tr>`;
+  html += `<tr class="subtotal"><td>5. Operating-cost subtotal</td><td>${fmt.wan(sat.opCostTotal)}</td><td>${pct(sat.opCostTotal)}</td></tr>`;
+  html += `<tr><td>6. Depreciation (equipment ${c.params.years > 8 ? '8' : c.params.years} yr + civil works 20 yr)</td><td>${fmt.wan(sat.dep)}</td><td>${pct(sat.dep)}</td></tr>`;
+  html += `<tr><td>7. Finance cost (interest, during the repayment period)</td><td>${fmt.wan(sat.interest)}</td><td>${pct(sat.interest)}</td></tr>`;
+  html += `<tr class="total"><td>8. Total cost</td><td>${fmt.wan(total)}</td><td>100.0%</td></tr>`;
+  html += '</tbody></table></div>';
+  // Unit cost
+  const yieldKgFull = c.yieldKg * sat.ramp;
+  if (yieldKgFull > 0) {
+    html += `<div class="note"><span class="label">Unit cost</span> full-capacity total cost ${fmt.wan(total)} EUR, output ${fmt.num(yieldKgFull/1000)} t, unit cost <strong>${fmt.num(total/yieldKgFull, 2)} EUR/kg</strong></div>`;
+  }
+  return html;
+}
+
+function renderRevenueTable(c) {
+  let html = '<h2>Table 4: Sales Revenue and Taxes</h2>';
+  html += '<div class="table-wrapper"><table class="fin">';
+  html += '<thead><tr><th style="min-width:120px">Year</th><th>Capacity ratio</th><th>Output (t)</th><th>Price (EUR/kg)</th><th>Sales revenue (EUR)</th><th>Sales tax (EUR)</th><th>Net sales revenue</th></tr></thead><tbody>';
+  c.yearly.forEach(y => {
+    if (y.year === 0) return;  // hide the construction year
+    const tons = c.yieldKg * y.ramp / 1000;
+    html += `<tr><td>Year ${y.year}</td><td>${(y.ramp*100).toFixed(0)}%</td><td>${fmt.num(tons, 1)}</td><td>${c.params.price}</td><td>${fmt.wan(y.revenue)}</td><td>${fmt.wan(y.salesTax)}</td><td>${fmt.wan(y.netRevenue)}</td></tr>`;
+  });
+  // Total
+  const sum = c.yearly.reduce((s, y) => ({
+    revenue: s.revenue + y.revenue,
+    salesTax: s.salesTax + y.salesTax,
+    netRevenue: s.netRevenue + y.netRevenue
+  }), { revenue: 0, salesTax: 0, netRevenue: 0 });
+  html += `<tr class="total"><td>Total (${c.params.years} yr)</td><td>—</td><td>—</td><td>—</td><td>${fmt.wan(sum.revenue)}</td><td>${fmt.wan(sum.salesTax)}</td><td>${fmt.wan(sum.netRevenue)}</td></tr>`;
+  html += '</tbody></table></div>';
+  return html;
+}
+
+function renderProfitTable(c) {
+  let html = '<h2>Table 5: Income Statement</h2>';
+  html += '<div class="table-wrapper"><table class="fin">';
+  html += '<thead><tr><th style="min-width:140px">Item (EUR)</th>';
+  c.yearly.forEach(y => {
+    if (y.year === 0) return;
+    html += `<th>Year ${y.year}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+  const rows = [
+    ['1. Sales revenue',     y => y.revenue],
+    ['2. Sales tax',         y => -y.salesTax,        'neg'],
+    ['3. Operating cost',    y => -y.opCostTotal,     'neg'],
+    ['4. Depreciation',      y => -y.dep,             'neg'],
+    ['5. Interest',          y => -y.interest,        'neg'],
+    ['6. Pre-tax profit',    y => y.profitBefore,     'sub'],
+    ['7. Income tax',        y => -y.tax,             'neg'],
+    ['8. Net profit',        y => y.profitNet,        'tot']
+  ];
+  rows.forEach(r => {
+    const cls = r[2] === 'sub' ? 'subtotal' : r[2] === 'tot' ? 'total' : '';
+    html += `<tr class="${cls}"><td>${r[0]}</td>`;
+    c.yearly.forEach(y => {
+      if (y.year === 0) return;
+      const v = r[1](y);
+      const tdCls = (r[2] === 'neg' && v < 0) ? '' : (v < 0 ? 'neg' : '');
+      html += `<td class="${tdCls}">${fmt.wan(v)}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  return html;
+}
+
+function renderCashFlowTable(c, type) {
+  const isTotal = type === 'total';
+  let html = `<h2>Table ${isTotal ? '6' : '7'}: Cash Flow Statement (${isTotal ? 'total investment' : 'equity'})</h2>`;
+  html += '<div class="table-wrapper"><table class="fin">';
+  html += '<thead><tr><th style="min-width:140px">Year</th><th>Cash inflow (EUR)</th><th>Cash outflow</th><th>Net cash flow</th><th>Cumulative net cash flow</th><th>Cumulative discounted NPV</th></tr></thead><tbody>';
+  c.yearly.forEach(y => {
+    const cf = isTotal ? y.cfTotal : y.cfEquity;
+    const cum = isTotal ? y.cumTotal : y.cumEquity;
+    const cumDisc = isTotal ? y.cumTotalDisc : y.cumEquityDisc;
+    // Rough inflow/outflow split (for display only; does not affect the net)
+    const inflow = y.revenue + (y.year === 0 && !isTotal ? c.capex.ownEquity : 0)
+                  + (y.year === c.params.years ? y.wcRecovery + y.salvage : 0);
+    const outflow = inflow - cf;
+    html += `<tr><td>Year ${y.year}${y.year === 0 ? ' (construction)' : ''}</td><td>${fmt.wan(inflow)}</td><td>${fmt.wan(outflow)}</td><td class="${cf < 0 ? 'neg' : (cf > 0 ? 'pos' : '')}">${fmt.wan(cf)}</td><td class="${cum < 0 ? 'neg' : 'pos'}">${fmt.wan(cum)}</td><td class="${cumDisc < 0 ? 'neg' : 'pos'}">${fmt.wan(cumDisc)}</td></tr>`;
+  });
+  // Trailing NPV/IRR row
+  const npvVal = isTotal ? c.indicators.npvTotal : c.indicators.npvEquity;
+  const irrVal = isTotal ? c.indicators.irrTotal : c.indicators.irrEquity;
+  html += `<tr class="total"><td>NPV @ ${(c.params.discount*100).toFixed(1)}%</td><td colspan="4">${fmt.wan(npvVal)} EUR</td><td>IRR = ${fmt.pct(irrVal)}</td></tr>`;
+  html += '</tbody></table></div>';
+  return html;
+}
+
+function renderSensitivityTable(c) {
+  let html = '<h2>Table 8: Sensitivity Analysis</h2>';
+  html += '<div class="table-wrapper"><table class="fin">';
+  html += '<thead><tr><th style="min-width:200px">Sensitivity factor</th><th>Low IRR</th><th>Base IRR</th><th>High IRR</th><th>IRR swing</th><th>Low NPV (EUR)</th><th>High NPV (EUR)</th></tr></thead><tbody>';
+  const base = c.sensitivity.baseIRR;
+  c.sensitivity.factors.forEach(r => {
+    html += `<tr><td>${r.label}</td><td class="${r.irrLow < base ? 'neg' : 'pos'}">${fmt.pct(r.irrLow)}</td><td>${fmt.pct(base)}</td><td class="${r.irrHigh > base ? 'pos' : 'neg'}">${fmt.pct(r.irrHigh)}</td><td><strong>${fmt.pct(r.irrSwing)}</strong></td><td>${fmt.wan(r.npvLow)}</td><td>${fmt.wan(r.npvHigh)}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  html += '<div class="note"><span class="label">Reading</span> factors are ranked by IRR swing, largest first. A larger swing means the project is more sensitive to that factor and it deserves priority in risk management. Sales price / output / CAPEX are usually the three dominant sensitivities for RAS projects.</div>';
+  return html;
+}
+
+function renderCharts(c) {
+  let html = '<h2>📈 Charts</h2>';
+  html += '<div class="chart-area">';
+  html += '<div class="chart-row">';
+  html += '<div><h3>Cumulative cash flow</h3><svg id="chartCashFlow" width="100%" height="320" viewBox="0 0 600 320"></svg></div>';
+  html += '<div><h3>Sensitivity tornado chart (by IRR swing)</h3><svg id="chartSensitivity" width="100%" height="320" viewBox="0 0 600 320"></svg></div>';
+  html += '</div>';
+  html += '<div style="margin-top:16px;"><h3>Full-capacity cost structure</h3><svg id="chartCostBreakdown" width="100%" height="200" viewBox="0 0 800 200"></svg></div>';
+  html += '</div>';
+  return html;
+}
+
+function renderNotes(c) {
+  let html = '<h2>📝 Conclusions & Notes</h2>';
+  const ind = c.indicators;
+  const irrT = ind.irrTotal;
+  const ok = isFinite(irrT) && irrT > c.params.discount;
+  html += '<div class="note" style="border-left-color: ' + (ok ? '#10b981' : '#ef4444') + ';">';
+  html += '<span class="label">Base-case conclusion</span> ';
+  if (ok) {
+    html += `The total-investment IRR (${fmt.pct(irrT)}) is <strong>above</strong> the discount rate ${fmt.pct(c.params.discount)} and NPV is positive (${fmt.wan(ind.npvTotal)} EUR), so the project is financially <strong>viable</strong>. `;
+    html += `Simple payback ${fmt.yr(ind.paybackTotal)}, discounted payback ${fmt.yr(ind.paybackTotalDisc)}. `;
+  } else {
+    html += `The project IRR (${fmt.pct(irrT)}) is <strong>below</strong> the discount rate and NPV is negative, so the project is financially <strong>not viable</strong>. `;
+    html += `The sales price / cost / investment scale need to be reoptimized.`;
+  }
+  html += '</div>';
+  // Sensitivity note
+  const top1 = c.sensitivity.factors[0];
+  const top2 = c.sensitivity.factors[1];
+  if (top1) {
+    html += `<div class="note"><span class="label">Key risk factors</span> the project is most sensitive to <strong>${top1.label}</strong> (IRR swing ${fmt.pct(top1.irrSwing)}), followed by <strong>${top2 ? top2.label : '—'}</strong>. These deserve particular attention during execution to track their actual deviations.</div>`;
+  }
+  // Report footnote
+  html += `<div class="note"><span class="label">Note</span> this evaluation is based on CAPEX/OPEX generated automatically by the iRAS model, with input parameters set by the user at the top of this page. It follows standard feasibility-study methodology but does not replace a formal feasibility report. Actual investment decisions should be combined with professional financial and engineering review.</div>`;
+  return html;
+}
+
+// ---------------- SVG charts ----------------
+function drawCashFlowChart(c) {
+  const svg = document.getElementById('chartCashFlow');
+  if (!svg) return;
+  const W = 600, H = 320, m = { l: 60, r: 20, t: 20, b: 40 };
+  const innerW = W - m.l - m.r, innerH = H - m.t - m.b;
+  const ys = c.yearly;
+  const xs = ys.map(y => y.year);
+  // Two curves: total investment + equity
+  const cumT = ys.map(y => y.cumTotal);
+  const cumE = ys.map(y => y.cumEquity);
+  const minY = Math.min(...cumT, ...cumE, 0);
+  const maxY = Math.max(...cumT, ...cumE, 0);
+  const xScale = i => m.l + i / (xs.length - 1) * innerW;
+  const yScale = v => m.t + innerH - (v - minY) / (maxY - minY) * innerH;
+
+  let svgHTML = '';
+  // Grid + zero axis
+  for (let i = 0; i <= 5; i++) {
+    const y = m.t + i / 5 * innerH;
+    const v = maxY - i / 5 * (maxY - minY);
+    svgHTML += `<line x1="${m.l}" y1="${y}" x2="${W - m.r}" y2="${y}" stroke="#334155" stroke-dasharray="2,2"/>`;
+    svgHTML += `<text x="${m.l - 6}" y="${y + 3}" fill="#94a3b8" font-size="10" text-anchor="end">${Math.round(v).toLocaleString('en-US')}</text>`;
+  }
+  // Emphasize the zero axis
+  if (minY < 0 && maxY > 0) {
+    const y0 = yScale(0);
+    svgHTML += `<line x1="${m.l}" y1="${y0}" x2="${W - m.r}" y2="${y0}" stroke="#94a3b8" stroke-width="1.5"/>`;
+  }
+  // x axis
+  xs.forEach((x, i) => {
+    if (i % 2 === 0 || i === xs.length - 1) {
+      svgHTML += `<text x="${xScale(i)}" y="${H - m.b + 16}" fill="#94a3b8" font-size="10" text-anchor="middle">${x}</text>`;
+    }
+  });
+  svgHTML += `<text x="${W/2}" y="${H - 6}" fill="#cbd5e1" font-size="11" text-anchor="middle">Year</text>`;
+
+  // Two polylines
+  const pathT = cumT.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xScale(i)} ${yScale(v)}`).join(' ');
+  const pathE = cumE.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xScale(i)} ${yScale(v)}`).join(' ');
+  svgHTML += `<path d="${pathT}" stroke="#fbcfe8" stroke-width="2" fill="none"/>`;
+  svgHTML += `<path d="${pathE}" stroke="#7dd3fc" stroke-width="2" fill="none" stroke-dasharray="4,3"/>`;
+  // Data points
+  cumT.forEach((v, i) => {
+    svgHTML += `<circle cx="${xScale(i)}" cy="${yScale(v)}" r="3" fill="#fbcfe8"/>`;
+  });
+  cumE.forEach((v, i) => {
+    svgHTML += `<circle cx="${xScale(i)}" cy="${yScale(v)}" r="2.5" fill="#7dd3fc"/>`;
+  });
+  // Legend
+  svgHTML += `<rect x="${m.l + 10}" y="${m.t + 6}" width="14" height="2" fill="#fbcfe8"/>`;
+  svgHTML += `<text x="${m.l + 28}" y="${m.t + 11}" fill="#cbd5e1" font-size="11">Total-investment cumulative cash flow</text>`;
+  svgHTML += `<rect x="${m.l + 10}" y="${m.t + 22}" width="14" height="2" fill="#7dd3fc"/>`;
+  svgHTML += `<text x="${m.l + 28}" y="${m.t + 27}" fill="#cbd5e1" font-size="11">Equity cumulative cash flow</text>`;
+  svg.innerHTML = svgHTML;
+}
+
+function drawSensitivityChart(c) {
+  const svg = document.getElementById('chartSensitivity');
+  if (!svg) return;
+  const W = 600, H = 320, m = { l: 130, r: 30, t: 20, b: 40 };
+  const innerW = W - m.l - m.r;
+  const factors = c.sensitivity.factors;
+  const base = c.sensitivity.baseIRR;
+  // x-axis range: span all low/high IRR extremes
+  const allVals = factors.flatMap(f => [f.irrLow, f.irrHigh]);
+  const minV = Math.min(...allVals, base) - 0.02;
+  const maxV = Math.max(...allVals, base) + 0.02;
+  const xScale = v => m.l + (v - minV) / (maxV - minV) * innerW;
+
+  let svgHTML = '';
+  // Baseline
+  svgHTML += `<line x1="${xScale(base)}" y1="${m.t}" x2="${xScale(base)}" y2="${H - m.b}" stroke="#fda4af" stroke-width="1.5" stroke-dasharray="3,3"/>`;
+  svgHTML += `<text x="${xScale(base)}" y="${m.t - 4}" fill="#fda4af" font-size="10" text-anchor="middle">Base ${fmt.pct(base)}</text>`;
+  // One bar per factor
+  const barH = (H - m.t - m.b) / factors.length * 0.65;
+  const rowH = (H - m.t - m.b) / factors.length;
+  factors.forEach((f, i) => {
+    const yC = m.t + (i + 0.5) * rowH;
+    const xLow = xScale(f.irrLow), xHigh = xScale(f.irrHigh);
+    const x = Math.min(xLow, xHigh), w = Math.abs(xHigh - xLow);
+    svgHTML += `<rect x="${x}" y="${yC - barH/2}" width="${w}" height="${barH}" fill="#7e22ce" opacity="0.65" stroke="#a855f7" stroke-width="1"/>`;
+    // Label
+    svgHTML += `<text x="${m.l - 6}" y="${yC + 4}" fill="#cbd5e1" font-size="11" text-anchor="end">${f.label}</text>`;
+    // Endpoint values
+    svgHTML += `<text x="${xLow}" y="${yC + 4}" fill="#fbcfe8" font-size="9" text-anchor="${xLow < xHigh ? 'end' : 'start'}" dx="${xLow < xHigh ? -3 : 3}">${fmt.pct(f.irrLow)}</text>`;
+    svgHTML += `<text x="${xHigh}" y="${yC + 4}" fill="#fbcfe8" font-size="9" text-anchor="${xHigh > xLow ? 'start' : 'end'}" dx="${xHigh > xLow ? 3 : -3}">${fmt.pct(f.irrHigh)}</text>`;
+  });
+  // x-axis ticks
+  for (let i = 0; i <= 5; i++) {
+    const v = minV + i / 5 * (maxV - minV);
+    const x = xScale(v);
+    svgHTML += `<line x1="${x}" y1="${H - m.b}" x2="${x}" y2="${H - m.b + 4}" stroke="#94a3b8"/>`;
+    svgHTML += `<text x="${x}" y="${H - m.b + 16}" fill="#94a3b8" font-size="10" text-anchor="middle">${(v*100).toFixed(0)}%</text>`;
+  }
+  svgHTML += `<text x="${W/2}" y="${H - 6}" fill="#cbd5e1" font-size="11" text-anchor="middle">IRR (%)</text>`;
+  svg.innerHTML = svgHTML;
+}
+
+function drawCostBreakdownChart(c) {
+  const svg = document.getElementById('chartCostBreakdown');
+  if (!svg) return;
+  const W = 800, H = 200, m = { l: 60, r: 20, t: 20, b: 40 };
+  const sat = c.yearly.find(y => y.ramp >= 0.95) || c.yearly[c.yearly.length-1];
+  // Build the 6 cost items
+  const items = [
+    { label: 'Operating cost (feed/power/LOX)', val: sat.operatingCost, color: '#f97316' },
+    { label: 'Repairs',               val: sat.repairCost,     color: '#06b6d4' },
+    { label: 'Admin',                 val: sat.adminCost,      color: '#a855f7' },
+    { label: 'Labor',                 val: sat.laborCost,      color: '#10b981' },
+    { label: 'Depreciation',          val: sat.dep,            color: '#eab308' },
+    { label: 'Finance cost (interest)', val: sat.interest,     color: '#ef4444' }
+  ];
+  const total = items.reduce((s, i) => s + i.val, 0);
+  if (total <= 0) { svg.innerHTML = '<text x="400" y="100" fill="#94a3b8" text-anchor="middle">No data</text>'; return; }
+  // Horizontal stacked bar
+  let xCursor = m.l;
+  const innerW = W - m.l - m.r;
+  let svgHTML = '';
+  items.forEach((it, i) => {
+    const w = it.val / total * innerW;
+    svgHTML += `<rect x="${xCursor}" y="${m.t}" width="${w}" height="40" fill="${it.color}" opacity="0.85"/>`;
+    if (w > 60) {
+      svgHTML += `<text x="${xCursor + w/2}" y="${m.t + 25}" fill="white" font-size="10" text-anchor="middle">${(it.val/total*100).toFixed(1)}%</text>`;
+    }
+    xCursor += w;
+  });
+  // Legend (two rows)
+  items.forEach((it, i) => {
+    const col = i % 3;
+    const row = Math.floor(i / 3);
+    const x = m.l + col * 230;
+    const y = m.t + 70 + row * 22;
+    svgHTML += `<rect x="${x}" y="${y - 8}" width="14" height="14" fill="${it.color}"/>`;
+    svgHTML += `<text x="${x + 20}" y="${y + 3}" fill="#cbd5e1" font-size="11">${it.label} (${fmt.wan(it.val)} EUR)</text>`;
+  });
+  svg.innerHTML = svgHTML;
+}
+
+// ---------------- Excel export ----------------
+function exportExcel() {
+  if (!STATE.calc) { alert('Please run the calculation first'); return; }
+  if (typeof XLSX === 'undefined' || !XLSX.utils) {
+    alert('The Excel export library (SheetJS) failed to load.\nPossible causes: no network / CDN blocked.\n\nPlease check the network, reload the page and try again, or use "🖨️ Print" to save as PDF.');
+    return;
+  }
+  const c = STATE.calc;
+  const wb = XLSX.utils.book_new();
+
+  // Table 1: Investment estimate
+  const t1 = [
+    ['Item', 'Amount (EUR)', 'Share'],
+    ['1. Equipment procurement', c.capex.equip, (c.capex.equip/c.capex.totalInvest*100).toFixed(1)+'%'],
+    ['2. Civil/installation/electrical/automation/design', c.capex.civil, (c.capex.civil/c.capex.totalInvest*100).toFixed(1)+'%'],
+    ['3. Total construction investment (fixed assets)', c.capex.fixedAsset, (c.capex.fixedAsset/c.capex.totalInvest*100).toFixed(1)+'%'],
+    ['4. Working capital', c.capex.workingCapital, (c.capex.workingCapital/c.capex.totalInvest*100).toFixed(1)+'%'],
+    ['5. Total project investment', c.capex.totalInvest, '100%']
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(t1), '1. Investment');
+
+  // Table 2: Sources & uses of funds
+  // v1.5 audit round 16: same convention as the HTML table (after the Bug 2 fix, the equity share ≠ ownPct)
+  const _pctTot = v => c.capex.totalInvest > 0 ? (v / c.capex.totalInvest * 100).toFixed(1) + '%' : '—';
+  const t2 = [
+    ['Item', 'Amount (EUR)', 'Share'],
+    ['Equity — fixed assets', c.capex.ownEquityFixed, _pctTot(c.capex.ownEquityFixed)],
+    ['Equity — working capital (100%)', c.capex.workingCapital, _pctTot(c.capex.workingCapital)],
+    ['Bank loan (' + ((1-c.params.ownPct)*100).toFixed(0) + '% × fixed assets)', c.capex.loan, _pctTot(c.capex.loan)],
+    ['Subtotal: total equity', c.capex.ownEquity, _pctTot(c.capex.ownEquity)],
+    ['Total', c.capex.totalInvest, '100.0%'],
+    [],
+    ['Repayment schedule', 'Interest (EUR)', 'Principal (EUR)', 'Year total', 'Remaining principal']
+  ];
+  c.loanSchedule.forEach(s => t2.push(['Year ' + s.year, s.interest, s.principal, s.interest + s.principal, s.balance]));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(t2), '2. Funding');
+
+  // Tables 3-5: income-related (merged into one sheet, laid out by year)
+  const yrs = c.yearly.filter(y => y.year > 0);
+  const t3 = [['Item (EUR)', ...yrs.map(y => 'Year ' + y.year)]];
+  const rows = [
+    ['Sales revenue',     'revenue'],
+    ['Sales tax',         'salesTax'],
+    ['Net sales revenue', 'netRevenue'],
+    ['Operating cost',    'operatingCost'],
+    ['Repairs',           'repairCost'],
+    ['Admin',             'adminCost'],
+    ['Labor cost',        'laborCost'],
+    ['Total operating cost','opCostTotal'],
+    ['Depreciation',      'dep'],
+    ['Interest',          'interest'],
+    ['Pre-tax profit',    'profitBefore'],
+    ['Income tax',        'tax'],
+    ['Net profit',        'profitNet']
+  ];
+  rows.forEach(r => t3.push([r[0], ...yrs.map(y => y[r[1]])]));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(t3), '3. Income Statement');
+
+  // Tables 6/7: cash flow statements
+  ['Total investment', 'Equity'].forEach((label, idx) => {
+    const t = [['Year', 'Net cash flow (EUR)', 'Cumulative cash flow', 'Cumulative discounted NPV']];
+    c.yearly.forEach(y => {
+      const cf = idx === 0 ? y.cfTotal : y.cfEquity;
+      const cum = idx === 0 ? y.cumTotal : y.cumEquity;
+      const cumD = idx === 0 ? y.cumTotalDisc : y.cumEquityDisc;
+      t.push(['Year ' + y.year, cf, cum, cumD]);
+    });
+    const npvVal = idx === 0 ? c.indicators.npvTotal : c.indicators.npvEquity;
+    const irrVal = idx === 0 ? c.indicators.irrTotal : c.indicators.irrEquity;
+    t.push([], ['NPV (EUR)', npvVal], ['IRR', (irrVal*100).toFixed(2) + '%']);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(t), (idx === 0 ? '6' : '7') + '. ' + label + ' Cash Flow');
+  });
+
+  // Table 8: sensitivity
+  const t8 = [['Sensitivity factor', 'Low IRR', 'Base IRR', 'High IRR', 'IRR swing', 'Low NPV', 'High NPV']];
+  c.sensitivity.factors.forEach(f => {
+    t8.push([f.label, f.irrLow, c.sensitivity.baseIRR, f.irrHigh, f.irrSwing, f.npvLow, f.npvHigh]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(t8), '8. Sensitivity');
+
+  // KPI summary
+  const kpi = [
+    ['Indicator', 'Value'],
+    ['Total-investment IRR (after tax)', (c.indicators.irrTotal*100).toFixed(2) + '%'],
+    ['Equity IRR', (c.indicators.irrEquity*100).toFixed(2) + '%'],
+    ['Total-investment NPV @ ' + (c.params.discount*100).toFixed(1) + '% (EUR)', c.indicators.npvTotal],
+    ['Simple payback (years)', c.indicators.paybackTotal],
+    ['Discounted payback (years)', c.indicators.paybackTotalDisc],
+    ['Break-even output (% of full capacity)', c.indicators.bepPct.toFixed(1) + '%']
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(kpi), 'Key Indicators');
+
+  const fname = `iRAS_financial-analysis_${STATE.data.species}_${STATE.data.yieldTons}t_${new Date().toISOString().slice(0,10)}.xlsx`;
+  XLSX.writeFile(wb, fname);
+}
+
+// ---------------- Event binding ----------------
+let recalcTimer = null;
+function debounceRecalc() {
+  clearTimeout(recalcTimer);
+  recalcTimer = setTimeout(recalc, 250);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // 1) Live recalculation on input controls
+  const inputs = ['inpPrice','inpYears','inpRamp1','inpRamp2','inpRamp3','inpBuildYears',
+                  'inpWorkingCap','inpOwnPct','inpLoanRate','inpLoanMethod','inpLoanYears',
+                  'inpDiscount','inpTaxRate','inpSalesTax','inpRepairRate','inpAdminRate','inpLaborCost'];
+  inputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', debounceRecalc);
+  });
+  // 2) Main buttons
+  document.getElementById('btnRecalc').addEventListener('click', recalc);
+  document.getElementById('btnExportXlsx').addEventListener('click', exportExcel);
+  document.getElementById('btnPrint').addEventListener('click', () => window.print());
+
+  // v1.5 Bug 37+46: manual JSON file loading + schema validation
+  function loadFromJsonObject(parsed, srcLabel) {
+    // Bug 46: schema validation
+    if (!parsed || typeof parsed !== 'object') {
+      alert('JSON parse failed: not a valid object');
+      return false;
+    }
+    // The P&ID export format (written by the main page's buildPIDExport) has pidSchema + results.summary.finance
+    // Only the P&ID export format is accepted here (not the raw collectState design, which is used by the main page's restoreState)
+    if (!parsed.pidSchema && !(parsed.results && parsed.results.summary && parsed.results.summary.finance)) {
+      alert('Unrecognized JSON format: missing the pidSchema or results.summary.finance field.\nPlease confirm this is the JSON backup downloaded when clicking "Investment & Financial Analysis" on the main page, not the raw "Save Design" JSON.');
+      return false;
+    }
+    STATE.data = parsed;
+    bootstrap(srcLabel || 'manually loaded JSON');
+    return true;
+  }
+  const fileInput = document.getElementById('inpLoadJson');
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          loadFromJsonObject(JSON.parse(ev.target.result), `file ${file.name}`);
+        } catch (err) {
+          alert('JSON parse failed: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+  // Drag-and-drop support
+  document.body.addEventListener('dragover', (e) => { e.preventDefault(); });
+  document.body.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        loadFromJsonObject(JSON.parse(ev.target.result), `dropped file ${file.name}`);
+      } catch (err) {
+        alert('JSON parse failed: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  // 3) Data loading
+  if (!tryLoadFromStorage()) {
+    // Leave empty; wait for the user to open from the main page or load JSON manually
+  }
+
+  // 4) postMessage listener (the main page clicks again → notify a refresh)
+  window.addEventListener('message', (ev) => {
+    if (ev && ev.data && ev.data.type === 'iRAS_FINANCE_RELOAD') {
+      tryLoadFromStorage('iRAS main-page design (reloaded)');
+    }
+  });
+});
+</script>
+</body>
+</html>

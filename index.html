@@ -656,6 +656,7 @@
         <button type="button" id="btnExportEquipment" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40 shrink-0" title="Export the current design as a standalone equipment-list page (modules, N+1 redundancy, unit prices)">📋 Equipment list</button>
         <button type="button" id="btnOpenPID" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40 shrink-0" title="Open the P&ID viewer in a new window (based on the current design)">📐 P&ID</button>
         <button type="button" id="btnOpenFinance" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40 shrink-0" title="Open the financial evaluation page in a new window (NPV/IRR/sensitivity + Excel export)">💰 Financial evaluation</button>
+        <button type="button" id="btnOpenReport" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40 shrink-0" title="Open the feasibility-report generator in a new window (structured .docx report)">📄 Feasibility report</button>
         <button type="button" id="btnPrint" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40 shrink-0" title="Print / choose &quot;Save as PDF&quot; in the print dialog to export PDF">🖨️ Print</button>
         <button type="button" id="btnHelp" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40">? Help</button>
         <button type="button" id="btnClearCache" class="no-print text-[10px] px-2 py-1 rounded border border-rose-700/60 text-rose-300 hover:bg-rose-900/30 shrink-0" title="Clear locally saved data (auto-save and cross-page cache) and reload with fresh defaults. Use this after upgrading to a new version if numbers look stale.">🗑️ Clear cache</button>
@@ -3943,7 +3944,7 @@ function layoutSiteFromResults(allResults) {
     const array = layoutModuleArray(m.numModules, single.footprint.L, single.footprint.W);
     return {
       stageIdx: idx,
-      stageName: r.stage.name || `Stage ${idx + 1}`,
+      stageName: nameOf(r.stage) || `Stage ${idx + 1}`,
       modules: array.positions.map(p => ({ ...p, idx: p.idx + 1 })),
       arrayW: array.arrayW,
       arrayH: array.arrayH,
@@ -7150,7 +7151,7 @@ function buildPIDExport() {
     const load = r.load;
 
     return {
-      stageName: stage.name || `Stage ${idx+1}`,
+      stageName: nameOf(stage) || `Stage ${idx+1}`,
       farm: {
         biomass: stageFarm.biomass,
         tankCount: null,
@@ -7347,7 +7348,7 @@ function buildPIDExport() {
     irasVersion: (typeof IRAS_META !== 'undefined' && IRAS_META.version) || '1.5',
     savedAt: new Date().toISOString(),
     species: currentSpecies,
-    speciesName: sp ? sp.name : currentSpecies,
+    speciesName: sp ? nameOf(sp) : currentSpecies,
     tanCoef: currentTanCoef,
     yieldTons,
     stages: stagesPure,
@@ -7454,6 +7455,7 @@ function buildPIDExport() {
 const PID_SHARE_KEY = 'iRAS_pidExport';
 const EQUIPMENT_SHARE_KEY = 'iRAS_equipmentExport';
 const FINANCE_SHARE_KEY = 'iRAS_financeExport';
+const REPORT_SHARE_KEY = 'iRAS_reportExport';
 function stashPIDData() {
   const data = buildPIDExport();
   if (!data) return false;
@@ -7463,7 +7465,7 @@ function stashPIDData() {
     //   the old version chained setItem calls; if one failed (quota exceeded), some pages got no data → inconsistency.
     //   Strategy: each setItem in its own try; return false only if all fail; partial success still counts as success.
     //   sessionStorage cannot be used (named windows from window.open do not share sessionStorage by default).
-    const KEYS = [PID_SHARE_KEY, EQUIPMENT_SHARE_KEY, FINANCE_SHARE_KEY];
+    const KEYS = [PID_SHARE_KEY, EQUIPMENT_SHARE_KEY, FINANCE_SHARE_KEY, REPORT_SHARE_KEY];
     let okCount = 0;
     KEYS.forEach(k => {
       try { localStorage.setItem(k, json); okCount++; }
@@ -7500,7 +7502,7 @@ function collectState() {
     irasVersion: IRAS_META.version,
     savedAt: new Date().toISOString(),
     species: currentSpecies,
-    speciesName: sp ? sp.name : currentSpecies,
+    speciesName: sp ? nameOf(sp) : currentSpecies,
     tanCoef: currentTanCoef,
     yieldTons: parseFloat(document.getElementById('inpYield').value) || 0,
     stages: stagesState.map(s => ({...s, proc: {...(s.proc || {})}})),
@@ -8221,6 +8223,30 @@ document.getElementById('btnOpenFinance').addEventListener('click', () => {
   try {
     win.focus();
     win.postMessage({ type: 'iRAS_FINANCE_RELOAD' }, window.location.origin || '*');  // v1.5 Bug 36
+  } catch(e) {}
+});
+
+document.getElementById('btnOpenReport').addEventListener('click', () => {
+  if (!stashPIDData()) {
+    alert('Current configuration is unavailable. Please ensure it is complete (annual yield > 0).');
+    return;
+  }
+  const win = window.open('report.html', 'iras_report');
+  if (!win || win.closed) {
+    const data = buildPIDExport();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `iRAS_report-data_${currentSpecies}_${lastResults.yieldTons || 0}t.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    alert('Pop-up blocked. The JSON has been downloaded; open report.html and load it manually.');
+    return;
+  }
+  try {
+    win.focus();
+    win.postMessage({ type: 'iRAS_REPORT_RELOAD' }, window.location.origin || '*');  // v1.5 Bug 36
   } catch(e) {}
 });
 

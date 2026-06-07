@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<!--
+  iRAS Equipment List — v1.3 companion standalone page
+
+  Data source: sessionStorage['iRAS_pidExport'] (passed in from the "Export Equipment List" button on the iRAS main page)
+         or a JSON file loaded manually by the user
+
+  Copyright (C) 2026 Hainan Dengdeng Technology Consulting Co., Ltd.
+  AGPL v3
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iRAS Equipment List v1.3</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-size: 13px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  header {
+    background: #1e293b;
+    border-bottom: 1px solid #334155;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    position: sticky; top: 0; z-index: 10;
+  }
+  header h1 { font-size: 18px; color: #67e8f9; }
+  header .meta { color: #94a3b8; font-size: 12px; margin-top: 4px; }
+  header .actions { display: flex; gap: 8px; }
+  header button, header label {
+    background: #334155;
+    color: #e2e8f0;
+    border: 1px solid #475569;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  header button:hover, header label:hover { background: #475569; }
+  header .print-btn { background: #065f46; border-color: #047857; color: #d1fae5; }
+  main { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: #1e293b;
+    border-radius: 12px;
+    border: 1px dashed #475569;
+  }
+  .empty-state h2 { font-size: 18px; margin-bottom: 12px; color: #cbd5e1; }
+  .empty-state p { color: #94a3b8; margin-bottom: 20px; line-height: 1.7; }
+
+  .summary-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px; margin-bottom: 24px;
+  }
+  .summary-card {
+    background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 12px;
+  }
+  .summary-card .label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+  .summary-card .value { font-size: 22px; font-weight: bold; color: #67e8f9; font-family: monospace; margin-top: 4px; }
+  .summary-card .sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+  .stage-block {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .stage-header {
+    background: linear-gradient(90deg, #164e63 0%, #1e293b 100%);
+    padding: 14px 20px;
+    border-bottom: 1px solid #334155;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+  .stage-header h2 { font-size: 16px; color: #67e8f9; }
+  .stage-header .stage-meta { color: #cbd5e1; font-size: 12px; }
+  .stage-body { padding: 16px 20px; }
+
+  table.equip-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 12px;
+  }
+  table.equip-table th {
+    text-align: left;
+    padding: 8px 10px;
+    background: #0f172a;
+    border-bottom: 1px solid #475569;
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  table.equip-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #334155;
+    vertical-align: top;
+  }
+  table.equip-table tr:hover { background: #0f172a; }
+  table.equip-table .tag {
+    font-family: monospace; color: #fbbf24; font-weight: bold;
+  }
+  table.equip-table .qty { font-family: monospace; color: #67e8f9; }
+  table.equip-table .spec { color: #cbd5e1; }
+  table.equip-table .note { color: #94a3b8; font-size: 11px; }
+  table.equip-table .badge-spare { display: inline-block; background: #92400e; color: #fef3c7; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 6px; }
+  table.equip-table .badge-mod { display: inline-block; background: #1e3a8a; color: #dbeafe; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 6px; }
+
+  .section-label {
+    margin-top: 16px;
+    font-size: 11px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+  }
+
+  .modular-banner {
+    background: #1e3a8a40;
+    border: 1px solid #1e40af;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+  }
+  .modular-banner .title { color: #93c5fd; font-size: 12px; font-weight: bold; }
+  .modular-banner .desc { color: #cbd5e1; font-size: 11px; margin-top: 2px; }
+
+  @media print {
+    body { background: white; color: #111; font-size: 11px; }
+    header { position: static; background: white; border-bottom: 2px solid #444; }
+    header h1 { color: #111; }
+    header .actions { display: none; }
+    .stage-block, .summary-card { background: white; border: 1px solid #888; }
+    .stage-header { background: #eee; color: #111; border-bottom: 1px solid #444; }
+    .stage-header h2 { color: #111; }
+    table.equip-table th { background: #ddd; color: #111; }
+    table.equip-table .tag { color: #92400e; }
+    table.equip-table .qty { color: #1e40af; }
+    .modular-banner { background: #f0f9ff; border-color: #1e40af; }
+  }
+</style>
+</head>
+<body>
+<header class="no-print">
+  <div>
+    <h1>📋 iRAS Equipment List</h1>
+    <div class="meta" id="metaLine">No design loaded</div>
+  </div>
+  <div class="actions">
+    <input type="file" id="fileLoad" accept=".json" style="display:none">
+    <button id="btnLoad">📂 Load JSON</button>
+    <button id="btnPrint" class="print-btn">🖨️ Print / Export PDF</button>
+  </div>
+</header>
+<main id="mainContent">
+  <div class="empty-state">
+    <h2>Waiting for design data</h2>
+    <p>Click the <strong>📋 Export Equipment List</strong> button on the iRAS main page (it will redirect here automatically), or click <strong>📂 Load JSON</strong> on this page to select a saved design file.</p>
+  </div>
+</main>
+
+<script>
+"use strict";
+
+const STATE = { data: null };
+
+function fmtNum(v, digits) {
+  if (v == null || !Number.isFinite(v)) return '—';
+  return Number(v).toFixed(digits == null ? 1 : digits);
+}
+function fmtKw(v) { return v != null && Number.isFinite(v) ? v.toFixed(1) + ' kW' : '—'; }
+function fmtM3h(v) { return v != null && Number.isFinite(v) ? v.toFixed(0) + ' m³/h' : '—'; }
+function fmtM3(v) { return v != null && Number.isFinite(v) ? v.toFixed(1) + ' m³' : '—'; }
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+function renderEmpty() {
+  document.getElementById('mainContent').innerHTML = `
+    <div class="empty-state">
+      <h2>Waiting for design data</h2>
+      <p>Three ways to load a design:</p>
+      <p style="text-align: left; max-width: 600px; margin: 0 auto;">
+        <strong style="color: #67e8f9;">Recommended:</strong> on the iRAS main page (<code style="background:#0f172a; padding:2px 6px; border-radius:3px;">index.html</code>), click the <strong>📋 Export Equipment List</strong> button — it redirects here and loads the data automatically.<br><br>
+        <strong style="color: #67e8f9;">Manual:</strong> on the main page click <strong>💾 Save Design</strong> to download a JSON file, then click <strong>📂 Load JSON</strong> at the top right and select it.<br><br>
+        <strong style="color: #fbbf24;">⚠️ Note:</strong> before loading a design, make sure the main page has finished calculating (total cost is not "—").
+      </p>
+    </div>`;
+  document.getElementById('metaLine').textContent = 'No design loaded';
+}
+
+function renderAll(data) {
+  if (!data || !data.results || !data.results.perStage) {
+    renderEmpty();
+    return;
+  }
+  document.getElementById('metaLine').textContent =
+    `${data.speciesName || data.species} · ${data.yieldTons} t/yr · saved ${new Date(data.savedAt).toLocaleString('en-US')}`;
+
+  let html = renderSummary(data);
+  data.results.perStage.forEach((stage, idx) => {
+    html += renderStage(stage, idx, data);
+  });
+  // v1.6: site-level equipment table (shared facility-wide, not split by stage)
+  html += renderSiteEquipment(data);
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+// v1.6: render the site-level equipment table (facility-wide equipment summary)
+function renderSiteEquipment(data) {
+  const s = data.results.summary || {};
+  const site = s.siteEquipment;
+  if (!site || !site.oxygenTank) return '';
+  const t = site.oxygenTank;
+  // Back-calculate duty + standby
+  const sug = t.suggested || {};
+  const mainCount = sug.mainCount || Math.max(1, t.count - 1);
+  const sparesCount = Math.max(0, t.count - mainCount);
+  const reserveCls = t.reserveDays < 3 ? '#fb7185'
+                    : t.reserveDays < 5 ? '#fbbf24'
+                    : t.reserveDays > 30 ? '#94a3b8'
+                    : '#67e8f9';
+  return `
+    <div class="stage-section" style="margin-top:24px; border-top: 2px solid #475569; padding-top:16px;">
+      <h2 style="color:#7dd3fc; font-size:18px; margin-bottom:8px;">🏭 Site-Level Equipment (shared facility-wide)</h2>
+      <div style="color:#94a3b8; font-size:11px; margin-bottom:12px;">
+        Site-level equipment is not split by stage; only one set is installed facility-wide (duty + standby). Specs / quantities / unit prices can be adjusted under "③ Stage Summary & Site Equipment" on the iRAS main page.
+        ${s.totalLOXKgD ? `Facility-wide daily use <b style="color:#67e8f9">${s.totalLOXKgD.toFixed(0)} kg/d</b>` : ''}
+      </div>
+      <table class="equip-table">
+        <thead>
+          <tr><th style="width:18%">Equipment</th><th style="width:8%">Tag</th><th style="width:10%">Spec</th><th style="width:8%">Qty</th><th style="width:14%">Total storage</th><th style="width:42%">Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>LOX station <span style="color:#94a3b8; font-size:10px">(LOX tank + vaporizer + pressure reduction)</span></td>
+            <td><code>V-901</code></td>
+            <td>${t.size_t} t/tank</td>
+            <td>${t.count} sets <span style="color:#94a3b8; font-size:10px">(${mainCount} duty + ${sparesCount} standby)</span></td>
+            <td>${t.storage_t} t · <span style="color:${reserveCls}">${t.reserveDays.toFixed(0)} d reserve</span></td>
+            <td style="color:#94a3b8; font-size:11px">Unit price ${Math.round(t.unitPrice).toLocaleString('en-US')} EUR/set · CAPEX ${Math.round(t.totalCapex).toLocaleString('en-US')} EUR (already included in total project investment, not repeated in the per-stage tables)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderSummary(data) {
+  const s = data.results.summary || {};
+  return `
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="label">Species</div>
+        <div class="value" style="font-size:16px">${escapeHtml(data.speciesName || data.species)}</div>
+        <div class="sub">TAN coeff ${data.tanCoef}</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Annual yield</div>
+        <div class="value">${data.yieldTons || 0}<span style="font-size:13px"> t</span></div>
+        <div class="sub">${data.results.perStage.length} stages</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Design stage</div>
+        <div class="value" style="font-size:16px">${escapeHtml(s.designStage || '—')}</div>
+        <div class="sub">Peak flow ${s.peakFlowM3H || 0} m³/h</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Total system volume</div>
+        <div class="value">${s.totalSystemVolume || 0}<span style="font-size:13px"> m³</span></div>
+        <div class="sub">LOX ${s.totalLOXKgD || 0} kg/d</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderStage(stage, idx, data) {
+  const e = stage.equipment || {};
+  const p = stage.pumps || {};
+  const f = stage.farm || {};
+  const fl = stage.flow || {};
+  const lo = stage.load || {};
+  const t = stage.thermal || null;
+  const mod = stage.modular || null;
+
+  // v1.3.x: get the number of parallel sets for the stage (from stages[idx].subSystemCount)
+  const stageInputData = (data.stages && data.stages[idx]) || {};
+  const subSets = stageInputData.subSystemCount || 1;
+  const setSuffix = subSets > 1 ? ` · ${subSets} parallel sets (user-set)` : '';
+
+  let modBanner = '';
+  if (mod && mod.numModules > 1) {
+    modBanner = `
+      <div class="modular-banner">
+        <div class="title">🏗️ Multi-module parallel design — ${mod.numModules} modules in this stage${setSuffix}</div>
+        <div class="desc">Each module is an independent recirculation system with N+1 redundancy inside the module (main pump / blower / RDF / heat pump), UV 2×75% in parallel. Facility-wide shared: LOX station + emergency diesel generator + dual transformers</div>
+      </div>`;
+  }
+
+  // v1.3.x: tank configuration (starting point for layout design)
+  let poolBanner = '';
+  if (mod && mod.pools) {
+    const p = mod.pools;
+    const poolDesignNote = ` (user-set ${p.poolsPerSet} tanks/set × ${p.depth_m}m deep, back-calculated to Φ${p.diameter_m}m)`;
+    poolBanner = `
+      <div class="modular-banner" style="background: #0c4a6e40; border-color: #0369a1;">
+        <div class="title" style="color: #7dd3fc;">🐟 Tank configuration — ${p.count} tanks × Φ${p.diameter_m}m × ${p.depth_m}m × ${p.volume_m3} m³/tank</div>
+        <div class="desc">${mod.numModules > 1 ? `${p.countPerModule} tanks/set, ` : ''}surface area ${p.surfaceArea_m2} m²/tank${poolDesignNote}${p.advisory ? `<br><span style="color: #fbbf24;">⚠️ ${p.advisory}</span>` : ''}</div>
+      </div>`;
+  }
+
+  // Process-equipment table
+  const equipRows = [];
+  // v1.3.x: fish tank listed as the primary equipment
+  if (mod && mod.pools) {
+    const p = mod.pools;
+    equipRows.push({
+      label: '🐟 Fish tank',
+      tag: 'T-101',
+      qty: `${p.count}${mod.numModules > 1 ? ` <span class="badge-mod">×${mod.numModules} sets</span>` : ''}<br><span style="font-size:10px;color:#94a3b8">${p.countPerModule} tanks/set</span>`,
+      spec: `Φ${p.diameter_m}m × ${p.depth_m}m, ${p.volume_m3} m³/tank`,
+      note: `Circular tank (self-cleaning) · surface area ${p.surfaceArea_m2} m²/tank`
+    });
+  }
+  if (e.rdf) equipRows.push(rowFromMod('RDF drum filter', 'F-201', mod && mod.modulePerSpec.rdf, fmtM3h(e.rdf.flow), `${e.rdf.tssEff}% TSS removal`));
+  if (e.bf) equipRows.push(rowFromVol('Biofilter (MBBR)', 'B-301', e.bf.volume, `K1/K3 media · ${e.bf.fillRatio || 50}% fill`, `VTR ${(e.bf.vtrAtT || 0).toFixed(0)} g/m³·d · design TAN ${(e.bf.designTAN || 0).toFixed(1)} kg/d`));
+  if (e.uv) equipRows.push(rowFromMod('UV reactor', 'D-401', mod && mod.modulePerSpec.uv, fmtKw(e.uv.powerKw), `dose ${e.uv.dose} mJ/cm² · flow ${(e.uv.flow||0).toFixed(0)} m³/h`));
+  if (e.co2 && e.co2.enabled) {
+    const sp = e.co2.spec || {};
+    equipRows.push(rowFromVol('CO₂ stripper', 'C-501', sp.area, `cross-section ${sp.area ? sp.area.toFixed(1) : '—'} m²`, `stripping ${e.co2.eff}% · G:L=${e.co2.gToL} · blower ${sp.blowerKw ? sp.blowerKw.toFixed(1) : '—'} kW`));
+  }
+  if (e.o2cone && e.o2cone.enabled) {
+    const sp = e.o2cone.spec || {};
+    // v1.7: label varies with topology so mainline / bypass is obvious at a glance in the list
+    const topoLabel = e.o2cone.topology === 'bypass'
+      ? `LOX oxygenation cone (bypass, small)`
+      : `LOX oxygenation cone (mainline)`;
+    equipRows.push({
+      label: topoLabel, tag: 'A-601', qty: '1 set',
+      spec: `${sp.param2Value || '—'} · peak O₂ supply ${e.o2cone.peakSupplyKgH ? e.o2cone.peakSupplyKgH.toFixed(2) : '—'} kg/h`,
+      note: `DO target ${e.o2cone.satTarget}% · absorption ${e.o2cone.absorptionEff}%${e.o2cone.topology === 'bypass' ? ` · bypass ${e.o2cone.bypassRatio||10}%` : ''}`
+    });
+  }
+  // v1.7: tank aeration blower K-101 (air mode only) — same 1+1 sparing convention as the K-302 biofilter blower
+  if (e.tankAirBlower && e.tankAirBlower.enabled) {
+    const tabMod = mod && mod.modulePerSpec.tankAirBlower;
+    const perUnitSpec = `${(e.tankAirBlower.airFlowM3min||0).toFixed(1)} Nm³/min · ${(e.tankAirBlower.powerKw||0).toFixed(1)} kW`;
+    const note = `pressure ${e.tankAirBlower.pressureKPa} kPa · η ${e.tankAirBlower.etaPct}% · serves fine-bubble diffuser discs in the tanks (primary oxygenation in air mode; failure suffocates the fish, so dual units must alternate)`;
+    equipRows.push(rowFromMod('Tank aeration blower', e.tankAirBlower.tag, tabMod, perUnitSpec, note));
+  }
+  if (e.skimmer && e.skimmer.enabled) {
+    equipRows.push(rowFromVol('Protein skimmer', 'S-701', e.skimmer.volume, `${e.skimmer.mode === 'ozone' ? 'ozone-enhanced' : 'air'} mode · ${e.skimmer.flowPct}% bypass`, `DOM removal ${e.skimmer.domEff}% · ozone ${(e.skimmer.ozoneKgD||0).toFixed(2)} kg/d`));
+  }
+  if (e.aop && e.aop.enabled) {
+    equipRows.push(rowFromVol('AOP reactor', 'X-901', e.aop.volume, `${e.aop.type === 'integrated' ? 'integrated UV+O₃' : 'split UV+O₃'} · ${e.aop.flowPct}% bypass`, `geosmin removal ${e.aop.geosminEff}% · DOM ${e.aop.domEff}% · ozone ${(e.aop.ozoneKgD||0).toFixed(2)} kg/d`));
+  }
+  if (e.denitri && e.denitri.enabled) {
+    equipRows.push(rowFromVol('Denitrification reactor', 'R-801', e.denitri.volume, `MBBR · ${e.denitri.flowPct}% bypass · ${e.denitri.no3Eff}% NO₃ removal`, `N removed ${(e.denitri.no3RemovedKgD||0).toFixed(1)} kg/d · methanol ${(e.denitri.methanolKgD||0).toFixed(1)} kg/d`));
+  }
+  if (e.ozoneGen && e.ozoneGen.totalKgD > 0) {
+    const ozMod = mod && mod.modulePerSpec.ozoneGenerator;
+    equipRows.push(rowFromMod('Ozone generator', 'G-901', ozMod, fmtKw(e.ozoneGen.powerKw), `output ${(e.ozoneGen.totalKgD||0).toFixed(2)} kg/d`));
+  }
+  if (e.bfBlower && e.bfBlower.spec) {
+    const sp = e.bfBlower.spec;
+    const bfMod = mod && mod.modulePerSpec.bfBlower;
+    equipRows.push(rowFromMod('Biofilter blower', 'K-302', bfMod, fmtKw(sp.power), `airflow ${(sp.airFlow||0).toFixed(1)} m³/min · peak O₂ ${(sp.o2PeakKgH||0).toFixed(1)} kg/h`));
+  }
+
+  // Pump list (v1.3.x: branch pumps folded into the modular spec with 1+1 sparing; v1.6: backwash pump no longer listed separately, embedded in the RDF)
+  const pumpRows = [];
+  if (p.main && p.main.kw > 0) {
+    const mainMod = mod && mod.modulePerSpec.mainPump;
+    pumpRows.push(rowFromMod('Main recirculation pump', 'P-101', mainMod, fmtKw(p.main.kw), `${(p.main.flow||0).toFixed(0)} m³/h · H=${p.main.headM}m · η=${p.main.eta}% · ${p.main.vfd ? 'VFD' : 'fixed-speed'}`));
+  }
+  if (p.uvBranch && p.uvBranch.needed && p.uvBranch.kw > 0) {
+    const uvMod = mod && mod.modulePerSpec.uvBranchPump;
+    pumpRows.push(rowFromMod('UV branch pump', 'P-401', uvMod, fmtKw(p.uvBranch.kw), 'UV branch circulation'));
+  }
+  if (p.denitriBranch && p.denitriBranch.needed && p.denitriBranch.kw > 0) {
+    const denitriMod = mod && mod.modulePerSpec.denitriBranchPump;
+    pumpRows.push(rowFromMod('Denitrification branch pump', 'P-601', denitriMod, fmtKw(p.denitriBranch.kw), 'feed to denitrification reactor'));
+  }
+  if (p.aopBranch && p.aopBranch.needed && p.aopBranch.kw > 0) {
+    const aopMod = mod && mod.modulePerSpec.aopBranchPump;
+    pumpRows.push(rowFromMod('AOP branch pump', 'P-701', aopMod, fmtKw(p.aopBranch.kw), 'feed to AOP reactor'));
+  }
+  if (p.skimmerBranch && p.skimmerBranch.needed && p.skimmerBranch.kw > 0) {
+    const skMod = mod && mod.modulePerSpec.skimmerBranchPump;
+    pumpRows.push(rowFromMod('Skimmer branch pump', 'P-501', skMod, fmtKw(p.skimmerBranch.kw), 'feed to protein skimmer'));
+  }
+  // v1.7: O₂ cone bypass pump (shown only for the bypass topology)
+  if (p.o2Bypass && p.o2Bypass.kw > 0) {
+    const o2bpMod = mod && mod.modulePerSpec.o2BypassPump;
+    pumpRows.push(rowFromMod('O₂ cone bypass pump', 'P-602', o2bpMod, fmtKw(p.o2Bypass.kw), `bypass mode: ${(p.o2Bypass.flow||0).toFixed(0)} m³/h × ${(p.o2Bypass.headM||0)}m`));
+  }
+  // v1.6: backwash pump removed from the list (the RDF ships with an integral backwash pump from the vendor; P-202 no longer listed separately)
+  // v1.3.x: dosing pumps, 1+1 sparing
+  if (mod && mod.modulePerSpec.methanolDosing) {
+    const dm = mod.modulePerSpec.methanolDosing;
+    pumpRows.push(rowFromMod('Methanol dosing pump', 'P-801', dm, 'small metering pump', 'carbon-source dosing for denitrification'));
+  }
+  if (mod && mod.modulePerSpec.naHCO3Dosing) {
+    const dm = mod.modulePerSpec.naHCO3Dosing;
+    pumpRows.push(rowFromMod('NaHCO₃ dosing pump', 'P-802', dm, 'small metering pump', 'pH / alkalinity maintenance'));
+  }
+
+  // Heat pump
+  const thermalRows = [];
+  if (t && t.needsThermal && t.heatPumpKWhPerDay > 0) {
+    const hpKw = t.heatPumpKWhPerDay / 16;
+    const hpMod = mod && mod.modulePerSpec.heatPump;
+    thermalRows.push(rowFromMod('Heat pump unit', 'H-801', hpMod, fmtKw(hpKw),
+      `${t.mode === 'cool' ? '🥶 cooling' : '🔥 heating'} · COP=${t.cop ? t.cop.toFixed(2) : '—'} · daily ${t.heatPumpKWhPerDay.toFixed(0)} kWh`));
+  }
+
+  return `
+    <div class="stage-block">
+      <div class="stage-header">
+        <div>
+          <h2>Stage ${idx+1} · ${escapeHtml(stage.stageName)}</h2>
+          <div class="stage-meta">${(f.biomass/1000).toFixed(1)} t standing biomass · ${(fl.volumeTank||0).toFixed(0)} m³ tanks · ${(fl.flowMain||0).toFixed(0)} m³/h recirc · ${fl.tempOpt}°C · density ${f.density} kg/m³${fl.salinity > 0 ? ' · salinity ' + fl.salinity + '‰' : ''}</div>
+        </div>
+        <div style="text-align: right; color: #94a3b8; font-size: 11px;">
+          Feed ${(lo.feedAvg||0).toFixed(0)} kg/d (avg) · ${(lo.feedMax||0).toFixed(0)} kg/d (max)<br>
+          TAN ${(lo.tanDaily||0).toFixed(1)} kg/d · O₂ demand ${(lo.o2DailyTotal||0).toFixed(0)} kg/d
+        </div>
+      </div>
+      <div class="stage-body">
+        ${modBanner}
+        ${poolBanner}
+
+        <div class="section-label">⚙️ Process equipment</div>
+        <table class="equip-table">
+          <thead><tr><th style="width:18%">Equipment</th><th style="width:10%">Tag</th><th style="width:14%">Qty / spec</th><th style="width:18%">Key parameters</th><th>Notes</th></tr></thead>
+          <tbody>
+            ${equipRows.map(r => `
+              <tr>
+                <td>${escapeHtml(r.label)}</td>
+                <td class="tag">${escapeHtml(r.tag)}</td>
+                <td class="qty">${r.qty || '—'}</td>
+                <td class="spec">${escapeHtml(r.spec || '')}</td>
+                <td class="note">${escapeHtml(r.note || '')}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+
+        <div class="section-label">💧 Pump list</div>
+        <table class="equip-table">
+          <thead><tr><th style="width:18%">Pump</th><th style="width:10%">Tag</th><th style="width:14%">Qty</th><th style="width:18%">Shaft power</th><th>Spec</th></tr></thead>
+          <tbody>
+            ${pumpRows.map(r => `
+              <tr>
+                <td>${escapeHtml(r.label)}</td>
+                <td class="tag">${escapeHtml(r.tag)}</td>
+                <td class="qty">${r.qty || '—'}</td>
+                <td class="spec">${escapeHtml(r.spec || '')}</td>
+                <td class="note">${escapeHtml(r.note || '')}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+
+        ${thermalRows.length > 0 ? `
+          <div class="section-label">♨️ Heat pump / temperature control</div>
+          <table class="equip-table">
+            <thead><tr><th style="width:18%">Equipment</th><th style="width:10%">Tag</th><th style="width:14%">Qty</th><th style="width:18%">Per-unit spec</th><th>Key parameters</th></tr></thead>
+            <tbody>
+              ${thermalRows.map(r => `
+                <tr>
+                  <td>${escapeHtml(r.label)}</td>
+                  <td class="tag">${escapeHtml(r.tag)}</td>
+                  <td class="qty">${r.qty || '—'}</td>
+                  <td class="spec">${escapeHtml(r.spec || '')}</td>
+                  <td class="note">${escapeHtml(r.note || '')}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>` : ''}
+      </div>
+    </div>`;
+}
+
+// Helper: build the "Qty" column from the modular data
+function rowFromMod(label, tag, modSpec, perUnitSpec, note) {
+  if (modSpec) {
+    const totalUnits = modSpec.totalCount * (modSpec.modules || 1);
+    const sparing = modSpec.sparing || (modSpec.sparesCount > 0 ? 'N+1' : '');
+    const qtyHtml = `${modSpec.N}${modSpec.sparesCount > 0 ? '+' + modSpec.sparesCount + ' standby' : ''} <span class="badge-mod">×${modSpec.modules || 1} modules</span>`;
+    return {
+      label, tag,
+      qty: qtyHtml + `<br><span style="font-size:10px; color:#94a3b8">${totalUnits} total facility-wide</span>`,
+      spec: `each ${perUnitSpec}` + (sparing ? ` (${sparing})` : ''),
+      note: note || ''
+    };
+  }
+  return { label, tag, qty: '1 set', spec: perUnitSpec, note: note || '' };
+}
+function rowFromVol(label, tag, volume, sizing, note) {
+  // Single-train static equipment: mark "single train + bypass" to reflect design intent
+  const qtyHtml = `1 set<br><span style="font-size:10px; color:#94a3b8">single train + bypass valve</span>`;
+  return { label, tag, qty: qtyHtml, spec: fmtM3(volume) + (sizing ? ` · ${sizing}` : ''), note: note || '' };
+}
+
+// ─── Data loading ───
+// v1.3.x: use a dedicated key iRAS_equipmentExport (separate from iRAS_pidExport used by pid.html),
+// so the P&ID window and the equipment-list window can each show the latest data without interfering.
+// Switched to localStorage (shared across same-origin tabs) to fix browsers that don't inherit sessionStorage on window.open.
+const SHARE_KEY = 'iRAS_equipmentExport';
+function tryLoadFromSession() {
+  try {
+    // Prefer localStorage, fall back to sessionStorage; remain compatible with the legacy pidExport key
+    let stashed =
+      localStorage.getItem(SHARE_KEY) ||
+      sessionStorage.getItem(SHARE_KEY) ||
+      localStorage.getItem('iRAS_pidExport') ||
+      sessionStorage.getItem('iRAS_pidExport');
+    if (stashed) {
+      STATE.data = JSON.parse(stashed);
+      renderAll(STATE.data);
+      // Clear all possible copies once consumed
+      try { localStorage.removeItem(SHARE_KEY); } catch(e) {}
+      try { sessionStorage.removeItem(SHARE_KEY); } catch(e) {}
+      try { localStorage.removeItem('iRAS_pidExport'); } catch(e) {}
+      try { sessionStorage.removeItem('iRAS_pidExport'); } catch(e) {}
+      return true;
+    }
+  } catch(e) { console.warn('storage read failed:', e); }
+  return false;
+}
+
+function loadFromFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    let data;
+    try {
+      data = JSON.parse(e.target.result);
+    } catch(err) {
+      alert('JSON parse failed: ' + err.message);
+      return;
+    }
+    // Validate schema
+    if (!data || typeof data !== 'object') {
+      alert('Invalid file format: not a valid JSON object');
+      return;
+    }
+    if (!data.results || !data.results.perStage || !Array.isArray(data.results.perStage)) {
+      // Design saved by older v1.2 (no results field) — give clear guidance
+      const isOldScheme = data.stages && Array.isArray(data.stages);
+      if (isOldScheme) {
+        alert(
+          'This design was saved by an earlier version and contains no equipment-list data (the results field is missing).\n\n' +
+          'How to fix:\n' +
+          '1. Load this design on the iRAS main page (index.html)\n' +
+          '2. Wait for the calculation to finish (the total cost at the top right shows a number)\n' +
+          '3. Click "💾 Save Design" again to re-download\n' +
+          '4. Load the new JSON file into this page\n\n' +
+          'Or: simply click the "📋 Export Equipment List" button on the iRAS main page to jump here directly (recommended)'
+        );
+      } else {
+        alert('Incompatible file schema: missing the results.perStage field');
+      }
+      return;
+    }
+    STATE.data = data;
+    renderAll(STATE.data);
+  };
+  reader.readAsText(file);
+}
+
+// ─── Events ───
+document.getElementById('btnLoad').addEventListener('click', () => {
+  document.getElementById('fileLoad').click();
+});
+document.getElementById('fileLoad').addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  if (f) loadFromFile(f);
+  e.target.value = '';
+});
+document.getElementById('btnPrint').addEventListener('click', () => window.print());
+
+// ─── Startup ───
+document.addEventListener('DOMContentLoaded', () => {
+  if (!tryLoadFromSession()) {
+    renderEmpty();
+  }
+
+  // v1.3.x: window-reuse scenario — when the main page clicks "Export Equipment List" again, it notifies this page via postMessage to reload
+  // (Note: the listener is inside DOMContentLoaded so the DOM is ready and renderAll won't fail on missing nodes)
+  window.addEventListener('message', (ev) => {
+    if (ev && ev.data && ev.data.type === 'iRAS_EQUIPMENT_RELOAD') {
+      tryLoadFromSession();
+    }
+  });
+});
+</script>
+</body>
+</html>

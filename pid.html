@@ -1,0 +1,3516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>iRAS P&ID v2.0 — skeleton</title>
+<style>
+  /* ============================================================
+     iRAS P&ID v2.0 skeleton styles
+     Design tone: an engineering drafting tool — light grey background, high information density, no decorative animation
+     Reference: AutoCAD / EPLAN / dwg style (not a brand website)
+     ============================================================ */
+  :root {
+    --bg:        #ECEAE3;
+    --panel:    #FAFAF6;
+    --canvas:   #FFFFFF;
+    --line:     #C8C5BB;
+    --line-2:   #DEDBD2;
+    --ink:      #1F1F1E;
+    --ink-2:    #5C5B57;
+    --ink-3:    #95938C;
+    --accent:   #185FA5;
+    --accent-2: #C04545;
+    --warn:     #B97A0E;
+    --ok:       #4A7B3A;
+    --code-bg:  #F2F0E7;
+    --shadow:   0 1px 2px rgba(0,0,0,0.04);
+    --mono:     ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace;
+    --sans:     -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== Top bar ===== */
+  header.topbar {
+    flex: 0 0 auto;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .brand {
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+  }
+  .brand .ver {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-3);
+    margin-left: 6px;
+    font-weight: 400;
+  }
+  .topbar .summary {
+    flex: 1 1 auto;
+    display: flex;
+    gap: 18px;
+    font-size: 12px;
+    color: var(--ink-2);
+    overflow: hidden;
+  }
+  .summary-item { white-space: nowrap; }
+  .summary-item b {
+    color: var(--ink);
+    font-family: var(--mono);
+    font-weight: 500;
+    margin-left: 4px;
+  }
+  .summary-item.muted { color: var(--ink-3); font-style: italic; }
+  /* v1.7: peak O₂ demand sub-items — fish / biofilter components (small, grey, not stealing focus from the main figure) */
+  .summary-sub {
+    color: var(--ink-3);
+    font-size: 10.5px;
+    margin-left: 2px;
+  }
+
+  .topbar .actions { display: flex; gap: 6px; flex-shrink: 0; }
+  button {
+    font-family: inherit;
+    font-size: 12px;
+    padding: 5px 11px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--panel);
+    color: var(--ink);
+    cursor: pointer;
+    transition: none;
+  }
+  button:hover { background: #fff; border-color: var(--ink-2); }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.primary:hover { background: #0d4677; border-color: #0d4677; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ===== Main three columns ===== */
+  .main {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: 220px 1fr 360px;
+    overflow: hidden;
+  }
+
+  /* ===== Left column ===== */
+  aside.left {
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    padding: 14px 14px;
+    overflow-y: auto;
+    font-size: 12px;
+  }
+  .section-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-3);
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--line-2);
+  }
+  .layer-list {
+    display: flex; flex-direction: column; gap: 4px;
+    margin-bottom: 22px;
+  }
+  .layer-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .layer-row:hover { background: rgba(0,0,0,0.03); }
+  .layer-row input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
+  .layer-row .label { color: var(--ink); }
+  .layer-row .swatch { width: 14px; height: 3px; border-radius: 1px; }
+  .layer-row[data-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
+
+  .meta-list { font-family: var(--mono); font-size: 11px; line-height: 1.7; color: var(--ink-2); }
+  .meta-list dt { color: var(--ink-3); }
+  .meta-list dd { color: var(--ink); margin-bottom: 6px; }
+
+  /* ===== Center column ===== */
+  main.canvas-area {
+    background: var(--bg);
+    overflow: auto;
+    position: relative;
+    display: flex; align-items: stretch; justify-content: stretch;
+  }
+  .canvas-frame {
+    flex: 1;
+    margin: 18px;
+    background: var(--canvas);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    position: relative;
+    min-height: calc(100% - 36px);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .canvas-placeholder {
+    text-align: center;
+    color: var(--ink-3);
+    font-size: 12px;
+    line-height: 1.8;
+    max-width: 360px;
+    padding: 20px;
+  }
+  .canvas-placeholder .big {
+    font-size: 14px;
+    color: var(--ink-2);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .canvas-placeholder code {
+    font-family: var(--mono); font-size: 11px;
+    background: var(--code-bg); padding: 1px 5px; border-radius: 2px;
+  }
+  svg.pid-svg { display: block; width: 100%; height: 100%; }
+
+  /* ============================================================
+     SVG inner-element styles — engineering-drawing visual language
+     Defined in CSS rather than inline attributes, for easy layer toggling / printing / export reuse
+     ============================================================ */
+  svg.pid-svg text {
+    font-family: var(--sans);
+    fill: var(--ink);
+  }
+  svg.pid-svg text.tag {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    fill: var(--ink);
+  }
+  svg.pid-svg text.name {
+    font-size: 11.5px;
+    fill: var(--ink);
+  }
+  svg.pid-svg text.sub {
+    font-size: 10px;
+    fill: var(--ink-2);
+    font-style: italic;
+  }
+  svg.pid-svg text.param {
+    font-family: var(--mono);
+    font-size: 10px;
+    fill: var(--ink-2);
+  }
+  svg.pid-svg text.line-label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    fill: var(--accent);
+    font-weight: 500;
+  }
+  svg.pid-svg text.band-label {
+    font-size: 10px;
+    fill: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* Equipment box — different types use a fill color + top color bar for recognition */
+  svg.pid-svg .equip-box {
+    stroke: var(--ink-2);
+    stroke-width: 1.2;
+    fill: #fff;
+  }
+  svg.pid-svg .equip-box.kind-tank      { fill: #E8F0F8; }
+  svg.pid-svg .equip-box.kind-filter    { fill: #F4EBDC; }
+  svg.pid-svg .equip-box.kind-bio       { fill: #E5EFE0; }
+  svg.pid-svg .equip-box.kind-uv        { fill: #E8E2F4; }
+  svg.pid-svg .equip-box.kind-degas     { fill: #F4E8D4; }
+  svg.pid-svg .equip-box.kind-aerator   { fill: #F4DDDC; }
+  /* Top color bar — darker than the fill, making the kind readable at a glance */
+  svg.pid-svg .equip-band {
+    stroke: none;
+  }
+  svg.pid-svg .equip-band.kind-tank     { fill: #5A8AB8; }
+  svg.pid-svg .equip-band.kind-filter   { fill: #B89668; }
+  svg.pid-svg .equip-band.kind-bio      { fill: #6B9658; }
+  svg.pid-svg .equip-band.kind-uv       { fill: #8B7AB8; }
+  svg.pid-svg .equip-band.kind-degas    { fill: #C49A4F; }
+  svg.pid-svg .equip-band.kind-aerator  { fill: #C06464; }
+
+  /* Equipment-icon interior (v2.1) — use the eq- prefix to avoid clashing with the outer stroke/fill */
+  svg.pid-svg .equip-icon .eq-stroke      { stroke: #1F1F1E; stroke-width: 1.4; fill: none; }
+  svg.pid-svg .equip-icon .eq-stroke-thin { stroke: #1F1F1E; stroke-width: 0.7; fill: none; }
+  svg.pid-svg .equip-icon .eq-fill-light  { fill: #FAFAF7; }
+  svg.pid-svg .equip-icon .eq-fill-water  { fill: #E8EFF7; }
+  svg.pid-svg .equip-icon .eq-fill-medium { fill: #DDD8C8; }
+
+  /* Main pipeline */
+  svg.pid-svg .main-line {
+    stroke: var(--accent);
+    stroke-width: 2.4;
+    fill: none;
+  }
+  svg.pid-svg .main-line.return {
+    stroke: var(--accent);
+    stroke-width: 2.2;
+  }
+
+  /* Bypass pipeline — thinner than the main line, slightly lighter */
+  svg.pid-svg .bypass-line {
+    stroke: #5A8AB8;
+    stroke-width: 1.8;
+    fill: none;
+  }
+
+  /* Bypass-loop boundary — light background box, rounded corners, low opacity */
+  svg.pid-svg .bypass-envelope {
+    fill: #F7F5EE;
+    fill-opacity: 0.6;
+    stroke: #C8C5BB;
+    stroke-width: 0.8;
+    stroke-dasharray: 4 3;
+  }
+  /* Slight tint of the envelope by kind */
+  svg.pid-svg .bypass-envelope.kind-aerator { fill: #FAEDEA; }
+  svg.pid-svg .bypass-envelope.kind-uv      { fill: #F2EBF8; }
+  svg.pid-svg .bypass-envelope.kind-bio     { fill: #ECF3E6; }
+
+  /* Bypass title text (top-left of the envelope) */
+  svg.pid-svg text.bypass-title {
+    font-size: 11px;
+    font-weight: 600;
+    fill: #5C5B57;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Gas / medium pipe — dashed */
+  svg.pid-svg .gas-line {
+    stroke: #8B6F47;
+    stroke-width: 1.4;
+    fill: none;
+    stroke-dasharray: 6 3;
+  }
+  /* Heat-carrier medium (heat pump) — red dashed */
+  svg.pid-svg .thermal-line {
+    stroke: #C04545;
+    stroke-width: 1.4;
+    fill: none;
+    stroke-dasharray: 8 3;
+  }
+
+  /* Control signal — short dashes */
+  svg.pid-svg .signal-line {
+    stroke: var(--accent-2);
+    stroke-width: 1.0;
+    fill: none;
+    stroke-dasharray: 2 2;
+  }
+
+  /* Instrument bubble */
+  svg.pid-svg .instrument-bubble {
+    stroke: var(--ink-2);
+    stroke-width: 1.0;
+    fill: #fff;
+  }
+  svg.pid-svg .instrument-bubble-line {
+    stroke: var(--ink-2);
+    stroke-width: 0.8;
+    fill: none;
+    stroke-dasharray: 2 2;
+  }
+  svg.pid-svg text.instrument-text {
+    font-family: var(--mono);
+    font-size: 9px;
+    fill: var(--ink);
+    text-anchor: middle;
+    dominant-baseline: middle;
+  }
+
+  /* Pump symbol */
+  svg.pid-svg .pump-circle {
+    stroke: var(--ink);
+    stroke-width: 1.3;
+    fill: #fff;
+  }
+  svg.pid-svg .pump-triangle {
+    stroke: var(--ink);
+    stroke-width: 1.3;
+    fill: var(--ink);
+  }
+
+  /* Process-band divider (shown when debugging, can be hidden later) */
+  svg.pid-svg .band-rule {
+    stroke: var(--line-2);
+    stroke-width: 0.6;
+    stroke-dasharray: 2 4;
+    fill: none;
+  }
+  .canvas-watermark {
+    position: absolute; bottom: 8px; right: 12px;
+    font-family: var(--mono); font-size: 10px;
+    color: var(--ink-3); pointer-events: none;
+  }
+  .canvas-area.drag-over .canvas-frame {
+    border-color: var(--accent);
+    border-style: dashed;
+    background: #F4F8FC;
+  }
+  .canvas-area.drag-over .canvas-frame::after {
+    content: "Release to load JSON";
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent); font-size: 16px; font-weight: 500;
+    background: rgba(244,248,252,0.8); pointer-events: none;
+  }
+
+  /* ===== Right column ===== */
+  aside.right {
+    background: var(--panel);
+    border-left: 1px solid var(--line);
+    overflow-y: auto;
+    font-size: 12px;
+    display: flex; flex-direction: column;
+  }
+  .inspector-header {
+    flex: 0 0 auto;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line-2);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .inspector-header .title { font-weight: 600; font-size: 12px; }
+  .inspector-header select {
+    font-family: var(--mono); font-size: 11px;
+    padding: 2px 4px;
+    border: 1px solid var(--line); border-radius: 2px;
+    background: var(--canvas);
+  }
+  .inspector-body {
+    flex: 1 1 auto; overflow-y: auto;
+    padding: 8px 12px 60px;
+    font-family: var(--mono); font-size: 11px; line-height: 1.65;
+  }
+  .empty-state {
+    padding: 30px 20px; text-align: center; color: var(--ink-3);
+  }
+  .empty-state .hint { margin-top: 10px; font-size: 11px; line-height: 1.7; }
+  .empty-state code { font-family: var(--mono); background: var(--code-bg); padding: 1px 4px; border-radius: 2px; }
+
+  /* ===== Data tree ===== */
+  details.tree-node {
+    border-left: 1px solid var(--line-2);
+    margin-left: 2px;
+    padding-left: 8px;
+  }
+  details.tree-node[open] > summary { color: var(--ink); }
+  details.tree-node summary {
+    cursor: pointer; list-style: none;
+    color: var(--ink-2);
+    padding: 1px 0; user-select: none;
+  }
+  details.tree-node summary::-webkit-details-marker { display: none; }
+  details.tree-node summary::before {
+    content: "▸";
+    display: inline-block; width: 12px;
+    color: var(--ink-3); font-size: 9px;
+  }
+  details.tree-node[open] > summary::before { content: "▾"; }
+  .tree-key { color: var(--accent); }
+  .tree-key.disabled { color: var(--ink-3); text-decoration: line-through; }
+  .tree-val { color: var(--ink); }
+  .tree-val.string { color: #886F1F; }
+  .tree-val.number { color: #1F5C8A; }
+  .tree-val.boolean { color: var(--ok); }
+  .tree-val.null { color: var(--ink-3); font-style: italic; }
+  .tree-leaf {
+    padding: 0 0 0 12px;
+    color: var(--ink-2);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .tree-leaf .unit { color: var(--ink-3); margin-left: 3px; }
+
+  /* ===== Tooltip overlay ===== */
+  .toast {
+    position: fixed;
+    bottom: 18px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: #fff;
+    padding: 8px 16px; border-radius: 3px;
+    font-size: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+    z-index: 100;
+    max-width: 80%;
+  }
+  .toast.error { background: var(--accent-2); }
+  .toast.warn  { background: var(--warn); }
+
+  input[type="file"] { display: none; }
+
+  /* ===== Status bar ===== */
+  .statusbar {
+    flex: 0 0 auto;
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+    padding: 4px 14px;
+    font-family: var(--mono); font-size: 10px; color: var(--ink-3);
+    display: flex; gap: 16px; justify-content: space-between;
+  }
+  .statusbar .right-info { display: flex; gap: 14px; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">iRAS P&amp;ID<span class="ver">v2.0-skeleton</span></div>
+  <div class="summary" id="topSummary">
+    <span class="summary-item muted">No data loaded</span>
+  </div>
+  <div class="actions">
+    <button id="btnLoadSample">📂 Load sample</button>
+    <button id="btnLoadFile">📁 Select JSON file</button>
+    <input type="file" id="fileInput" accept=".json,application/json">
+    <button id="btnClear" disabled>Clear</button>
+  </div>
+</header>
+
+<div class="main">
+  <aside class="left">
+    <div class="section-title">Layers</div>
+    <div class="layer-list" id="layerList">
+      <label class="layer-row" data-layer="process">
+        <input type="checkbox" checked>
+        <span class="label">Process</span>
+        <span class="swatch" style="background:#185FA5"></span>
+      </label>
+      <label class="layer-row" data-layer="bypass">
+        <input type="checkbox" checked>
+        <span class="label">Bypass</span>
+        <span class="swatch" style="background:#5A8AB8"></span>
+      </label>
+      <label class="layer-row" data-layer="utility">
+        <input type="checkbox" checked>
+        <span class="label">Utility</span>
+        <span class="swatch" style="background:#8B6F47"></span>
+      </label>
+      <label class="layer-row" data-layer="instrument">
+        <input type="checkbox" checked>
+        <span class="label">Instrument</span>
+        <span class="swatch" style="background:#5C5B57"></span>
+      </label>
+      <label class="layer-row" data-layer="control">
+        <input type="checkbox" checked>
+        <span class="label">Control</span>
+        <span class="swatch" style="background:#C04545"></span>
+      </label>
+      <label class="layer-row" data-layer="annotation">
+        <input type="checkbox" checked>
+        <span class="label">Annotation / title</span>
+        <span class="swatch" style="background:#1F1F1E"></span>
+      </label>
+    </div>
+
+    <div class="section-title">Metadata</div>
+    <dl class="meta-list" id="metaList">
+      <dd style="color:var(--ink-3); font-style:italic;">—</dd>
+    </dl>
+  </aside>
+
+  <main class="canvas-area" id="canvasArea">
+    <div class="canvas-frame" id="canvasFrame">
+      <svg class="pid-svg" id="pidSvg" viewBox="0 0 2150 1280" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <!-- Main-process arrow -->
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+                  markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M2 1 L8 5 L2 9" fill="none" stroke="context-stroke"
+                  stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+        <g id="layer-process"></g>
+        <g id="layer-bypass"></g>
+        <g id="layer-utility"></g>
+        <g id="layer-instrument"></g>
+        <g id="layer-annotation"></g>
+      </svg>
+      <div class="canvas-placeholder" id="canvasPlaceholder">
+        <div class="big">P&amp;ID rendering area</div>
+        <div>Drawing is not implemented at the skeleton stage.</div>
+        <div style="margin-top:8px;">After loading <code>iRAS_PID_*.json</code>, inspect the parsed data structure in the right panel.</div>
+        <div style="margin-top:14px; color:var(--ink-3);">Later M1 steps will draw the main process / bypass / instruments here.</div>
+      </div>
+      <div class="canvas-watermark">SVG 1800 × 1220 · A2 landscape</div>
+    </div>
+  </main>
+
+  <aside class="right">
+    <div class="inspector-header">
+      <div class="title">Data Inspector</div>
+      <select id="stageSelect" disabled>
+        <option>Not loaded</option>
+      </select>
+    </div>
+    <div class="inspector-body" id="inspectorBody">
+      <div class="empty-state">
+        <div>Waiting for data</div>
+        <div class="hint">
+          You can:<br>
+          • Click <code>📂 Load sample</code> to try it<br>
+          • Click <code>📁 Select JSON file</code> to pick a file<br>
+          • Drag a JSON file onto the canvas
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="statusbar">
+  <div id="statusLeft">Ready</div>
+  <div class="right-info">
+    <span id="statusSchema">schema: —</span>
+    <span id="statusStages">Stages: —</span>
+    <span id="statusBytes">Size: —</span>
+  </div>
+</div>
+
+<!--
+  Embedded sample JSON. The injection tool replaces the content between the two marker lines below
+  The marker is a string of leading/trailing dashes + 7 hex digits, which never collides with valid JSON content
+-->
+<script id="sampleData" type="application/json">
+{"pidSchema":"1.0","irasVersion":"1.1.0","savedAt":"2026-04-30T21:05:38.407Z","species":"salmon","speciesName":"Atlantic salmon","tanCoef":0.092,"yieldTons":1000,"stages":[{"name":"Fry","weightStart":0.1,"weightEnd":50,"months":6,"FCR":1,"protein":0.5,"feedRate":0.03,"peakFactor":1.5,"tempOpt":12,"density":30,"mortality":0.15,"turnover":4,"exchangeDaily":8,"feedPrice":12,"salinity":0,"DOmin_satRatio":0.75,"DOmin_abs":6,"o2FishFactor":0.2,"o2BaseFactor":0.32,"o2Q10":2,"metabRefTemp":15,"proc":{"rdfTSS":75,"biofilterTAN":70,"uvDose":40,"uvFlowPct":10,"denitriFlowPct":10,"denitriEff":80,"rdfBackwash":2,"aerationMode":"o2","o2SatTarget":170,"o2AbsorptionEff":85,"alkTarget":150,"alkSource":100,"VTR20":500,"VDR20":800,"thetaNit":1.1,"thetaDen":1.08,"bfFillRatio":50,"o2DOMfactor":0.1,"sourceSS":10,"sourcePH":7.5,"sourceTemp":18,"hxEff":75,"heatPumpCOP_heat":4,"heatPumpCOP_cool":3,"thermalIncludeMetab":true,"thermalIncludeEquip":true,"thermalIncludeLoss":true,"metabBasalRate":0,"metabFeedFactor":1.5,"pumpHeatRatio":0.85,"uvHeatRatio":0.95,"tankIndoor":true,"roomTemp":20,"poolDepth":1.5,"poolUValue":5,"skimmerEnabled":true,"skimmerMode":"ozone","skimmerFlowPct":20,"skimmerDOMEffAir":40,"skimmerDOMEffOzone":70,"skimmerTSSEff":40,"skimmerHRT_min":2,"ozoneDose":0.01,"aopEnabled":true,"aopType":"integrated","aopFlowPct":5,"aopGeosminEff":90,"aopDOMRemoval":5,"aopHRT_min":2,"co2StripperEnabled":true,"co2StripperEff":65,"co2StripperGtoL":3,"co2StripperLoadingRate":80,"co2FallbackEff":5,"co2BlowerPressure_kPa":2.5,"co2BlowerEfficiency":60,"safetyBio":1.15,"safetyAerator":1.1,"safetyBFblow":1.1,"safetyRDF":1.1,"safetyDenitri":1.1,"safetySkimmer":1.1,"safetyCO2":1.15,"safetyUV":1.1,"mainPumpHead_m":12,"mainPumpEta":68,"denitriPumpHead_m":10,"denitriPumpEta":60,"uvPumpHead_m":10,"uvPumpEta":60,"aopPumpHead_m":10,"aopPumpEta":60,"skimmerPumpHead_m":6,"skimmerPumpEta":60,"rdfBackwashPumpHead_m":8,"rdfBackwashPumpEta":55,"miscElecKWhPerDay":50}},{"name":"Juvenile","weightStart":50,"weightEnd":500,"months":8,"FCR":1.1,"protein":0.45,"feedRate":0.015,"peakFactor":1.5,"tempOpt":14,"density":50,"mortality":0.08,"turnover":3,"exchangeDaily":6,"feedPrice":12,"salinity":0,"DOmin_satRatio":0.75,"DOmin_abs":6,"o2BaseFactor":0.32,"o2Q10":2,"metabRefTemp":15,"proc":{"rdfTSS":75,"biofilterTAN":70,"uvDose":40,"uvFlowPct":10,"denitriFlowPct":10,"denitriEff":80,"rdfBackwash":2,"aerationMode":"o2","o2SatTarget":165,"o2AbsorptionEff":85,"alkTarget":150,"alkSource":100,"VTR20":500,"VDR20":800,"thetaNit":1.1,"thetaDen":1.08,"bfFillRatio":50,"o2DOMfactor":0.1,"sourceSS":10,"sourcePH":7.5,"sourceTemp":18,"hxEff":75,"heatPumpCOP_heat":4,"heatPumpCOP_cool":3,"thermalIncludeMetab":true,"thermalIncludeEquip":true,"thermalIncludeLoss":true,"metabBasalRate":0,"metabFeedFactor":1.5,"pumpHeatRatio":0.85,"uvHeatRatio":0.95,"tankIndoor":true,"roomTemp":20,"poolDepth":1.5,"poolUValue":5,"skimmerEnabled":true,"skimmerMode":"ozone","skimmerFlowPct":20,"skimmerDOMEffAir":40,"skimmerDOMEffOzone":70,"skimmerTSSEff":40,"skimmerHRT_min":2,"ozoneDose":0.01,"aopEnabled":true,"aopType":"integrated","aopFlowPct":5,"aopGeosminEff":90,"aopDOMRemoval":5,"aopHRT_min":2,"co2StripperEnabled":true,"co2StripperEff":65,"co2StripperGtoL":3,"co2StripperLoadingRate":80,"co2FallbackEff":5,"co2BlowerPressure_kPa":2.5,"co2BlowerEfficiency":60,"safetyBio":1.15,"safetyAerator":1.1,"safetyBFblow":1.1,"safetyRDF":1.1,"safetyDenitri":1.1,"safetySkimmer":1.1,"safetyCO2":1.15,"safetyUV":1.1,"mainPumpHead_m":12,"mainPumpEta":68,"denitriPumpHead_m":10,"denitriPumpEta":60,"uvPumpHead_m":10,"uvPumpEta":60,"aopPumpHead_m":10,"aopPumpEta":60,"skimmerPumpHead_m":6,"skimmerPumpEta":60,"rdfBackwashPumpHead_m":8,"rdfBackwashPumpEta":55,"miscElecKWhPerDay":50}},{"name":"Grow-out","weightStart":500,"weightEnd":2000,"months":6,"FCR":1.2,"protein":0.42,"feedRate":0.01,"peakFactor":1.5,"tempOpt":15,"density":60,"mortality":0.04,"turnover":2.5,"exchangeDaily":5,"feedPrice":12,"salinity":12,"DOmin_satRatio":0.75,"DOmin_abs":6,"o2BaseFactor":0.32,"o2Q10":2,"metabRefTemp":15,"proc":{"rdfTSS":75,"biofilterTAN":70,"uvDose":40,"uvFlowPct":10,"denitriFlowPct":10,"denitriEff":80,"rdfBackwash":2,"aerationMode":"o2","o2SatTarget":165,"o2AbsorptionEff":85,"alkTarget":150,"alkSource":100,"VTR20":500,"VDR20":800,"thetaNit":1.1,"thetaDen":1.08,"bfFillRatio":50,"o2DOMfactor":0.1,"sourceSS":10,"sourcePH":7.5,"sourceTemp":18,"hxEff":75,"heatPumpCOP_heat":4,"heatPumpCOP_cool":3,"thermalIncludeMetab":true,"thermalIncludeEquip":true,"thermalIncludeLoss":true,"metabBasalRate":0,"metabFeedFactor":1.5,"pumpHeatRatio":0.85,"uvHeatRatio":0.95,"tankIndoor":true,"roomTemp":20,"poolDepth":1.5,"poolUValue":5,"skimmerEnabled":true,"skimmerMode":"ozone","skimmerFlowPct":20,"skimmerDOMEffAir":40,"skimmerDOMEffOzone":70,"skimmerTSSEff":40,"skimmerHRT_min":2,"ozoneDose":0.01,"aopEnabled":true,"aopType":"integrated","aopFlowPct":5,"aopGeosminEff":90,"aopDOMRemoval":5,"aopHRT_min":2,"co2StripperEnabled":true,"co2StripperEff":65,"co2StripperGtoL":3,"co2StripperLoadingRate":80,"co2FallbackEff":5,"co2BlowerPressure_kPa":2.5,"co2BlowerEfficiency":60,"safetyBio":1.15,"safetyAerator":1.1,"safetyBFblow":1.1,"safetyRDF":1.1,"safetyDenitri":1.1,"safetySkimmer":1.1,"safetyCO2":1.15,"safetyUV":1.1,"mainPumpHead_m":12,"mainPumpEta":68,"denitriPumpHead_m":10,"denitriPumpEta":60,"uvPumpHead_m":10,"uvPumpEta":60,"aopPumpHead_m":10,"aopPumpEta":60,"skimmerPumpHead_m":6,"skimmerPumpEta":60,"rdfBackwashPumpHead_m":8,"rdfBackwashPumpEta":55,"miscElecKWhPerDay":50}},{"name":"Market size","weightStart":2000,"weightEnd":5000,"months":4,"FCR":1.2,"protein":0.4,"feedRate":0.0095,"peakFactor":1.5,"tempOpt":15,"density":70,"mortality":0.03,"turnover":3,"exchangeDaily":4,"feedPrice":12,"salinity":30,"DOmin_satRatio":0.75,"DOmin_abs":6,"o2BaseFactor":0.32,"o2Q10":2,"metabRefTemp":15,"proc":{"rdfTSS":75,"biofilterTAN":70,"uvDose":40,"uvFlowPct":10,"denitriFlowPct":10,"denitriEff":80,"rdfBackwash":2,"aerationMode":"o2","o2SatTarget":160,"o2AbsorptionEff":85,"alkTarget":150,"alkSource":100,"VTR20":500,"VDR20":800,"thetaNit":1.1,"thetaDen":1.08,"bfFillRatio":50,"o2DOMfactor":0.1,"sourceSS":10,"sourcePH":7.5,"sourceTemp":18,"hxEff":75,"heatPumpCOP_heat":4,"heatPumpCOP_cool":3,"thermalIncludeMetab":true,"thermalIncludeEquip":true,"thermalIncludeLoss":true,"metabBasalRate":0,"metabFeedFactor":1.5,"pumpHeatRatio":0.85,"uvHeatRatio":0.95,"tankIndoor":true,"roomTemp":20,"poolDepth":1.5,"poolUValue":5,"skimmerEnabled":true,"skimmerMode":"ozone","skimmerFlowPct":20,"skimmerDOMEffAir":40,"skimmerDOMEffOzone":70,"skimmerTSSEff":40,"skimmerHRT_min":2,"ozoneDose":0.01,"aopEnabled":true,"aopType":"integrated","aopFlowPct":5,"aopGeosminEff":90,"aopDOMRemoval":5,"aopHRT_min":2,"co2StripperEnabled":true,"co2StripperEff":65,"co2StripperGtoL":3,"co2StripperLoadingRate":80,"co2FallbackEff":5,"co2BlowerPressure_kPa":2.5,"co2BlowerEfficiency":60,"safetyBio":1.15,"safetyAerator":1.1,"safetyBFblow":1.1,"safetyRDF":1.1,"safetyDenitri":1.1,"safetySkimmer":1.1,"safetyCO2":1.15,"safetyUV":1.1,"mainPumpHead_m":12,"mainPumpEta":68,"denitriPumpHead_m":10,"denitriPumpEta":60,"uvPumpHead_m":10,"uvPumpEta":60,"aopPumpHead_m":10,"aopPumpEta":60,"skimmerPumpHead_m":6,"skimmerPumpEta":60,"rdfBackwashPumpHead_m":8,"rdfBackwashPumpEta":55,"miscElecKWhPerDay":50}}],"prices":{"elec":0.7,"o2":1.2,"methanol":3.5,"naHCO3":2.5},"equipPrices":{"rdf":500,"biofilter":4500,"uv":10000,"skimmer":25000,"ozone":100000,"aop":35000,"denitri":5500,"degas":20000,"mainPump":3500,"branchPump":3000,"blower":4000,"o2tower":350,"o2tank":100000,"heatPump":2000,"heatExch":1200,"totalFactor":2.2,"depYearsEquip":8,"depYearsCivil":20,"regionFactor":1,"scaleRefSize":1000,"scaleExponent":0.1},"capexFactor":2.2,"depYearsEquip":8,"depYearsCivil":20,"regionFactor":1,"scaleRefSize":1000,"scaleExponent":0.1,"results":{"perStage":[{"stageName":"Fry","farm":{"biomass":3181.996829435495,"tankCount":null,"yearGrowth":11649.297773793514,"volume":106.06656098118316,"density":30},"load":{"feedMax":95.45990488306484,"feedAvg":31.915884311763055,"tanDaily":4.391155624620983,"tssDaily":28.63797146491945,"domDaily":9.545990488306485,"co2Daily":26.251473842842834,"o2DailyTotal":48.70555266943735,"o2PeakHourly":3.0440970418398345},"flow":{"volumeTank":106.06656098118316,"volumeTotal":182.01901779215527,"flowMain":424.26624392473263,"turnover":4,"tempOpt":12,"salinity":0},"equipment":{"rdf":{"tag":"F-201","flow":466.6928683172059,"tssEff":75,"backwashPct":2},"bf":{"tag":"B-301","volume":21.64951373778404,"tanEff":70,"designTAN":5.04982896831413,"fillRatio":50,"vtrAtT":233.25369010486654,"vdrAtT":432.2151076015806},"uv":{"tag":"D-401","flow":42.42662439247326,"dose":40,"powerKw":1.59},"co2":{"tag":"C-501","enabled":true,"eff":65,"gToL":3,"loadingRate":80,"spec":{"enabled":true,"area":6.098827256418032,"eff":65,"GtoL":3,"airFlow":1272.798731774198,"blowerKw":2.946293360588421,"pressure_kPa":5,"blowerEta":0.6,"basis":"recirc 424 × G:L 3 × 5kPa / 60%η"}},"o2cone":{"tag":"A-601","enabled":true,"satTarget":170,"absorptionEff":85,"peakSupplyKgH":1.5442043436966375,"spec":{"mode":"pure-oxygen (LOX + Speece cone)","basis":"hourly peak 1.19 kg/h × safety 1.1 ÷ 85% absorption","param1Label":"Peak O₂ supply","param1Value":"1.54 kg/h","param2Label":"Cone flow","param2Value":"424 m³/h","towerFlowM3h":424.26624392473263,"peakSupplyKgH":1.5442043436966375}},"skimmer":{"tag":"S-701","enabled":true,"mode":"ozone","flowPct":20,"domEff":70,"tssEff":40,"volume":3.1112857887813727,"ozoneKgD":0.9545990488306484},"aop":{"tag":"X-901","enabled":true,"type":"integrated","flowPct":5,"geosminEff":90,"domEff":5,"volume":0.707110406541221,"ozoneKgD":0.2545597463548396},"denitri":{"tag":"R-801","enabled":true,"flowPct":10,"no3Eff":80,"flow":42.42662439247326,"volume":8.605642759199883,"designNO3":3.71948881114834,"no3RemovedKgD":3.381353464680309,"methanolKgD":8.351943057760364},"ozoneGen":{"tag":"G-901","totalKgD":1.209158795185488,"powerKw":0.5038161646606201},"bfBlower":{"tag":"K-302","spec":{"basis":"hourly peak 1.85 kg/h × safety 1.1","o2PeakKgH":2.0359330538816764,"o2Demand":48.86239329316024,"airFlow":1.536785215792328,"power":2.1344239108226777}}},"pumps":{"main":{"tag":"P-101","kw":20.402214965204056,"flow":424.26624392473263,"headM":12,"eta":68,"vfd":true},"uvBranch":{"tag":"P-401","kw":1.926875857824827,"needed":true},"denitriBranch":{"tag":"P-601","kw":1.926875857824827,"needed":true},"aopBranch":{"tag":"P-701","kw":0.9634379289124139,"needed":true},"skimmerBranch":{"tag":"P-501","kw":2.312251029389793,"needed":true},"backwash":{"tag":"P-202","kw":0.33632742245669717,"duty":"RDF backwash"},"totalKw":27.867983061612613},"thermal":{"needsThermal":true,"mode":"cool","tSource":18,"tTarget":12,"dT":-6,"heatPumpKWhPerDay":276.74426442467615,"heatPumpAvgKw":11.5,"hxEffPct":75,"cop":3,"qMakeupM3D":14.561521423372422},"instruments":[{"tag":"DO-101","type":"DO","loc":"T-101","controlsTo":"P-101_VFD"},{"tag":"pH-102","type":"pH","loc":"T-101","controlsTo":"NaHCO3_dosing"},{"tag":"TT-103","type":"T","loc":"T-101","controlsTo":"H-801"},{"tag":"LT-104","type":"L","loc":"T-101"},{"tag":"PDS-201","type":"PDS","loc":"F-201"},{"tag":"DO-301","type":"DO","loc":"B-301"},{"tag":"AT-302","type":"TAN","loc":"B-301_out"},{"tag":"DO-601","type":"DO","loc":"A-601"}]},{"stageName":"Juvenile","farm":{"biomass":41087.70357089496,"tankCount":null,"yearGrowth":96649.48453608247,"volume":821.7540714178992,"density":50},"load":{"feedMax":616.3155535634244,"feedAvg":291.2724191498376,"tanDaily":25.515463917525768,"tssDaily":184.8946660690273,"domDaily":61.63155535634244,"co2Daily":178.91131466104906,"o2DailyTotal":308.3545452129254,"o2PeakHourly":19.27215907580784},"flow":{"volumeTank":821.7540714178992,"volumeTotal":1198.5068093083928,"flowMain":2465.2622142536975,"turnover":3,"tempOpt":14,"salinity":0},"equipment":{"rdf":{"tag":"F-201","flow":2711.7884356790673,"tssEff":75,"backwashPct":2},"bf":{"tag":"B-301","volume":103.96506177835055,"tanEff":70,"designTAN":29.34278350515463,"fillRatio":50,"vtrAtT":282.2369650268885,"vdrAtT":504.13570150648366},"uv":{"tag":"D-401","flow":246.52622142536973,"dose":40,"powerKw":9.22},"co2":{"tag":"C-501","enabled":true,"eff":65,"gToL":3,"loadingRate":80,"spec":{"enabled":true,"area":35.4381443298969,"eff":65,"GtoL":3,"airFlow":7395.7866427610925,"blowerKw":17.119876487872897,"pressure_kPa":5,"blowerEta":0.6,"basis":"recirc 2465 × G:L 3 × 5kPa / 60%η"}},"o2cone":{"tag":"A-601","enabled":true,"satTarget":165,"absorptionEff":85,"peakSupplyKgH":10.52419498006171,"spec":{"mode":"pure-oxygen (LOX + Speece cone)","basis":"hourly peak 8.13 kg/h × safety 1.1 ÷ 85% absorption","param1Label":"Peak O₂ supply","param1Value":"10.52 kg/h","param2Label":"Cone flow","param2Value":"2465 m³/h","towerFlowM3h":2465.2622142536975,"peakSupplyKgH":10.52419498006171}},"skimmer":{"tag":"S-701","enabled":true,"mode":"ozone","flowPct":20,"domEff":70,"tssEff":40,"volume":18.07858957119378,"ozoneKgD":6.163155535634244},"aop":{"tag":"X-901","enabled":true,"type":"integrated","flowPct":5,"geosminEff":90,"domEff":5,"volume":4.108770357089496,"ozoneKgD":1.4791573285522186},"denitri":{"tag":"R-801","enabled":true,"flowPct":10,"no3Eff":80,"flow":246.52622142536973,"volume":42.870686946970324,"designNO3":21.612643838075737,"no3RemovedKgD":19.647858034614305,"methanolKgD":48.53020934549734},"ozoneGen":{"tag":"G-901","totalKgD":7.642312864186463,"powerKw":3.18429702674436},"bfBlower":{"tag":"K-302","spec":{"basis":"hourly peak 11.14 kg/h × safety 1.1","o2PeakKgH":12.25380925033617,"o2Demand":294.0914220080681,"airFlow":9.249554083889016,"power":12.8466028942903}}},"pumps":{"main":{"tag":"P-101","kw":118.55010942072929,"flow":2465.2622142536975,"headM":12,"eta":68,"vfd":true},"uvBranch":{"tag":"P-401","kw":11.196399223068875,"needed":true},"denitriBranch":{"tag":"P-601","kw":11.196399223068875,"needed":true},"aopBranch":{"tag":"P-701","kw":5.598199611534439,"needed":true},"skimmerBranch":{"tag":"P-501","kw":13.435679067682653,"needed":true},"backwash":{"tag":"P-202","kw":1.9542805916629309,"duty":"RDF backwash"},"totalKw":161.93106713774705},"thermal":{"needsThermal":true,"mode":"cool","tSource":18,"tTarget":14,"dT":-4,"heatPumpKWhPerDay":1787.174517533782,"heatPumpAvgKw":74.5,"hxEffPct":75,"cop":3,"qMakeupM3D":71.91040855850356},"instruments":[{"tag":"DO-101","type":"DO","loc":"T-101","controlsTo":"P-101_VFD"},{"tag":"pH-102","type":"pH","loc":"T-101","controlsTo":"NaHCO3_dosing"},{"tag":"TT-103","type":"T","loc":"T-101","controlsTo":"H-801"},{"tag":"LT-104","type":"L","loc":"T-101"},{"tag":"PDS-201","type":"PDS","loc":"F-201"},{"tag":"DO-301","type":"DO","loc":"B-301"},{"tag":"AT-302","type":"TAN","loc":"B-301_out"},{"tag":"DO-601","type":"DO","loc":"A-601"}]},{"stageName":"Grow-out","farm":{"biomass":131550.6872852234,"tankCount":null,"yearGrowth":309278.350515464,"volume":2192.5114547537232,"density":60},"load":{"feedMax":1315.506872852234,"feedAvg":1016.8055359412514,"tanDaily":50.83118556701032,"tssDaily":394.6520618556702,"domDaily":131.5506872852234,"co2Daily":409.2896854161826,"o2DailyTotal":661.5144310836843,"o2PeakHourly":41.344651942730266},"flow":{"volumeTank":2192.5114547537232,"volumeTotal":2991.71318139608,"flowMain":5481.278636884308,"turnover":2.5,"tempOpt":15,"salinity":12},"equipment":{"rdf":{"tag":"F-201","flow":6029.40650057274,"tssEff":75,"backwashPct":2},"bf":{"tag":"B-301","volume":213.96307401739702,"tanEff":70,"designTAN":58.455863402061865,"fillRatio":50,"vtrAtT":273.20538214602817,"vdrAtT":544.4665576270023},"uv":{"tag":"D-401","flow":548.1278636884308,"dose":40,"powerKw":20.5},"co2":{"tag":"C-501","enabled":true,"eff":65,"gToL":3,"loadingRate":80,"spec":{"enabled":true,"area":78.79338040521192,"eff":65,"GtoL":3,"airFlow":16443.835910652924,"blowerKw":38.06443497836325,"pressure_kPa":5,"blowerEta":0.6,"basis":"recirc 5481 × G:L 3 × 5kPa / 60%η"}},"o2cone":{"tag":"A-601","enabled":true,"satTarget":165,"absorptionEff":85,"peakSupplyKgH":24.07586384801074,"spec":{"mode":"pure-oxygen (LOX + Speece cone)","basis":"hourly peak 18.60 kg/h × safety 1.1 ÷ 85% absorption","param1Label":"Peak O₂ supply","param1Value":"24.08 kg/h","param2Label":"Cone flow","param2Value":"5481 m³/h","towerFlowM3h":5481.278636884308,"peakSupplyKgH":24.07586384801074}},"skimmer":{"tag":"S-701","enabled":true,"mode":"ozone","flowPct":20,"domEff":70,"tssEff":40,"volume":40.19604333715159,"ozoneKgD":13.15506872852234},"aop":{"tag":"X-901","enabled":true,"type":"integrated","flowPct":5,"geosminEff":90,"domEff":5,"volume":9.13546439480718,"ozoneKgD":3.288767182130585},"denitri":{"tag":"R-801","enabled":true,"flowPct":10,"no3Eff":80,"flow":548.1278636884308,"volume":79.0794166958121,"designNO3":43.05609778752011,"no3RemovedKgD":39.14190707956373,"methanolKgD":96.68051048652242},"ozoneGen":{"tag":"G-901","totalKgD":16.443835910652925,"powerKw":6.851598296105386},"bfBlower":{"tag":"K-302","spec":{"basis":"hourly peak 22.74 kg/h × safety 1.1","o2PeakKgH":25.01463286619417,"o2Demand":600.35118878866,"airFlow":18.881818286680378,"power":26.224747620389415}}},"pumps":{"main":{"tag":"P-101","kw":263.58501680311304,"flow":5481.278636884308,"headM":12,"eta":68,"vfd":true},"uvBranch":{"tag":"P-401","kw":24.894140475849564,"needed":true},"denitriBranch":{"tag":"P-601","kw":24.894140475849564,"needed":true},"aopBranch":{"tag":"P-701","kw":12.447070237924782,"needed":true},"skimmerBranch":{"tag":"P-501","kw":29.87296857101948,"needed":true},"backwash":{"tag":"P-202","kw":4.34515906487556,"duty":"RDF backwash"},"totalKw":360.03849562863195},"thermal":{"needsThermal":true,"mode":"cool","tSource":18,"tTarget":15,"dT":-3,"heatPumpKWhPerDay":4188.46215953967,"heatPumpAvgKw":174.5,"hxEffPct":75,"cop":3,"qMakeupM3D":149.585659069804},"instruments":[{"tag":"DO-101","type":"DO","loc":"T-101","controlsTo":"P-101_VFD"},{"tag":"pH-102","type":"pH","loc":"T-101","controlsTo":"NaHCO3_dosing"},{"tag":"TT-103","type":"T","loc":"T-101","controlsTo":"H-801"},{"tag":"LT-104","type":"L","loc":"T-101"},{"tag":"PDS-201","type":"PDS","loc":"F-201"},{"tag":"DO-301","type":"DO","loc":"B-301"},{"tag":"AT-302","type":"TAN","loc":"B-301_out"},{"tag":"DO-601","type":"DO","loc":"A-601"}]},{"stageName":"Market size","farm":{"biomass":236941.58075601372,"tankCount":null,"yearGrowth":600000,"volume":3384.87972508591,"density":70},"load":{"feedMax":2250.9450171821304,"feedAvg":1972.6027397260275,"tanDaily":82.83477663230241,"tssDaily":675.2835051546391,"domDaily":225.09450171821305,"co2Daily":700.329733720124,"o2DailyTotal":1112.9801463606525,"o2PeakHourly":69.56125914754078},"flow":{"volumeTank":3384.87972508591,"volumeTotal":4894.180020774394,"flowMain":10154.639175257731,"turnover":3,"tempOpt":15,"salinity":30},"equipment":{"rdf":{"tag":"F-201","flow":11170.103092783505,"tssEff":75,"backwashPct":2},"bf":{"tag":"B-301","volume":438.3347758034366,"tanEff":70,"designTAN":95.25999312714777,"fillRatio":50,"vtrAtT":217.3224630707042,"vdrAtT":544.4665576270023},"uv":{"tag":"D-401","flow":1015.4639175257731,"dose":40,"powerKw":37.98},"co2":{"tag":"C-501","enabled":true,"eff":65,"gToL":3,"loadingRate":80,"spec":{"enabled":true,"area":145.97293814432987,"eff":65,"GtoL":3,"airFlow":30463.91752577319,"blowerKw":70.51832760595647,"pressure_kPa":5,"blowerEta":0.6,"basis":"recirc 10155 × G:L 3 × 5kPa / 60%η"}},"o2cone":{"tag":"A-601","enabled":true,"satTarget":160,"absorptionEff":85,"peakSupplyKgH":41.195866689419056,"spec":{"mode":"pure-oxygen (LOX + Speece cone)","basis":"hourly peak 31.83 kg/h × safety 1.1 ÷ 85% absorption","param1Label":"Peak O₂ supply","param1Value":"41.20 kg/h","param2Label":"Cone flow","param2Value":"10155 m³/h","towerFlowM3h":10154.639175257731,"peakSupplyKgH":41.195866689419056}},"skimmer":{"tag":"S-701","enabled":true,"mode":"ozone","flowPct":20,"domEff":70,"tssEff":40,"volume":74.46735395189005,"ozoneKgD":22.509450171821303},"aop":{"tag":"X-901","enabled":true,"type":"integrated","flowPct":5,"geosminEff":90,"domEff":5,"volume":16.924398625429554,"ozoneKgD":6.092783505154639},"denitri":{"tag":"R-801","enabled":true,"flowPct":10,"no3Eff":80,"flow":1015.4639175257731,"volume":129.4187595455275,"designNO3":70.46418650211011,"no3RemovedKgD":64.05835136555464,"methanolKgD":158.22412787291998},"ozoneGen":{"tag":"G-901","totalKgD":28.602233676975942,"powerKw":11.917597365406642},"bfBlower":{"tag":"K-302","spec":{"basis":"hourly peak 37.73 kg/h × safety 1.1","o2PeakKgH":41.50089837628866,"o2Demand":996.0215610309278,"airFlow":31.326161213986,"power":43.508557241647225}}},"pumps":{"main":{"tag":"P-101","kw":488.31867798665854,"flow":10154.639175257731,"headM":12,"eta":68,"vfd":true},"uvBranch":{"tag":"P-401","kw":46.118986254295535,"needed":true},"denitriBranch":{"tag":"P-601","kw":46.118986254295535,"needed":true},"aopBranch":{"tag":"P-701","kw":23.059493127147768,"needed":true},"skimmerBranch":{"tag":"P-501","kw":55.34278350515465,"needed":true},"backwash":{"tag":"P-202","kw":8.049859418931582,"duty":"RDF backwash"},"totalKw":667.0087865464836},"thermal":{"needsThermal":true,"mode":"cool","tSource":18,"tTarget":15,"dT":-3,"heatPumpKWhPerDay":7259.579017125288,"heatPumpAvgKw":302.5,"hxEffPct":75,"cop":3,"qMakeupM3D":195.76720083097575},"instruments":[{"tag":"DO-101","type":"DO","loc":"T-101","controlsTo":"P-101_VFD"},{"tag":"pH-102","type":"pH","loc":"T-101","controlsTo":"NaHCO3_dosing"},{"tag":"TT-103","type":"T","loc":"T-101","controlsTo":"H-801"},{"tag":"LT-104","type":"L","loc":"T-101"},{"tag":"PDS-201","type":"PDS","loc":"F-201"},{"tag":"DO-301","type":"DO","loc":"B-301"},{"tag":"AT-302","type":"TAN","loc":"B-301_out"},{"tag":"DO-601","type":"DO","loc":"A-601"}]}],"summary":{"designStage":"Market size","designStageIdx":3,"totalLOXKgD":2131.6,"peakFlowM3H":10155,"totalSystemVolume":9266,"tagPrefix":"salmon-1000t"}}}
+</script>
+
+<script>
+"use strict";
+
+// ============================================================================
+// iRAS P&ID v2.0 skeleton — data loading + Inspector + layer toggling
+//
+// M1 progress:
+//  ✅ load JSON by drag-and-drop / file picker
+//  ✅ pidSchema validation + error messages
+//  ✅ data-tree display (by stage)
+//  ✅ layer toggling (DOM in place, content to be filled in later M1 steps)
+//  ✅ embedded sample JSON (zero-dependency demo)
+//  ⬜ equipment-symbol rendering (M1 steps 3-4)
+//  ⬜ orthogonal routing (M1 step 5)
+//  ⬜ publication-grade polish (M1 step 7)
+// ============================================================================
+
+const STATE = {
+  data: null,
+  designStageIdx: null,
+  // v1.7: written after the main pump P-101 is rendered so renderBypass can use the real pump coordinates (rather than lookupEquipPorts, since the main pump is not in EQUIP_ICONS)
+  mainPumpNode: null,
+};
+
+const SUPPORTED_SCHEMA_MAJOR = 1;
+
+// Use a hex check to see whether the sentinel is still present (not replaced by the injection tool). Built by concatenation so a naive string-replace cannot hit it
+const UNINJECTED_SENTINEL_HEX = '9d7e2a4';
+function looksLikePlaceholder(txt) {
+  // Any string like %%---SAMPLE-PAYLOAD-INJECT-HERE-XXXX---%% is treated as "not injected"
+  return /^%%-+SAMPLE-PAYLOAD-INJECT-HERE-[0-9a-f]+-+%%$/i.test(txt);
+}
+
+// ─── Utilities ───────────────────────────────────────────────
+function $(id) { return document.getElementById(id); }
+function fmtBytes(n) {
+  if (n < 1024) return n + ' B';
+  if (n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+  return (n/1024/1024).toFixed(2) + ' MB';
+}
+function fmtNum(v) {
+  if (v == null || isNaN(v)) return '—';
+  if (Math.abs(v) >= 1000) return Math.round(v).toLocaleString();
+  if (Math.abs(v) >= 100)  return v.toFixed(0);
+  if (Math.abs(v) >= 10)   return v.toFixed(1);
+  if (Math.abs(v) >= 1)    return v.toFixed(2);
+  return v.toFixed(3);
+}
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), type === 'error' ? 5000 : 2800);
+}
+
+// ─── Rendering engine ────────────────────────────────────────
+// Design principles:
+//  • all coordinates come from GRID; no magic numbers at call sites
+//  • equipment-drawing functions return { node, ports }, where ports is a dictionary of named anchors
+//  • connections are declarative: drawMainLine(fromPort, toPort, label) — the engine computes coordinates
+//  • the first version uses straight connections; step 5 upgrades to orthogonal routing
+// ──────────────────────────────────────────────────────────────
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+const GRID = {
+  cellW: 360,         // column spacing (equipment center → center) — widened to fit 4 devices across a bypass row
+  marginX: 60,
+  marginY: 40,
+  bands: {
+    source:  { y:  100, label: 'SOURCE WATER' },
+    main:    { y:  220, label: 'MAIN PROCESS' },
+    bypass:  { y:  560, label: 'BYPASS' },
+    utility: { y:  900, label: 'UTILITY' },
+    chem:    { y: 1100, label: 'CHEMICAL' },
+  },
+  // (v2.1: bypass is back to a single row; bypassRowY no longer used)
+  bypassRowY: function(rowIdx) { return 560; },   // kept for legacy code
+  eq:      { w: 180, h: 110 },
+  eqSmall: { w: 140, h:  80 },
+  pump:    { r:  18 },
+};
+
+/**
+ * Returns the equipment-center x,y for a given (band, col). col is 0-indexed.
+ */
+function gridCenter(band, col) {
+  return {
+    x: GRID.marginX + col * GRID.cellW + GRID.eq.w / 2,
+    y: GRID.bands[band].y + GRID.eq.h / 2,
+  };
+}
+
+/**
+ * SVG element construction helper
+ */
+function svgEl(name, attrs, parent) {
+  const el = document.createElementNS(SVG_NS, name);
+  if (attrs) {
+    for (const k in attrs) {
+      if (attrs[k] != null) el.setAttribute(k, attrs[k]);
+    }
+  }
+  if (parent) parent.appendChild(el);
+  return el;
+}
+
+/**
+ * Equipment box. Returns { node, ports }
+ *   node:  <g>, already appended to the parent
+ *   ports: { left, right, top, bottom, in, out, center }, each {x,y}
+ *
+ * params is [string, ...] — interior parameter lines (3-4 lines)
+ */
+// ─── Equipment icon library v2.1 ─────────────────────────────
+// Each tag maps to an ISA-style engineering icon, drawn inside a standard 200x140 viewBox.
+// Ports use relative coordinates (within the 200x140 system) and are scaled to the actual size at render time.
+//
+// Port naming convention:
+//   in   - main inlet water
+//   out  - main outlet water
+//   air  - air inlet (MBBR / CO2 stripper / skimmer)
+//   gas  - gas outlet (top of the CO2 stripper)
+//   o2   - oxygen inlet (oxygenation cone / AOP)
+//   foam - foam discharge (skimmer)
+//   carbon - carbon-source dosing (denitrification)
+//
+// When the renderer accesses ports via 'left/right/top/bottom', we map them semantically:
+//   left  → in
+//   right → out
+//   top   → defaults to in (top-feed devices like the CO2 stripper) or air (bottom-feed devices)
+//   bottom → defaults to out (bottom-outlet devices) or air
+const EQUIP_ICON_VBOX_W = 200;
+const EQUIP_ICON_VBOX_H = 140;
+
+const EQUIP_ICONS = {
+  // S-101 sump (low wide rectangle + water line + sludge cone bottom, v1.3.x)
+  'S-101': {
+    inner: `
+      <!-- Basin: low wide rectangle, collecting gravity flow from tank bottom drains -->
+      <path class="eq-stroke eq-fill-water"
+            d="M 25 50 L 25 100 L 95 120 L 105 120 L 175 100 L 175 50 Z" />
+      <!-- Water line (~8 below the top) -->
+      <line x1="25" y1="58" x2="175" y2="58" class="eq-stroke-thin" stroke="#5A8AB8"/>
+      <g class="eq-stroke-thin" stroke="#5A8AB8" fill="none">
+        <path d="M 35 68 Q 45 64 55 68 T 75 68 T 95 68 T 115 68 T 135 68 T 155 68 T 165 68"/>
+        <path d="M 45 84 Q 60 80 75 84 T 105 84 T 135 84 T 155 84"/>
+      </g>
+      <!-- Inlet: horizontal on the left (straight from the main line, avoiding a 90° bend) -->
+      <line x1="15" y1="68" x2="25" y2="68" class="eq-stroke"/>
+      <!-- Outlet: right side (to the main pump) -->
+      <line x1="175" y1="80" x2="185" y2="80" class="eq-stroke"/>
+      <!-- Sludge: V-shaped cone bottom marker -->
+      <line x1="100" y1="120" x2="100" y2="130" class="eq-stroke-thin"/>
+      <!-- Level gauge LG (small circle on the right) -->
+      <circle cx="170" cy="62" r="5" class="eq-stroke-thin" fill="#fff"/>
+      <text x="170" y="65" text-anchor="middle" font-family="ui-monospace,monospace" font-size="6" fill="#5C5B57">LG</text>
+    `,
+    ports: {
+      in:     { x:  15, y:  68, dir: 'W' },     // v1.3.x: horizontal inlet on the left (straight from the main line, no bend)
+      out:    { x: 185, y:  80, dir: 'E' },     // outlet on the right (to the main pump)
+      left:   { x:  15, y:  68, dir: 'W' },
+      right:  { x: 185, y:  80, dir: 'E' },
+      top:    { x: 100, y:  50, dir: 'N' },
+      bottom: { x: 100, y: 130, dir: 'S' },
+    },
+  },
+  // T-101 fish tank (side-view rectangular tank)
+  'T-101': {
+    inner: `
+      <path class="eq-stroke eq-fill-water"
+            d="M 30 38 L 30 110 L 170 110 L 170 38" />
+      <line x1="32" y1="46" x2="168" y2="46" class="eq-stroke-thin" stroke="#5A8AB8"/>
+      <g class="eq-stroke-thin" stroke="#5A8AB8" fill="none">
+        <path d="M 40 56 Q 48 52 56 56 T 72 56 T 88 56 T 104 56 T 120 56 T 136 56 T 152 56 T 160 56"/>
+        <path d="M 50 70 Q 60 66 70 70 T 90 70 T 110 70 T 130 70 T 150 70"/>
+      </g>
+      <g fill="#5A8AB8">
+        <path d="M 70 84 L 78 80 L 82 84 L 78 88 Z M 65 84 L 70 81 L 70 87 Z" />
+        <path d="M 110 92 L 118 88 L 122 92 L 118 96 Z M 105 92 L 110 89 L 110 95 Z" />
+      </g>
+      <line x1="30" y1="110" x2="100" y2="118" class="eq-stroke-thin"/>
+      <line x1="100" y1="118" x2="170" y2="110" class="eq-stroke-thin"/>
+      <!-- Outlet pipe: elbow at the lower-right corner, representing side draw-off -->
+      <line x1="170" y1="98" x2="180" y2="98" class="eq-stroke"/>
+    `,
+    ports: {
+      in:     { x:  50, y:  38, dir: 'N' },     // top inlet (offset left)
+      out:    { x: 180, y:  98, dir: 'E' },     // bottom-right outlet (RAS side draw-off)
+      left:   { x:  30, y:  74, dir: 'W' },
+      right:  { x: 180, y:  98, dir: 'E' },
+      top:    { x:  50, y:  38, dir: 'N' },
+      bottom: { x: 100, y: 118, dir: 'S' },
+    },
+  },
+  // F-201 drum filter (inclined rotating drum)
+  'F-201': {
+    inner: `
+      <ellipse cx="100" cy="70" rx="58" ry="34" class="eq-stroke eq-fill-light"/>
+      <g class="eq-stroke-thin" fill="none">
+        <circle cx="76" cy="60" r="2"/><circle cx="92" cy="56" r="2"/>
+        <circle cx="108" cy="58" r="2"/><circle cx="124" cy="62" r="2"/>
+        <circle cx="80" cy="74" r="2"/><circle cx="96" cy="72" r="2"/>
+        <circle cx="112" cy="74" r="2"/>
+        <circle cx="84" cy="86" r="2"/><circle cx="100" cy="86" r="2"/>
+        <circle cx="116" cy="86" r="2"/>
+      </g>
+      <line x1="42" y1="70" x2="158" y2="70" class="eq-stroke-thin"/>
+      <circle cx="100" cy="70" r="3" class="eq-stroke eq-fill-medium"/>
+    `,
+    ports: {
+      in:     { x:  42, y:  70, dir: 'W' },
+      out:    { x: 158, y:  70, dir: 'E' },
+      left:   { x:  42, y:  70, dir: 'W' },
+      right:  { x: 158, y:  70, dir: 'E' },
+      top:    { x: 100, y:  36, dir: 'N' },
+      bottom: { x: 100, y: 104, dir: 'S' },
+    },
+  },
+  // B-301 MBBR biofilter
+  'B-301': {
+    inner: `
+      <rect x="60" y="20" width="80" height="100" rx="4" class="eq-stroke eq-fill-water"/>
+      <path class="eq-stroke" d="M 60 28 Q 100 12 140 28" fill="#E8EFF7"/>
+      <g class="eq-stroke-thin" fill="#fff">
+        <circle cx="74" cy="60" r="3"/><circle cx="86" cy="68" r="3"/>
+        <circle cx="100" cy="58" r="3"/><circle cx="116" cy="64" r="3"/>
+        <circle cx="128" cy="58" r="3"/><circle cx="78" cy="76" r="3"/>
+        <circle cx="92" cy="80" r="3"/><circle cx="108" cy="76" r="3"/>
+        <circle cx="122" cy="78" r="3"/><circle cx="84" cy="92" r="3"/>
+        <circle cx="100" cy="94" r="3"/><circle cx="118" cy="92" r="3"/>
+      </g>
+      <line x1="64" y1="108" x2="136" y2="108" class="eq-stroke"/>
+      <g fill="#8B6F47">
+        <circle cx="72" cy="104" r="1.2"/><circle cx="84" cy="104" r="1.2"/>
+        <circle cx="96" cy="104" r="1.2"/><circle cx="108" cy="104" r="1.2"/>
+        <circle cx="120" cy="104" r="1.2"/><circle cx="132" cy="104" r="1.2"/>
+      </g>
+    `,
+    ports: {
+      in:     { x:  60, y:  40, dir: 'W' },
+      out:    { x: 140, y:  40, dir: 'E' },
+      air:    { x: 100, y: 120, dir: 'S' },
+      left:   { x:  60, y:  40, dir: 'W' },
+      right:  { x: 140, y:  40, dir: 'E' },
+      top:    { x: 100, y:  20, dir: 'N' },
+      bottom: { x: 100, y: 120, dir: 'S' },
+    },
+  },
+  // C-501 CO2 stripper (tall slim tower, counter-current: water in at top, air in at bottom, CO2 out at top, water out at bottom)
+  'C-501': {
+    inner: `
+      <rect x="75" y="14" width="50" height="112" rx="3" class="eq-stroke eq-fill-light"/>
+      <path class="eq-stroke" d="M 75 22 Q 100 6 125 22" fill="#FAFAF7"/>
+      <g class="eq-stroke-thin" fill="none">
+        <path d="M 80 36 Q 88 32 96 36 T 120 36"/>
+        <path d="M 80 50 Q 88 46 96 50 T 120 50"/>
+        <path d="M 80 64 Q 88 60 96 64 T 120 64"/>
+        <path d="M 80 78 Q 88 74 96 78 T 120 78"/>
+        <path d="M 80 92 Q 88 88 96 92 T 120 92"/>
+        <path d="M 80 106 Q 88 102 96 106 T 120 106"/>
+      </g>
+      <line x1="78" y1="28" x2="122" y2="28" class="eq-stroke-thin"/>
+      <!-- CO2 gas out: tower top -->
+      <line x1="100" y1="14" x2="100" y2="6" class="eq-stroke"/>
+      <!-- Water in: short horizontal pipe at the top left (counter-current: water enters at the top) -->
+      <line x1="60" y1="22" x2="75" y2="22" class="eq-stroke"/>
+      <!-- Water out: short horizontal pipe at the bottom right (stripped water exits at the bottom) -->
+      <line x1="125" y1="118" x2="140" y2="118" class="eq-stroke"/>
+      <!-- Air in: bottom left -->
+      <line x1="75" y1="118" x2="60" y2="118" class="eq-stroke"/>
+      <line x1="60" y1="118" x2="60" y2="130" class="eq-stroke-thin" stroke-dasharray="2 2"/>
+    `,
+    ports: {
+      in:     { x:  60, y:  22, dir: 'W' },     // main inlet: top left (enters horizontally from the left)
+      out:    { x: 140, y: 118, dir: 'E' },     // main outlet: bottom right (flows out horizontally to the right)
+      gas:    { x: 100, y:   6, dir: 'N' },     // CO2 out - top
+      air:    { x:  60, y: 130, dir: 'S' },     // air in - bottom left
+      // Compatibility mapping
+      left:   { x:  60, y:  22, dir: 'W' },
+      right:  { x: 140, y: 118, dir: 'E' },
+      top:    { x: 100, y:   6, dir: 'N' },
+      bottom: { x: 100, y: 126, dir: 'S' },
+    },
+  },
+  // A-601 oxygenation cone (Speece cone, narrow top / wide bottom — water enters at the top, slows inside the cone, exits at the bottom)
+  'A-601': {
+    inner: `
+      <!-- Upright cone: narrow top, wide bottom -->
+      <path class="eq-stroke eq-fill-water" d="M 90 24 L 110 24 L 150 116 L 50 116 Z"/>
+      <!-- Interior flow lines: water moving down and gradually spreading -->
+      <g class="eq-stroke-thin" stroke="#5A8AB8" fill="none">
+        <path d="M 78 88 Q 100 92 122 88"/>
+        <path d="M 70 72 Q 100 78 130 72"/>
+        <path d="M 64 56 Q 100 64 136 56"/>
+        <path d="M 60 40 Q 100 50 140 40"/>
+      </g>
+      <!-- Cone bottom cover plate -->
+      <line x1="50" y1="116" x2="150" y2="116" class="eq-stroke"/>
+      <!-- Inlet fitting: short horizontal pipe at the top left of the cone (main process enters horizontally from the left) -->
+      <line x1="60" y1="24" x2="90" y2="24" class="eq-stroke"/>
+      <!-- O2 in: top right of the cone -->
+      <line x1="110" y1="24" x2="140" y2="24" class="eq-stroke"/>
+      <line x1="140" y1="24" x2="140" y2="14" class="eq-stroke"/>
+      <!-- Outlet pipe: down from the center of the cone bottom -->
+      <line x1="100" y1="116" x2="100" y2="126" class="eq-stroke"/>
+    `,
+    ports: {
+      in:     { x:  60, y:  24, dir: 'W' },     // enters horizontally at the top left of the cone
+      out:    { x: 100, y: 126, dir: 'S' },     // outlet at the cone bottom
+      o2:     { x: 140, y:  14, dir: 'N' },     // O₂ inlet at the top
+      left:   { x:  60, y:  24, dir: 'W' },
+      right:  { x: 150, y: 116, dir: 'E' },     // bottom-right corner of the cone
+      top:    { x: 100, y:  24, dir: 'N' },     // cone top (used by the return main line)
+      bottom: { x: 100, y: 126, dir: 'S' },
+    },
+  },
+  // v1.7: M-601 SOLVOX cone mixer (mixing point) — degraded to a T-junction (solid circle + label)
+  //   M-601 is physically a mixing tee and should not be a standalone equipment icon
+  //   v1.7 fix: removed the M-601 entry from EQUIP_ICONS; draw a T-junction circle + label directly in renderBypass
+  //   In practice: the SOLVOX cone mixer is a pipe fitting (in-line mixer), not a standalone equipment slot
+
+  // v1.7.x: P-602 O₂-cone bypass pump — rendered directly by drawMainPump (shares the pump symbol with main pump P-101 + auto tag text)
+  //   The old EQUIP_ICONS['P-602'] entry was dead code (drawMainPump does not read EQUIP_ICONS) and has been removed
+  //   To change the P-602 symbol, edit drawMainPump (~L1431), which unifies all pumps
+
+  // S-701 protein skimmer
+  'S-701': {
+    inner: `
+      <rect x="80" y="40" width="40" height="80" rx="3" class="eq-stroke eq-fill-water"/>
+      <ellipse cx="100" cy="32" rx="28" ry="14" class="eq-stroke eq-fill-light"/>
+      <line x1="80" y1="40" x2="80" y2="32" class="eq-stroke"/>
+      <line x1="120" y1="40" x2="120" y2="32" class="eq-stroke"/>
+      <g fill="#fff" class="eq-stroke-thin">
+        <circle cx="88" cy="60" r="2"/><circle cx="100" cy="56" r="2.5"/>
+        <circle cx="112" cy="60" r="2"/><circle cx="92" cy="76" r="2.5"/>
+        <circle cx="108" cy="74" r="2"/><circle cx="100" cy="90" r="2"/>
+        <circle cx="88" cy="94" r="1.5"/><circle cx="112" cy="92" r="2"/>
+      </g>
+      <line x1="100" y1="18" x2="100" y2="8" class="eq-stroke"/>
+      <line x1="80" y1="60" x2="64" y2="60" class="eq-stroke"/>
+      <line x1="120" y1="100" x2="136" y2="100" class="eq-stroke"/>
+      <line x1="100" y1="120" x2="100" y2="130" class="eq-stroke"/>
+    `,
+    ports: {
+      in:     { x:  64, y:  60, dir: 'W' },
+      out:    { x: 136, y: 100, dir: 'E' },
+      foam:   { x: 100, y:   8, dir: 'N' },
+      air:    { x: 100, y: 130, dir: 'S' },
+      left:   { x:  64, y:  60, dir: 'W' },
+      right:  { x: 136, y: 100, dir: 'E' },
+      top:    { x: 100, y:   8, dir: 'N' },
+      bottom: { x: 100, y: 130, dir: 'S' },
+    },
+  },
+  // D-401 UV disinfection
+  'D-401': {
+    inner: `
+      <rect x="36" y="46" width="128" height="48" rx="6" class="eq-stroke eq-fill-light"/>
+      <ellipse cx="36" cy="70" rx="6" ry="24" class="eq-stroke eq-fill-light"/>
+      <ellipse cx="164" cy="70" rx="6" ry="24" class="eq-stroke eq-fill-light"/>
+      <line x1="44" y1="58" x2="156" y2="58" class="eq-stroke-thin" stroke-dasharray="2 2"/>
+      <line x1="44" y1="70" x2="156" y2="70" class="eq-stroke-thin" stroke-dasharray="2 2"/>
+      <line x1="44" y1="82" x2="156" y2="82" class="eq-stroke-thin" stroke-dasharray="2 2"/>
+      <text x="100" y="74" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" font-weight="600" fill="#5C2A8B">UV</text>
+      <line x1="30" y1="70" x2="18" y2="70" class="eq-stroke"/>
+      <line x1="170" y1="70" x2="182" y2="70" class="eq-stroke"/>
+    `,
+    ports: {
+      in:     { x:  18, y:  70, dir: 'W' },
+      out:    { x: 182, y:  70, dir: 'E' },
+      left:   { x:  18, y:  70, dir: 'W' },
+      right:  { x: 182, y:  70, dir: 'E' },
+      top:    { x: 100, y:  46, dir: 'N' },
+      bottom: { x: 100, y:  94, dir: 'S' },
+    },
+  },
+  // R-801 denitrification reactor
+  'R-801': {
+    inner: `
+      <rect x="60" y="20" width="80" height="100" rx="4" class="eq-stroke eq-fill-light"/>
+      <path class="eq-stroke" d="M 60 28 Q 100 12 140 28" fill="#FAFAF7"/>
+      <g class="eq-stroke-thin">
+        <line x1="68" y1="42" x2="132" y2="42"/>
+        <line x1="68" y1="56" x2="132" y2="56"/>
+        <line x1="68" y1="70" x2="132" y2="70"/>
+        <line x1="68" y1="84" x2="132" y2="84"/>
+        <line x1="68" y1="98" x2="132" y2="98"/>
+        <line x1="76" y1="38" x2="76" y2="102"/>
+        <line x1="92" y1="38" x2="92" y2="102"/>
+        <line x1="108" y1="38" x2="108" y2="102"/>
+        <line x1="124" y1="38" x2="124" y2="102"/>
+      </g>
+      <text x="100" y="116" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" font-weight="600" fill="#3D7A3D">NO₃→N₂</text>
+      <line x1="100" y1="20" x2="100" y2="10" class="eq-stroke-thin" stroke-dasharray="2 2"/>
+    `,
+    ports: {
+      in:     { x:  60, y:  40, dir: 'W' },
+      out:    { x: 140, y:  40, dir: 'E' },
+      carbon: { x: 100, y:  10, dir: 'N' },
+      left:   { x:  60, y:  40, dir: 'W' },
+      right:  { x: 140, y:  40, dir: 'E' },
+      top:    { x: 100, y:  10, dir: 'N' },
+      bottom: { x: 100, y: 120, dir: 'S' },
+    },
+  },
+  // X-901 AOP (advanced oxidation)
+  'X-901': {
+    inner: `
+      <rect x="36" y="36" width="128" height="68" rx="6" class="eq-stroke eq-fill-light"/>
+      <ellipse cx="36" cy="70" rx="6" ry="34" class="eq-stroke eq-fill-light"/>
+      <ellipse cx="164" cy="70" rx="6" ry="34" class="eq-stroke eq-fill-light"/>
+      <line x1="44" y1="50" x2="156" y2="50" class="eq-stroke-thin" stroke-dasharray="2 2"/>
+      <line x1="44" y1="60" x2="156" y2="60" class="eq-stroke-thin" stroke-dasharray="2 2"/>
+      <text x="100" y="56" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" font-weight="600" fill="#5C2A8B">UV</text>
+      <g fill="#fff" class="eq-stroke-thin">
+        <circle cx="60" cy="86" r="2"/><circle cx="76" cy="92" r="2.5"/>
+        <circle cx="92" cy="84" r="2"/><circle cx="108" cy="90" r="2.5"/>
+        <circle cx="124" cy="86" r="2"/><circle cx="140" cy="92" r="2"/>
+      </g>
+      <text x="100" y="100" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" font-weight="600" fill="#8B6F47">O₃</text>
+      <line x1="30" y1="70" x2="18" y2="70" class="eq-stroke"/>
+      <line x1="170" y1="70" x2="182" y2="70" class="eq-stroke"/>
+      <line x1="100" y1="36" x2="100" y2="24" class="eq-stroke-thin" stroke-dasharray="2 2"/>
+    `,
+    ports: {
+      in:     { x:  18, y:  70, dir: 'W' },
+      out:    { x: 182, y:  70, dir: 'E' },
+      o2:     { x: 100, y:  24, dir: 'N' },
+      left:   { x:  18, y:  70, dir: 'W' },
+      right:  { x: 182, y:  70, dir: 'E' },
+      top:    { x: 100, y:  24, dir: 'N' },
+      bottom: { x: 100, y: 116, dir: 'S' },
+    },
+  },
+  // V-901 LOX tank (liquid-oxygen tank, vertical cylinder)
+  'V-901': {
+    inner: `
+      <!-- Vertical cylindrical tank: rounded rectangle + top head -->
+      <rect x="60" y="32" width="80" height="80" rx="3" class="eq-stroke eq-fill-light"/>
+      <!-- Top elliptical head -->
+      <ellipse cx="100" cy="32" rx="40" ry="10" class="eq-stroke eq-fill-light"/>
+      <!-- Bottom elliptical head (dashed to show it is behind the shell) -->
+      <path class="eq-stroke" d="M 60 112 Q 100 122 140 112" fill="none"/>
+      <!-- Safety valve: triangle on top -->
+      <path class="eq-stroke" d="M 96 22 L 100 14 L 104 22 Z" fill="#fff"/>
+      <line x1="100" y1="22" x2="100" y2="32" class="eq-stroke"/>
+      <!-- LOX label -->
+      <text x="100" y="74" text-anchor="middle" font-family="ui-monospace, monospace" font-size="13" font-weight="700" fill="#3D6BA8">LOX</text>
+      <!-- Bottom legs (4 short diagonal lines) -->
+      <line x1="68" y1="118" x2="64" y2="128" class="eq-stroke"/>
+      <line x1="80" y1="118" x2="78" y2="128" class="eq-stroke"/>
+      <line x1="120" y1="118" x2="122" y2="128" class="eq-stroke"/>
+      <line x1="132" y1="118" x2="136" y2="128" class="eq-stroke"/>
+      <!-- Gas outlet pipe: top right -->
+      <line x1="130" y1="32" x2="140" y2="32" class="eq-stroke"/>
+      <line x1="140" y1="32" x2="140" y2="20" class="eq-stroke"/>
+    `,
+    ports: {
+      out:    { x: 140, y:  20, dir: 'N' },     // gas out at the top (to A-601)
+      top:    { x: 140, y:  20, dir: 'N' },
+      left:   { x:  60, y:  72, dir: 'W' },
+      right:  { x: 140, y:  72, dir: 'E' },
+      bottom: { x: 100, y: 128, dir: 'S' },
+      in:     { x:  60, y:  72, dir: 'W' },
+    },
+  },
+  // G-901 O₃ generator (electrical-cabinet form)
+  'G-901': {
+    inner: `
+      <!-- Electrical cabinet: rectangle, more "machine"-like than a tank (square corners) -->
+      <rect x="40" y="20" width="120" height="100" rx="2" class="eq-stroke eq-fill-light"/>
+      <!-- Small top color bar for the control panel -->
+      <rect x="40" y="20" width="120" height="8" class="eq-stroke" fill="#D4DCE6"/>
+      <!-- Interior: O₃ label + electrode symbol -->
+      <text x="100" y="60" text-anchor="middle" font-family="ui-monospace, monospace" font-size="20" font-weight="700" fill="#5C2A8B">O₃</text>
+      <!-- Electrode pair (two wavy lines, top and bottom) -->
+      <line x1="58" y1="78" x2="142" y2="78" class="eq-stroke-thin"/>
+      <line x1="58" y1="98" x2="142" y2="98" class="eq-stroke-thin"/>
+      <!-- Discharge between electrodes (zig-zag) -->
+      <path class="eq-stroke-thin" stroke="#C49A4F" d="M 70 80 L 72 88 L 68 92 L 70 96" fill="none"/>
+      <path class="eq-stroke-thin" stroke="#C49A4F" d="M 100 80 L 102 88 L 98 92 L 100 96" fill="none"/>
+      <path class="eq-stroke-thin" stroke="#C49A4F" d="M 130 80 L 132 88 L 128 92 L 130 96" fill="none"/>
+      <!-- Lightning symbol: power supply -->
+      <path class="eq-stroke-thin" d="M 50 32 L 47 38 L 50 38 L 47 44" fill="none" stroke="#C49A4F"/>
+      <!-- Gas inlet (air in on the left) -->
+      <line x1="30" y1="70" x2="40" y2="70" class="eq-stroke"/>
+      <!-- Gas outlet (O₃ out on the right) -->
+      <line x1="160" y1="70" x2="170" y2="70" class="eq-stroke"/>
+    `,
+    ports: {
+      in:     { x:  30, y:  70, dir: 'W' },     // air in
+      out:    { x: 170, y:  70, dir: 'E' },     // O₃ out
+      top:    { x: 100, y:  20, dir: 'N' },
+      left:   { x:  30, y:  70, dir: 'W' },
+      right:  { x: 170, y:  70, dir: 'E' },
+      bottom: { x: 100, y: 120, dir: 'S' },
+    },
+  },
+  // K-302 Roots blower (oval casing + twin internal lobes)
+  'K-302': {
+    inner: `
+      <!-- Circular casing (standard ISA blower symbol) -->
+      <circle cx="100" cy="70" r="44" class="eq-stroke eq-fill-light"/>
+      <!-- Twin internal lobes (Roots two-rotor signature) -->
+      <ellipse cx="84" cy="70" rx="14" ry="8" class="eq-stroke-thin" fill="#fff"
+               transform="rotate(30 84 70)"/>
+      <ellipse cx="116" cy="70" rx="14" ry="8" class="eq-stroke-thin" fill="#fff"
+               transform="rotate(-30 116 70)"/>
+      <!-- Center point -->
+      <circle cx="84" cy="70" r="2" fill="#1F1F1E"/>
+      <circle cx="116" cy="70" r="2" fill="#1F1F1E"/>
+      <!-- Inlet port (left, larger than the outlet) -->
+      <line x1="56" y1="70" x2="40" y2="70" class="eq-stroke"/>
+      <line x1="40" y1="64" x2="40" y2="76" class="eq-stroke"/>
+      <!-- Outlet port (right) -->
+      <line x1="144" y1="70" x2="160" y2="70" class="eq-stroke"/>
+      <!-- Label -->
+      <text x="100" y="118" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" font-weight="600" fill="#5C5B57">BLOWER</text>
+    `,
+    ports: {
+      in:     { x:  40, y:  70, dir: 'W' },
+      out:    { x: 160, y:  70, dir: 'E' },
+      top:    { x: 100, y:  26, dir: 'N' },
+      left:   { x:  40, y:  70, dir: 'W' },
+      right:  { x: 160, y:  70, dir: 'E' },
+      bottom: { x: 100, y: 114, dir: 'S' },
+    },
+  },
+  // v1.7: K-101 tank aeration blower (air mode only) — distinct from K-302 (biofilter blower, serving the MBBR)
+  //   K-101 serves fish tank T-101 (fine-bubble diffuser discs, high SOTE), pressure 70-90 kPa
+  //   K-302 serves biofilter B-301 (coarse-bubble aeration, scouring the media), pressure 20-40 kPa
+  //   Both are independent units with the same twin-lobe Roots blower symbol (differing only in label + tag number)
+  //   ISA symbol: circle + twin lobes + inlet larger than outlet
+  'K-101': {
+    inner: `
+      <!-- Circular casing (standard ISA blower symbol) -->
+      <circle cx="100" cy="70" r="44" class="eq-stroke eq-fill-light"/>
+      <!-- Twin internal lobes (Roots two-rotor signature) -->
+      <ellipse cx="84" cy="70" rx="14" ry="8" class="eq-stroke-thin" fill="#fff"
+               transform="rotate(30 84 70)"/>
+      <ellipse cx="116" cy="70" rx="14" ry="8" class="eq-stroke-thin" fill="#fff"
+               transform="rotate(-30 116 70)"/>
+      <!-- Center point -->
+      <circle cx="84" cy="70" r="2" fill="#1F1F1E"/>
+      <circle cx="116" cy="70" r="2" fill="#1F1F1E"/>
+      <!-- Inlet port (left, larger than the outlet) -->
+      <line x1="56" y1="70" x2="40" y2="70" class="eq-stroke"/>
+      <line x1="40" y1="64" x2="40" y2="76" class="eq-stroke"/>
+      <!-- Outlet port (right) -->
+      <line x1="144" y1="70" x2="160" y2="70" class="eq-stroke"/>
+      <!-- Label (distinct from K-302: TANK BLOWER, not BF BLOWER) -->
+      <text x="100" y="118" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" font-weight="600" fill="#5C5B57">TANK BLOWER</text>
+    `,
+    ports: {
+      in:     { x:  40, y:  70, dir: 'W' },
+      out:    { x: 160, y:  70, dir: 'E' },
+      top:    { x: 100, y:  26, dir: 'N' },
+      left:   { x:  40, y:  70, dir: 'W' },
+      right:  { x: 160, y:  70, dir: 'E' },
+      bottom: { x: 100, y: 114, dir: 'S' },
+    },
+  },
+  // H-801 heat pump unit (rectangular cabinet + refrigerant loop)
+  'H-801': {
+    inner: `
+      <!-- Rectangular cabinet -->
+      <rect x="40" y="24" width="120" height="92" rx="2" class="eq-stroke eq-fill-light"/>
+      <!-- Top color bar (cabinet shell) -->
+      <rect x="40" y="24" width="120" height="6" class="eq-stroke" fill="#E8D4D4"/>
+      <!-- Interior: refrigerant loop (oval ring) -->
+      <ellipse cx="100" cy="74" rx="42" ry="26" class="eq-stroke-thin" fill="none"/>
+      <!-- Four component labels at the corners of the oval -->
+      <!-- Compressor (top) -->
+      <circle cx="100" cy="48" r="6" class="eq-stroke-thin" fill="#fff"/>
+      <text x="100" y="51" text-anchor="middle" font-family="ui-monospace, monospace" font-size="6" font-weight="600" fill="#1F1F1E">C</text>
+      <!-- Condenser (right) -->
+      <rect x="138" y="68" width="10" height="12" class="eq-stroke-thin" fill="#fff"/>
+      <line x1="140" y1="71" x2="146" y2="71" class="eq-stroke-thin"/>
+      <line x1="140" y1="74" x2="146" y2="74" class="eq-stroke-thin"/>
+      <line x1="140" y1="77" x2="146" y2="77" class="eq-stroke-thin"/>
+      <!-- Evaporator (left) -->
+      <rect x="52" y="68" width="10" height="12" class="eq-stroke-thin" fill="#fff"/>
+      <line x1="54" y1="71" x2="60" y2="71" class="eq-stroke-thin"/>
+      <line x1="54" y1="74" x2="60" y2="74" class="eq-stroke-thin"/>
+      <line x1="54" y1="77" x2="60" y2="77" class="eq-stroke-thin"/>
+      <!-- Expansion valve (diamond at the bottom) -->
+      <path class="eq-stroke-thin" d="M 100 96 L 104 100 L 100 104 L 96 100 Z" fill="#fff"/>
+      <!-- Flow arrow (cooling mode: clockwise) -->
+      <path class="eq-stroke-thin" stroke="#5A8AB8" d="M 130 50 L 134 53 L 132 57" fill="none"/>
+      <!-- HP label -->
+      <text x="100" y="22" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" font-weight="600" fill="#5C5B57">HP</text>
+      <!-- Hot-water in/out (left and right sides) -->
+      <line x1="30" y1="70" x2="40" y2="70" class="eq-stroke"/>
+      <line x1="160" y1="70" x2="170" y2="70" class="eq-stroke"/>
+    `,
+    ports: {
+      in:     { x:  30, y:  70, dir: 'W' },
+      out:    { x: 170, y:  70, dir: 'E' },
+      top:    { x: 100, y:  24, dir: 'N' },
+      left:   { x:  30, y:  70, dir: 'W' },
+      right:  { x: 170, y:  70, dir: 'E' },
+      bottom: { x: 100, y: 116, dir: 'S' },
+    },
+  },
+};
+
+/**
+ * Equipment rendering. If the tag is in EQUIP_ICONS, use the real ISA icon; otherwise use a rectangular fallback.
+ *
+ * Key points:
+ *   - the icon is drawn in the standard 200x140 viewBox and scaled to GRID.eq.w × GRID.eq.h at render time
+ *   - text labels (tag/name/params) are placed below the icon, not overlaid inside the box
+ *   - ports are read from the icon dictionary and scaled to canvas coordinates
+ */
+function drawEquipBox(parent, cx, cy, opts) {
+  const w = opts.w || GRID.eq.w;
+  const h = opts.h || GRID.eq.h;
+  const x = cx - w / 2;
+  const y = cy - h / 2;
+
+  const g = svgEl('g', {
+    'class': 'equip',
+    'data-tag': opts.tag,
+    'data-cx': cx,
+    'data-cy': cy,
+    'data-w': w,
+    'data-h': h,
+  }, parent);
+
+  const iconDef = EQUIP_ICONS[opts.tag];
+
+  if (iconDef) {
+    // ─── icon mode ───
+    // Scale the icon's inner SVG into the (x, y, w, h) region
+    // viewBox 200x140, scale factors sx = w/200, sy = h/140
+    const sx = w / EQUIP_ICON_VBOX_W;
+    const sy = h / EQUIP_ICON_VBOX_H;
+    const iconG = svgEl('g', {
+      'class': 'equip-icon',
+      transform: 'translate(' + x + ',' + y + ') scale(' + sx + ',' + sy + ')',
+    }, g);
+    // Write the inner SVG via innerHTML (the browser parses the SVG elements)
+    iconG.innerHTML = iconDef.inner;
+
+    // tag above the top of the icon
+    // tagOffsetY: mainline devices default to -56 (raised to clear instrument bubbles); bypass devices use -6 (close to the icon top)
+    // tagOffsetX: horizontal offset (default 0), used to clear a pipe directly above the device (e.g. the return main line above A-601)
+    const tagOffsetY = opts.tagOffsetY != null ? opts.tagOffsetY : -56;
+    const tagOffsetX = opts.tagOffsetX || 0;
+    svgEl('text', {
+      'class': 'tag',
+      x: cx + tagOffsetX, y: y + tagOffsetY, 'text-anchor': 'middle',
+      'font-size': 13, 'font-weight': 600,
+    }, g).textContent = opts.tag;
+
+    // Name + English + parameters: placed below the icon
+    // Left-align the text to the device left to clear the bypass intake riser below the middle of a mainline device's bounding box (typically B-301 text colliding with the UV / denitrification intake pipe)
+    // textAlign options: 'middle' (default) | 'left' | 'right'
+    const textAlign = opts.textAlign || 'middle';
+    // textAlign has 4 meanings:
+    //   'middle'       — text centered below the icon (default)
+    //   'left'         — text left-aligned to the device left, below the icon
+    //   'right'        — the whole text block sits outside the device right, each line left-aligned within the block
+    //                     (clears the bypass intake/return risers below, which often fall inside the device bounding box)
+    //   'rightOutside' — same as 'right', kept as an alias
+    let textX, textAnchor, textY, lineH;
+    let useBlockGroup = false;
+    if (textAlign === 'right' || textAlign === 'rightOutside') {
+      // The block renders left-aligned in a sub-group (from x=0), then a transform shifts it outside the device right
+      // y shifted to the device bottom area (same height as the 'left' / 'middle' modes)
+      useBlockGroup = true;
+      textX = 0;
+      textAnchor = 'start';
+      textY = 14;                  // within the sub-group: first-line baseline 14 (leaving room for the first line)
+      lineH = 13;
+    } else {
+      textX = textAlign === 'left' ? x : cx;
+      textAnchor = textAlign === 'left' ? 'start' : 'middle';
+      textY = y + h + 14;
+      lineH = 13;
+      // Fine-tune: positive = right, negative = left (for middle/left modes)
+      textX += (opts.textOffsetX || 0);
+    }
+
+    // Decide the text parent node: a plain g or a sub-group
+    const textParent = useBlockGroup
+      ? svgEl('g', { 'class': 'equip-text-block' }, g)
+      : g;
+
+    svgEl('text', {
+      'class': 'name',
+      x: textX, y: textY, 'text-anchor': textAnchor,
+      'font-size': 11,
+    }, textParent).textContent = opts.name || '';
+    textY += lineH + 1;
+    if (opts.sub) {
+      svgEl('text', {
+        'class': 'sub',
+        x: textX, y: textY, 'text-anchor': textAnchor,
+        'font-size': 9, 'font-style': 'italic', fill: '#5C5B57',
+      }, textParent).textContent = opts.sub;
+      textY += lineH;
+    }
+    const params = opts.params || [];
+    params.forEach((p, i) => {
+      svgEl('text', {
+        'class': 'param',
+        x: textX, y: textY + i * lineH, 'text-anchor': textAnchor,
+        'font-size': 9, fill: '#5C5B57',
+      }, textParent).textContent = p;
+    });
+
+    // 'right' / 'rightOutside': measure the sub-group width, then transform the whole block outside the device right
+    if (useBlockGroup) {
+      try {
+        const bbox = textParent.getBBox();
+        // Target position:
+        //   left edge = device right + 12 (12px padding outside the device)
+        //   top baseline area = device bottom + 14 (same height as left/middle modes)
+        const offsetX = opts.textOffsetX || 0;       // fine-tune: positive = right, negative = left
+        const dx = (x + w + 12) - bbox.x + offsetX;
+        const finalDy = (y + h) - bbox.y + 4;
+        textParent.setAttribute('transform', 'translate(' + dx + ',' + finalDy + ')');
+      } catch (e) {
+        // fallback: measurement failed (SVG not yet rendered) — use an estimated width
+        textParent.setAttribute('transform', 'translate(' + (x + w + 12 + (opts.textOffsetX || 0)) + ',' + (y + h - 14) + ')');
+      }
+    }
+
+    // Ports: map the icon dictionary's port coordinates (in the 200x140 system) to canvas coordinates
+    const ports = {};
+    Object.keys(iconDef.ports).forEach(key => {
+      const p = iconDef.ports[key];
+      ports[key] = {
+        x: x + p.x * sx,
+        y: y + p.y * sy,
+        dir: p.dir,
+      };
+    });
+    // Fallback: if any of in/out/left/right/top/bottom/center is missing, use bounding-box defaults
+    if (!ports.center) ports.center = { x: cx, y: cy, dir: null };
+    if (!ports.left)   ports.left   = { x: x,     y: cy,    dir: 'W' };
+    if (!ports.right)  ports.right  = { x: x + w, y: cy,    dir: 'E' };
+    if (!ports.top)    ports.top    = { x: cx,    y: y,     dir: 'N' };
+    if (!ports.bottom) ports.bottom = { x: cx,    y: y + h, dir: 'S' };
+    if (!ports.in)     ports.in     = ports.left;
+    if (!ports.out)    ports.out    = ports.right;
+
+    return { node: g, ports: ports };
+  }
+
+  // ─── fallback: rectangle mode ───
+  svgEl('rect', {
+    'class': 'equip-box' + (opts.kind ? ' kind-' + opts.kind : ''),
+    x: x, y: y, width: w, height: h, rx: 2, ry: 2,
+  }, g);
+
+  if (opts.kind) {
+    svgEl('rect', {
+      'class': 'equip-band kind-' + opts.kind,
+      x: x + 1, y: y + 1, width: w - 2, height: 4, rx: 1,
+    }, g);
+  }
+
+  svgEl('text', {
+    'class': 'tag',
+    x: cx, y: y + 22, 'text-anchor': 'middle',
+  }, g).textContent = opts.tag;
+
+  svgEl('text', {
+    'class': 'name',
+    x: cx, y: y + 39, 'text-anchor': 'middle',
+  }, g).textContent = opts.name || '';
+
+  if (opts.sub) {
+    svgEl('text', {
+      'class': 'sub',
+      x: cx, y: y + 53, 'text-anchor': 'middle',
+    }, g).textContent = opts.sub;
+  }
+
+  const params = opts.params || [];
+  const lineH = 13;
+  const startY = y + h - 8 - (params.length - 1) * lineH;
+  params.forEach((p, i) => {
+    svgEl('text', {
+      'class': 'param',
+      x: cx, y: startY + i * lineH, 'text-anchor': 'middle',
+    }, g).textContent = p;
+  });
+
+  return {
+    node: g,
+    ports: {
+      left:   { x: x,         y: cy,        dir: 'W' },
+      right:  { x: x + w,     y: cy,        dir: 'E' },
+      top:    { x: cx,        y: y,         dir: 'N' },
+      bottom: { x: cx,        y: y + h,     dir: 'S' },
+      in:     { x: x,         y: cy,        dir: 'W' },
+      out:    { x: x + w,     y: cy,        dir: 'E' },
+      center: { x: cx,        y: cy,        dir: null },
+    },
+  };
+}
+
+/**
+ * Main pump symbol: circle + inner triangle (ISA-5.1 standard centrifugal pump)
+ * Embedded mid-segment in the main process line, breaking the line
+ */
+function drawMainPump(parent, cx, cy, opts) {
+  const r = GRID.pump.r;
+  // v1.7.x: add data-cx/cy/w/h so lookupEquipPorts can find the pump via the .pump fallback (#18)
+  //   w/h = 2r (bounding box of the circle), so SCADA instruments attached to the pump locate correctly later
+  const g = svgEl('g', {
+    'class': 'pump',
+    'data-tag': opts.tag,
+    'data-cx': cx,
+    'data-cy': cy,
+    'data-w': 2 * r,
+    'data-h': 2 * r,
+  }, parent);
+
+  svgEl('circle', { 'class': 'pump-circle', cx: cx, cy: cy, r: r }, g);
+  // Inner triangle: pointing right (= flow direction)
+  const triPath = `M ${cx - r * 0.4} ${cy - r * 0.55} L ${cx + r * 0.65} ${cy} L ${cx - r * 0.4} ${cy + r * 0.55} Z`;
+  svgEl('path', { 'class': 'pump-triangle', d: triPath }, g);
+
+  // tag position: 'right' (default) / 'bottom' (below the circle) / 'left' / 'utility' (split: tag above, name/params on multiple lines below)
+  const tagSide = opts.tagSide || 'bottom';
+  if (tagSide === 'right') {
+    svgEl('text', {
+      'class': 'tag',
+      x: cx + r + 6, y: cy - 2, 'text-anchor': 'start',
+      'font-size': 11,
+    }, g).textContent = opts.tag;
+    if (opts.params && opts.params.length) {
+      svgEl('text', {
+        'class': 'param',
+        x: cx + r + 6, y: cy + 11, 'text-anchor': 'start',
+      }, g).textContent = opts.params.join(' · ');
+    }
+  } else if (tagSide === 'left') {
+    svgEl('text', {
+      'class': 'tag',
+      x: cx - r - 6, y: cy - 2, 'text-anchor': 'end',
+      'font-size': 11,
+    }, g).textContent = opts.tag;
+    if (opts.params && opts.params.length) {
+      svgEl('text', {
+        'class': 'param',
+        x: cx - r - 6, y: cy + 11, 'text-anchor': 'end',
+      }, g).textContent = opts.params.join(' · ');
+    }
+  } else if (tagSide === 'utility') {
+    // utility style: tag close above the symbol, name/English/params on multiple lines below (visually consistent with rectangular utilities like V-901/G-901)
+    svgEl('text', {
+      'class': 'tag',
+      x: cx, y: cy - r - 8, 'text-anchor': 'middle',
+      'font-size': 13, 'font-weight': 600,
+    }, g).textContent = opts.tag;
+    let utilY = cy + r + 14;
+    if (opts.name) {
+      svgEl('text', {
+        'class': 'name',
+        x: cx, y: utilY, 'text-anchor': 'middle',
+        'font-size': 11,
+      }, g).textContent = opts.name;
+      utilY += 14;
+    }
+    if (opts.sub) {
+      svgEl('text', {
+        'class': 'sub',
+        x: cx, y: utilY, 'text-anchor': 'middle',
+        'font-size': 9, 'font-style': 'italic', fill: '#5C5B57',
+      }, g).textContent = opts.sub;
+      utilY += 13;
+    }
+    if (opts.params && opts.params.length) {
+      opts.params.forEach((p, i) => {
+        svgEl('text', {
+          'class': 'param',
+          x: cx, y: utilY + i * 12, 'text-anchor': 'middle',
+          'font-size': 9, fill: '#5C5B57',
+        }, g).textContent = p;
+      });
+    }
+  } else {
+    svgEl('text', {
+      'class': 'tag',
+      x: cx, y: cy + r + 18, 'text-anchor': 'middle',
+      'font-size': 11,
+    }, g).textContent = opts.tag;
+    if (opts.params && opts.params.length) {
+      svgEl('text', {
+        'class': 'param',
+        x: cx, y: cy + r + 32, 'text-anchor': 'middle',
+      }, g).textContent = opts.params.join(' · ');
+    }
+  }
+
+  // VFD marker (upper-right of the circle, further from the main-line inlet than the left side)
+  if (opts.vfd) {
+    const vx = cx + r + 4;
+    const vy = cy - r - 2;
+    svgEl('rect', {
+      x: vx, y: vy - 9, width: 24, height: 12,
+      fill: '#fff', stroke: '#5C5B57', 'stroke-width': 0.8, rx: 1,
+    }, g);
+    svgEl('text', {
+      x: vx + 12, y: vy,
+      'text-anchor': 'middle',
+      'font-family': 'ui-monospace, "SF Mono", Consolas, monospace',
+      'font-size': 9, fill: '#1F1F1E',
+    }, g).textContent = 'VFD';
+  }
+
+  return {
+    node: g,
+    ports: {
+      left:  { x: cx - r, y: cy, dir: 'W' },
+      right: { x: cx + r, y: cy, dir: 'E' },
+      top:   { x: cx,     y: cy - r, dir: 'N' },
+      bottom:{ x: cx,     y: cy + r, dir: 'S' },
+      in:    { x: cx - r, y: cy, dir: 'W' },
+      out:   { x: cx + r, y: cy, dir: 'E' },
+      center:{ x: cx,     y: cy, dir: null },
+    },
+  };
+}
+
+/**
+ * Orthogonal router: from portA (leaving along its dir) to portB (entering along its dir), returns a polyline point set
+ *
+ * Routing strategy (by priority):
+ *  1. straight: ports aligned and directions compatible → 1 segment
+ *  2. L-shape (1 bend): one port leaves horizontally, the other vertically (different axes) → 2 segments
+ *  3. Z/U-shape (2 bends): same direction (E→W or N→S) → 3 segments, split at the midpoint
+ *  4. complex case (4 bends): rarely triggered, a fallback
+ *
+ * stubLen: the minimum straight run leaving a port, preventing the pipe from bending straight into the device
+ * @param {Object} portA  {x, y, dir}
+ * @param {Object} portB  {x, y, dir}
+ * @returns {Array<{x,y}>} polyline point set (including endpoints)
+ */
+/**
+ * Retract the endpoint by gap pixels in the direction opposite its dir.
+ * Keeps the marker-end arrow tip from poking into the device box (the endpoint = box edge; after retracting, the tip sits gap px outside)
+ */
+function retractPort(p, gap) {
+  if (!p.dir) return { x: p.x, y: p.y, dir: p.dir };
+  // dir is "the direction entering p"; the opposite direction points away from the device
+  const dx = p.dir === 'W' ? gap : (p.dir === 'E' ? -gap : 0);
+  const dy = p.dir === 'N' ? gap : (p.dir === 'S' ? -gap : 0);
+  return { x: p.x + dx, y: p.y + dy, dir: p.dir };
+}
+
+function orthogonalRoute(portA, portB, opts) {
+  opts = opts || {};
+  const stub = opts.stubLen != null ? opts.stubLen : 12;
+
+  // Position of the "first bend after leaving" the port
+  function stubPoint(p) {
+    switch (p.dir) {
+      case 'E': return { x: p.x + stub, y: p.y };
+      case 'W': return { x: p.x - stub, y: p.y };
+      case 'N': return { x: p.x,        y: p.y - stub };
+      case 'S': return { x: p.x,        y: p.y + stub };
+      default:  return { x: p.x,        y: p.y };
+    }
+  }
+
+  const a = portA, b = portB;
+  const aStub = stubPoint(a);
+  const bStub = stubPoint(b);
+
+  // ── Case 1: perfectly aligned straight line ──
+  // E→W on the same y row: a single horizontal line
+  if (a.dir === 'E' && b.dir === 'W' && Math.abs(a.y - b.y) < 0.5 && b.x > a.x) {
+    return [a, b];
+  }
+  // W→E on the same y row (reversed)
+  if (a.dir === 'W' && b.dir === 'E' && Math.abs(a.y - b.y) < 0.5 && b.x < a.x) {
+    return [a, b];
+  }
+  // N→S / S→N on the same x column
+  if (a.dir === 'N' && b.dir === 'S' && Math.abs(a.x - b.x) < 0.5 && b.y < a.y) {
+    return [a, b];
+  }
+  if (a.dir === 'S' && b.dir === 'N' && Math.abs(a.x - b.x) < 0.5 && b.y > a.y) {
+    return [a, b];
+  }
+
+  // ── Cases 2 & 3: same direction H↔H or V↔V (common: E→W main process) ──
+  // E→W: exit right → enter left, bending at the midpoint x then up/down
+  if ((a.dir === 'E' && b.dir === 'W') || (a.dir === 'W' && b.dir === 'E')) {
+    if (Math.abs(a.y - b.y) < 0.5) {
+      // same y, already covered by Case 1; unreachable here
+      return [a, b];
+    }
+    // midpoint x — makes the horizontal segments symmetric
+    const midX = (aStub.x + bStub.x) / 2;
+    return [
+      a,
+      { x: midX, y: a.y },
+      { x: midX, y: b.y },
+      b,
+    ];
+  }
+
+  // N→S or S→N
+  if ((a.dir === 'N' && b.dir === 'S') || (a.dir === 'S' && b.dir === 'N')) {
+    if (Math.abs(a.x - b.x) < 0.5) return [a, b];
+    const midY = (aStub.y + bStub.y) / 2;
+    return [
+      a,
+      { x: a.x, y: midY },
+      { x: b.x, y: midY },
+      b,
+    ];
+  }
+
+  // ── Case 4: orthogonal directions (E→S, S→W, ...) — L-shape, 1 bend ──
+  // Which endpoint turns first depends on the direction
+  // e.g. E→S (exit east, enter south) → go to b.x, then down to b
+  if (a.dir === 'E' || a.dir === 'W') {
+    // a leaves horizontally, b enters vertically → path: a → (b.x, a.y) → b
+    return [a, { x: b.x, y: a.y }, b];
+  } else {
+    // a leaves vertically, b enters horizontally → path: a → (a.x, b.y) → b
+    return [a, { x: a.x, y: b.y }, b];
+  }
+}
+
+/**
+ * Render a polyline point set as an SVG path, with small rounded corners (cornerR) at bends
+ */
+function pointsToPath(pts, cornerR) {
+  if (pts.length < 2) return '';
+  if (pts.length === 2 || !cornerR) {
+    // straight line, or no rounding
+    return 'M ' + pts.map(p => p.x + ' ' + p.y).join(' L ');
+  }
+  // Rounded bends: each interior point uses a quadratic-like right-angle arc
+  let d = 'M ' + pts[0].x + ' ' + pts[0].y;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const prev = pts[i - 1], curr = pts[i], next = pts[i + 1];
+    // back off by cornerR along the incoming direction
+    const inDx = Math.sign(curr.x - prev.x), inDy = Math.sign(curr.y - prev.y);
+    const outDx = Math.sign(next.x - curr.x), outDy = Math.sign(next.y - curr.y);
+    const r = Math.min(
+      cornerR,
+      Math.hypot(curr.x - prev.x, curr.y - prev.y) / 2,
+      Math.hypot(next.x - curr.x, next.y - curr.y) / 2
+    );
+    const p1 = { x: curr.x - inDx * r, y: curr.y - inDy * r };
+    const p2 = { x: curr.x + outDx * r, y: curr.y + outDy * r };
+    d += ' L ' + p1.x + ' ' + p1.y;
+    d += ' Q ' + curr.x + ' ' + curr.y + ' ' + p2.x + ' ' + p2.y;
+  }
+  const last = pts[pts.length - 1];
+  d += ' L ' + last.x + ' ' + last.y;
+  return d;
+}
+
+/**
+ * Find the midpoint of the longest horizontal segment, for placing a label (avoiding labels over vertical segments)
+ */
+function longestHorizontalMid(pts) {
+  let bestLen = -1, bestMid = null;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1];
+    if (Math.abs(a.y - b.y) < 0.5) {
+      const len = Math.abs(b.x - a.x);
+      if (len > bestLen) {
+        bestLen = len;
+        bestMid = { x: (a.x + b.x) / 2, y: a.y };
+      }
+    }
+  }
+  return bestMid;
+}
+
+/**
+ * Main pipeline (orthogonal-routing version)
+ * portA, portB: must include a dir field
+ */
+function drawMainLine(parent, portA, portB, label) {
+  const g = svgEl('g', { 'class': 'flow-line' }, parent);
+  const portBRetracted = retractPort(portB, 6);
+  const pts = orthogonalRoute(portA, portBRetracted);
+  const d = pointsToPath(pts, 5);
+
+  svgEl('path', {
+    'class': 'main-line',
+    d: d,
+    'marker-end': 'url(#arrow)',
+  }, g);
+
+  if (label) {
+    const mid = longestHorizontalMid(pts) || {
+      x: (portA.x + portBRetracted.x) / 2,
+      y: (portA.y + portBRetracted.y) / 2,
+    };
+    svgEl('text', {
+      'class': 'line-label',
+      x: mid.x, y: mid.y - 8, 'text-anchor': 'middle',
+    }, g).textContent = label;
+  }
+
+  return g;
+}
+
+/**
+ * Generic line (reuses orthogonal routing + path rendering) but allows a custom CSS class
+ */
+function drawLine(parent, portA, portB, opts) {
+  opts = opts || {};
+  const g = svgEl('g', { 'class': opts.gClass || 'flow-line' }, parent);
+  // Retract the endpoint by 6px so the arrow tip does not poke into the target device
+  const endGap = opts.endGap != null ? opts.endGap : 6;
+  const portBRetracted = (opts.arrow !== false) ? retractPort(portB, endGap) : portB;
+  const pts = orthogonalRoute(portA, portBRetracted);
+  const d = pointsToPath(pts, opts.cornerR != null ? opts.cornerR : 5);
+
+  const pathAttrs = {
+    'class': opts.lineClass || 'main-line',
+    d: d,
+    fill: 'none',
+  };
+  if (opts.arrow !== false) pathAttrs['marker-end'] = 'url(#arrow)';
+
+  svgEl('path', pathAttrs, g);
+
+  if (opts.label) {
+    const mid = longestHorizontalMid(pts) || {
+      x: (portA.x + portBRetracted.x) / 2,
+      y: (portA.y + portBRetracted.y) / 2,
+    };
+    svgEl('text', {
+      'class': 'line-label',
+      x: mid.x, y: mid.y - 8, 'text-anchor': 'middle',
+    }, g).textContent = opts.label;
+  }
+
+  return g;
+}
+
+/**
+ * Instrument bubble: circle + two interior lines (type/number), with an optional dashed line to the device
+ *   pos: { x, y } bubble center
+ *   anchor: { x, y } the connection point on the device (other end of the dashed line); null = no line
+ */
+function drawInstrumentBubble(parent, pos, anchor, type, number) {
+  const r = 14;
+  const g = svgEl('g', { 'class': 'instrument', 'data-tag': type + '-' + number }, parent);
+
+  if (anchor) {
+    svgEl('line', {
+      'class': 'instrument-bubble-line',
+      x1: pos.x, y1: pos.y, x2: anchor.x, y2: anchor.y,
+    }, g);
+  }
+
+  svgEl('circle', { 'class': 'instrument-bubble', cx: pos.x, cy: pos.y, r: r }, g);
+  // Center line
+  svgEl('line', {
+    x1: pos.x - r + 1, y1: pos.y, x2: pos.x + r - 1, y2: pos.y,
+    stroke: '#5C5B57', 'stroke-width': 0.6,
+  }, g);
+
+  svgEl('text', {
+    'class': 'instrument-text',
+    x: pos.x, y: pos.y - 4,
+  }, g).textContent = type;
+  svgEl('text', {
+    'class': 'instrument-text',
+    x: pos.x, y: pos.y + 6,
+    'font-size': 8,
+  }, g).textContent = number;
+
+  return {
+    node: g,
+    ports: {
+      top:    { x: pos.x, y: pos.y - r, dir: 'N' },
+      bottom: { x: pos.x, y: pos.y + r, dir: 'S' },
+      left:   { x: pos.x - r, y: pos.y, dir: 'W' },
+      right:  { x: pos.x + r, y: pos.y, dir: 'E' },
+    },
+  };
+}
+
+/**
+ * Draw an "off-page connector" short arrow + label (instead of a long cross-band line)
+ *
+ *   port:      the device port (with dir); the stub starts here
+ *   medium:    the medium name, e.g. "gaseous O₂"
+ *   peerTag:   the paired device tag, e.g. "A-601"
+ *   role:      'source' | 'target'
+ *              source = the medium leaves this device → label "→ peerTag"
+ *              target = the medium arrives from elsewhere → label "← peerTag"
+ *   lineClass: the stub style ('gas-line' / 'thermal-line' / 'signal-line')
+ *   colOffset: horizontal offset when a device has multiple stubs (default 0)
+ */
+function drawStub(parent, port, medium, peerTag, role, lineClass, colOffset, opts) {
+  colOffset = colOffset || 0;
+  opts = opts || {};
+  const STUB_LEN = 28;
+  const g = svgEl('g', { 'class': 'stub', 'data-peer': peerTag }, parent);
+
+  let dx = 0, dy = 0;
+  if (port.dir === 'N') dy = -1;
+  else if (port.dir === 'S') dy = 1;
+  else if (port.dir === 'E') dx = 1;
+  else if (port.dir === 'W') dx = -1;
+
+  let perpDx = 0, perpDy = 0;
+  if (port.dir === 'N' || port.dir === 'S') perpDx = 1;
+  else perpDy = 1;
+
+  const startX = port.x + perpDx * colOffset;
+  const startY = port.y + perpDy * colOffset;
+  const endX   = startX + dx * STUB_LEN;
+  const endY   = startY + dy * STUB_LEN;
+
+  const linePts = role === 'source'
+    ? { x1: startX, y1: startY, x2: endX, y2: endY }
+    : { x1: endX,   y1: endY,   x2: startX, y2: startY };
+
+  svgEl('path', {
+    'class': lineClass,
+    d: 'M ' + linePts.x1 + ' ' + linePts.y1 + ' L ' + linePts.x2 + ' ' + linePts.y2,
+    fill: 'none',
+    'marker-end': 'url(#arrow)',
+  }, g);
+
+  const labelX = endX + dx * 6;
+  const labelY = endY + dy * 6;
+  let textAnchor = 'middle';
+  if (port.dir === 'E') textAnchor = 'start';
+  else if (port.dir === 'W') textAnchor = 'end';
+
+  const mediumColor = lineClass === 'thermal-line' ? '#C04545'
+                    : lineClass === 'signal-line'  ? '#C04545'
+                    :                                '#8B6F47';
+  const arrow = role === 'source' ? '→ ' : '← ';
+
+  // Single-line mode: medium and tag combined — a compact version for tight spaces
+  if (opts.compact) {
+    svgEl('text', {
+      x: labelX, y: labelY + (port.dir === 'N' ? -4 : 10),
+      'text-anchor': textAnchor,
+      'font-family': 'ui-monospace, "SF Mono", Consolas, monospace',
+      'font-size': 9, 'font-weight': 600,
+      fill: '#1F1F1E',
+    }, g).textContent = arrow + peerTag + ' (' + medium + ')';
+  } else {
+    // Medium line
+    svgEl('text', {
+      x: labelX, y: labelY + (port.dir === 'N' ? -4 : 8),
+      'text-anchor': textAnchor,
+      'font-family': 'ui-monospace, "SF Mono", Consolas, monospace',
+      'font-size': 9,
+      fill: mediumColor,
+    }, g).textContent = medium;
+
+    // Paired-tag line
+    svgEl('text', {
+      x: labelX, y: labelY + (port.dir === 'N' ? -16 : 19),
+      'text-anchor': textAnchor,
+      'font-family': 'ui-monospace, "SF Mono", Consolas, monospace',
+      'font-size': 9, 'font-weight': 600,
+      fill: '#1F1F1E',
+    }, g).textContent = arrow + peerTag;
+  }
+
+  return g;
+}
+
+/**
+ * Look up a device's ports within a layer. Returns { left, right, top, bottom }, each {x,y,dir}
+ * Used for cross-layer connections (bypass → main process, utility → main process)
+ */
+function lookupEquipPorts(tag) {
+  // v1.7.x: prefer .equip, fall back to .pump (main/bypass pumps are created by drawMainPump and also carry data-cx/cy/w/h)
+  let equipG = document.querySelector('.equip[data-tag="' + tag + '"]');
+  if (!equipG) equipG = document.querySelector('.pump[data-tag="' + tag + '"]');
+  if (!equipG) return null;
+
+  const cx = parseFloat(equipG.getAttribute('data-cx'));
+  const cy = parseFloat(equipG.getAttribute('data-cy'));
+  const w  = parseFloat(equipG.getAttribute('data-w'));
+  const h  = parseFloat(equipG.getAttribute('data-h'));
+  if (!isFinite(cx) || !isFinite(cy)) return null;
+
+  // If in icon mode and the dictionary has custom ports, use the icon-defined ports
+  // Otherwise use the midpoints of the 4 sides of the bounding box
+  const iconDef = EQUIP_ICONS[tag];
+  if (iconDef && iconDef.ports) {
+    const sx = w / EQUIP_ICON_VBOX_W;
+    const sy = h / EQUIP_ICON_VBOX_H;
+    const x = cx - w / 2;
+    const y = cy - h / 2;
+    const ports = {};
+    Object.keys(iconDef.ports).forEach(key => {
+      const p = iconDef.ports[key];
+      ports[key] = { x: x + p.x * sx, y: y + p.y * sy, dir: p.dir };
+    });
+    if (!ports.center) ports.center = { x: cx, y: cy, dir: null };
+    return ports;
+  }
+
+  // fallback: midpoints of the 4 sides of the rectangle
+  return {
+    left:   { x: cx - w / 2,  y: cy,        dir: 'W' },
+    right:  { x: cx + w / 2,  y: cy,        dir: 'E' },
+    top:    { x: cx,          y: cy - h / 2, dir: 'N' },
+    bottom: { x: cx,          y: cy + h / 2, dir: 'S' },
+    center: { x: cx,          y: cy,        dir: null },
+    in:     { x: cx - w / 2,  y: cy,        dir: 'W' },
+    out:    { x: cx + w / 2,  y: cy,        dir: 'E' },
+  };
+}
+
+// ─── Bypass layer ────────────────────────────────────────────
+// Design: each bypass occupies its own vertical row (rowIdx 0..3), enclosed by an envelope to mark an independent process unit
+// Each loop contains: intake point + branch pump + treatment device + return point (4 elements in a horizontal row)
+function renderBypass(stage) {
+  const layer = $('layer-bypass');
+  layer.innerHTML = '';
+
+  const eq = stage.equipment;
+  const pumps = stage.pumps;
+  const flowMain = stage.flow.flowMain;
+  const uvFlowPct = eq.uv.flow ? Math.round(eq.uv.flow / flowMain * 100) : 0;
+
+  // Candidate bypasses (3: skimmer / denitrification / UV)
+  // v1.3.x: main path T-101 → RDF → MBBR → CO2 → S-101 → P-101 → A-601 → back to T-101
+  //   - skimmer  : F-201 → B-301 (intake after RDF, return before MBBR)
+  //   - denitri  : B-301 → C-501 (intake after MBBR, return before CO2)
+  //   - UV       : C-501 → S-101 (intake after CO2, return before the sump)
+  //   - AOP      : moved to the utility layer (run on demand), not in the bypass layer; see renderUtility
+  const candidates = [
+    { item: eq.skimmer, pump: pumps.skimmerBranch, mainFrom: 'F-201', mainTo: 'B-301',
+      name: 'Protein skimmer', sub: 'Protein skimmer', kind: 'aerator',
+      params: function(s) { return ['α ' + s.flowPct + '%', 'η_DOM ' + s.domEff + '%', 'V ' + fmtNum(s.volume) + ' m³']; }
+    },
+    { item: eq.denitri, pump: pumps.denitriBranch, mainFrom: 'B-301', mainTo: 'C-501',
+      name: 'Denitrification reactor', sub: 'Denitrification', kind: 'bio',
+      params: function(s) { return ['α ' + s.flowPct + '%', 'η_NO₃ ' + s.no3Eff + '%', 'V ' + fmtNum(s.volume) + ' m³']; }
+    },
+    { item: eq.uv, pump: pumps.uvBranch, mainFrom: 'C-501', mainTo: 'S-101',
+      name: 'UV disinfection', sub: 'UV sterilizer', kind: 'uv',
+      forceEnabled: true,
+      flowPctOverride: uvFlowPct,
+      params: function(s) { return ['α ' + uvFlowPct + '%', fmtNum(s.powerKw) + ' kW', s.dose + ' mJ/cm²']; }
+    },
+  ];
+
+  const enabled = candidates.filter(c => c.item && (c.forceEnabled || c.item.enabled));
+  const N = enabled.length;
+  if (N === 0) return;
+
+  // v1.3.x: bypass layout — single-row simple layout
+  //   - each bypass device cx = the midpoint of its main segment (mainFrom.right + mainTo.left)/2
+  //   - intake/return T-junctions sit on the main-line connection (not into the device)
+  //   - the three bypasses (skimmer/denitri/UV) each occupy a separate segment, no shared segment
+  //   - AOP moved to the utility layer (run on demand), not here
+  const tapFromCount = {};
+  const tapToCount = {};
+  enabled.forEach(c => {
+    tapFromCount[c.mainFrom] = (tapFromCount[c.mainFrom] || 0) + 1;
+    tapToCount[c.mainTo]     = (tapToCount[c.mainTo]   || 0) + 1;
+  });
+
+  // Bypass-area baseline y (single-row layout)
+  const baseRowY = GRID.bands.bypass.y;
+
+  enabled.forEach((c, idx) => {
+    const fromPorts = lookupEquipPorts(c.mainFrom);
+    const toPorts   = lookupEquipPorts(c.mainTo);
+    if (!fromPorts || !toPorts) return;
+
+    // T-junction positions (all 3 bypasses own their main segment; no offset needed)
+    //   the main line uses ports.out (mainFrom) → ports.in (mainTo), so the T-junction y must match them
+    //   x: mainFrom device out.x + 30 (intake)  /  mainTo device in.x - 30 (return)
+    //   y: fromPorts.out.y / toPorts.in.y (matches the main line so the T-junction circle sits on it)
+    //   note: orthogonalRoute first runs a stub in the port direction; at 30px it is usually still within the stub or the same-y segment after it
+    const TAP_BASE_OFFSET = 30;
+    const fromOutPort = fromPorts.out || fromPorts.right;
+    const toInPort    = toPorts.in    || toPorts.left;
+    const tapInPort  = {
+      x: fromOutPort.x + TAP_BASE_OFFSET,
+      y: fromOutPort.y,
+      dir: 'S'
+    };
+    const tapOutPort = {
+      x: toInPort.x - TAP_BASE_OFFSET,
+      y: toInPort.y,
+      dir: 'S'
+    };
+
+    // v1.3.x: branch layout
+    //   - pump cx = intake T-junction x (so the intake pipe is a pure vertical line, no horizontal bend)
+    //   - device cx = pump cx + 110 (device 110px to the right of the pump)
+    //   - bypass sits one row below the main process (baseRowY)
+    const pumpCx = tapInPort.x;
+    const eqCx   = pumpCx + 110;
+    const rowY = baseRowY;
+    const eqCy = rowY + GRID.eq.h / 2;
+    // intake horizontal corridor y: 60px below the main process (clear of both the main line and bypass devices)
+    const tapBendY = rowY - 60;
+
+    // ─── Device ───
+    const eqNode = drawEquipBox(layer, eqCx, eqCy, {
+      tag: c.item.tag, name: c.name, sub: c.sub, kind: c.kind,
+      params: c.params(c.item),
+      tagOffsetY: -6,         // bypass devices have no instrument bubble, so the tag sits close to the icon top (the -56 default is for mainline instrument clearance)
+    });
+
+    // ─── Pump ───
+    const pumpCy = eqCy;
+    const pumpNode = drawMainPump(layer, pumpCx, pumpCy, {
+      tag: c.pump.tag,
+      vfd: false,
+      params: [fmtNum(c.pump.kw) + ' kW'],
+      tagSide: 'left',
+    });
+
+    // ─── Intake pipe (vertical line): T-junction → pump.top, a single vertical line
+    // since pumpCx == tapInPort.x, a straight two-point line is enough
+    const inPath = [
+      tapInPort,
+      pumpNode.ports.top,
+    ];
+    const inD = pointsToPath(inPath, 5);
+    svgEl('path', {
+      'class': 'bypass-line',
+      d: inD, fill: 'none',
+      'marker-end': 'url(#arrow)',
+    }, layer);
+
+    // v1.3.x: T-junction marker (intake) — a small solid circle on the main line
+    svgEl('circle', {
+      cx: tapInPort.x, cy: tapInPort.y,
+      r: 3, fill: '#1F1F1E', stroke: 'none',
+      'class': 'tap-junction',
+    }, layer);
+
+    // flow-percentage label (right of the midpoint of the intake riser)
+    const flowPctLabel = (c.item.flowPct != null ? c.item.flowPct : c.flowPctOverride) + '%';
+    svgEl('text', {
+      'class': 'line-label',
+      x: tapInPort.x + 6,
+      y: (tapInPort.y + pumpNode.ports.top.y) / 2,
+      'text-anchor': 'start',
+    }, layer).textContent = flowPctLabel;
+
+    // ─── Pump → device (horizontal line) ───
+    drawLine(layer, pumpNode.ports.right, eqNode.ports.left, {
+      lineClass: 'bypass-line',
+    });
+
+    // ─── Return pipe (L-shape): device right → horizontal to the T-junction x → up to the main line ───
+    // the last segment goes straight up with the arrow pointing up at the main-line T-junction (more clearly "joining the main line" than a horizontal arrow)
+    const outPath = [
+      eqNode.ports.right,
+      { x: tapOutPort.x, y: eqNode.ports.right.y },
+      tapOutPort,
+    ];
+    const outD = pointsToPath(outPath, 5);
+    svgEl('path', {
+      'class': 'bypass-line',
+      d: outD, fill: 'none',
+      'marker-end': 'url(#arrow)',
+    }, layer);
+
+    // v1.3.x: T-junction marker (return) — a small solid circle on the main line, marking "rejoins the main flow here"
+    svgEl('circle', {
+      cx: tapOutPort.x, cy: tapOutPort.y,
+      r: 3, fill: '#1F1F1E', stroke: 'none',
+      'class': 'tap-junction',
+    }, layer);
+  });
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // v1.7: O₂-cone bypass — visually consistent with the 3 other bypasses, but physically special:
+  //   - intake: between S-101 → P-101 (before the main pump, 10% off the S-101 outlet pipe)
+  //          reason: both pre-pump and post-pump intake are valid in practice, but the former gives a cleaner drawing
+  //   - bypass devices: P-602 bypass pump → A-601 O₂ cone (2 devices in series)
+  //   - return: M-601 T-junction (on the horizontal segment after main pump P-101, directly above A-601)
+  //          visual: A-601 right outlet → straight up to M-601 → along the main return header → back to T-101
+  //   - flow: main Q × o2BypassRatio (typically 10%)
+  // ═════════════════════════════════════════════════════════════════════════
+  if (eq.o2cone && eq.o2cone.enabled && eq.o2cone.topology === 'bypass') {
+    const bypassRatio = eq.o2cone.bypassRatio || 10;
+    const bypassFlow = eq.o2cone.bypassFlow || 0;
+    const bypassPumpKw = eq.o2cone.bypassPumpKw || 0;
+    const bypassPumpHead = eq.o2cone.bypassPumpHead_m || 20;
+
+    // Anchors: S-101 sump (reference for the intake T-junction) + main pump P-101 (reference for the M-601 T-junction)
+    const sumpPorts = lookupEquipPorts('S-101');
+    const mainPump = STATE.mainPumpNode;
+    if (!sumpPorts || !mainPump) {
+      // fallback: main process not ready, skip
+    } else {
+      const sumpRightX = sumpPorts.right.x;
+      const sumpY = sumpPorts.right.y;
+      const pumpOutX = mainPump.ports.out.x;
+      const pumpY = mainPump.ports.out.y;
+      // A-601 cx anchor: main pump right + 30 (on the post-pump horizontal segment, directly above A-601 = M-601 T-junction)
+      const a601Cx = pumpOutX + 30;
+      // P-602 cx: A-601 left 110 (standard bypass spacing)
+      const p602Cx = a601Cx - 110;
+      // intake T-junction: at P-602 cx (intake pipe is a pure vertical line)
+      //   check: P-602 cx should lie between S-101.right ↔ P-101.in (the S-101 outlet segment)
+      const tapInPort = {
+        x: p602Cx,
+        y: sumpY,            // matches the S-101 outlet y (main horizontal line)
+        dir: 'S'
+      };
+      // M-601 return T-junction: on the post-pump horizontal segment, directly above A-601
+      const tapOutPort = {
+        x: a601Cx,           // aligned with A-601 cx
+        y: pumpY,            // at the main horizontal line y (main-pump outlet height)
+        dir: 'S'
+      };
+
+      // layout: bypass below the main process (baseRowY)
+      const o2RowY = baseRowY;
+      const o2EqCy = o2RowY + GRID.eq.h / 2;
+
+      // ─── P-602 O₂-cone bypass pump ───
+      const o2PumpNode = drawMainPump(layer, p602Cx, o2EqCy, {
+        tag: 'P-602',
+        vfd: false,
+        params: [fmtNum(bypassPumpKw) + ' kW', 'H ' + bypassPumpHead + ' m'],
+        tagSide: 'left',
+      });
+
+      // ─── A-601 O₂ cone ───
+      const o2ConeNode = drawEquipBox(layer, a601Cx, o2EqCy, {
+        tag: 'A-601',
+        name: 'O₂ cone', sub: 'O₂ cone (bypass ' + bypassRatio.toFixed(0) + '%)',
+        kind: 'aerator',
+        params: [
+          'sat ' + eq.o2cone.satTarget + '%',
+          'η ' + eq.o2cone.absorptionEff + '%',
+          fmtNum(eq.o2cone.peakSupplyKgH) + ' kg/h',
+        ],
+        tagOffsetY: -6,
+      });
+
+      // ─── Intake pipe (vertical line): T-junction → pump.top ───
+      const o2InPath = [tapInPort, o2PumpNode.ports.top];
+      svgEl('path', {
+        'class': 'bypass-line',
+        d: pointsToPath(o2InPath, 5),
+        fill: 'none',
+        'marker-end': 'url(#arrow)',
+      }, layer);
+
+      // ─── Intake T-junction circle (on the S-101 → P-101 main line) ───
+      svgEl('circle', {
+        cx: tapInPort.x, cy: tapInPort.y,
+        r: 3, fill: '#1F1F1E', stroke: 'none',
+        'class': 'tap-junction',
+      }, layer);
+
+      // flow-percentage label (right of the midpoint of the intake riser)
+      svgEl('text', {
+        'class': 'line-label',
+        x: tapInPort.x + 6,
+        y: (tapInPort.y + o2PumpNode.ports.top.y) / 2,
+        'text-anchor': 'start',
+      }, layer).textContent = bypassRatio.toFixed(0) + '%';
+
+      // ─── Pump → O₂ cone (horizontal line) ───
+      drawLine(layer, o2PumpNode.ports.right, o2ConeNode.ports.left, {
+        lineClass: 'bypass-line',
+      });
+
+      // ─── Return pipe (vertical line): O₂-cone top → M-601 T-junction ───
+      //   M-601 is directly above A-601 (on the post-pump horizontal segment), so go straight up
+      const o2OutPath = [
+        o2ConeNode.ports.top,
+        tapOutPort,
+      ];
+      svgEl('path', {
+        'class': 'bypass-line',
+        d: pointsToPath(o2OutPath, 5),
+        fill: 'none',
+        'marker-end': 'url(#arrow)',
+      }, layer);
+
+      // ─── Return M-601 T-junction (solid circle + text label, degraded to a fitting) ───
+      svgEl('circle', {
+        cx: tapOutPort.x, cy: tapOutPort.y,
+        r: 4,           // slightly larger than a normal T-junction to mark the mixing point
+        fill: '#3A6E9F', stroke: '#1F1F1E', 'stroke-width': 0.8,
+        'class': 'tap-junction',
+      }, layer);
+      // M-601 text label (upper-right of the T-junction)
+      svgEl('text', {
+        'class': 'line-label',
+        x: tapOutPort.x + 8,
+        y: tapOutPort.y - 4,
+        'text-anchor': 'start',
+        'font-weight': '600',
+        fill: '#3A6E9F',
+      }, layer).textContent = 'M-601 mixing point';
+    }
+  }
+}
+
+// ─── Utility layer ───────────────────────────────────────────
+function renderUtility(stage) {
+  const layer = $('layer-utility');
+  layer.innerHTML = '';
+
+  const eq = stage.equipment;
+  const pumps = stage.pumps;
+  const thermal = stage.thermal;
+  // v1.3.x: LOX shows the current stage's O₂ use (not the facility total), so the figure updates when switching stages
+  // v1.7 fix: use o2cone.peakSupplyKgH × 24 (daily-peak basis) instead of load.o2DailyTotal
+  //   the old o2DailyTotal = fish physiology + nitrifiers + DOM breakdown (includes the biofilter-blower O₂, not LOX consumption)
+  //   in practice LOX only supplies the fish physiological demand; nitrification/DOM are served by the biofilter blower (K-302) + air
+  //   new basis: peakSupplyKgH × 24 = the cone's daily peak, exactly matching A-601's 41.20 kg/h × 24
+  //   (the OPEX LOX cost uses o2Demand × avgRatio for the true daily average; the P&ID does not show this value)
+  const stageLOXKgD = (stage.equipment && stage.equipment.o2cone && stage.equipment.o2cone.peakSupplyKgH)
+    ? stage.equipment.o2cone.peakSupplyKgH * 24
+    : ((stage.load && stage.load.o2DailyTotal != null)
+        ? stage.load.o2DailyTotal
+        : STATE.data.results.summary.totalLOXKgD);   // fallback
+  // v1.6: site-level LOX tank config (read from summary.siteEquipment; one set facility-wide, not per stage)
+  const _siteO2 = STATE.data.results.summary.siteEquipment && STATE.data.results.summary.siteEquipment.oxygenTank;
+  const _o2TankSpec = _siteO2
+    ? `${_siteO2.size_t} t × ${_siteO2.count} tanks`
+    : '3 t tank';     // fallback (old data has no siteEquipment field)
+
+  // Utility devices left to right: 
+  //   o2 mode: LOX (V-901) → O3 generator → biofilter blower → heat pump
+  //   air mode: tank blower (K-101) → O3 generator → biofilter blower → heat pump
+  // Placed at col 0..3 in order (small size to save vertical space)
+  // v1.6: the backwash pump was removed from the P&ID — it is an integral part of the RDF (F-201), shipped with it
+  const utilityItems = [];
+
+  // v1.7: oxygenation utilities — air mode draws K-101 tank blower, o2 mode draws V-901 LOX station
+  //   v1.7.x switched to a positive test: use tankAirBlower.enabled rather than !o2cone.enabled
+  //   reason: if the o2cone field is missing or enabled is unset as the schema evolves, the negative test wrongly falls back to air mode
+  //         the positive test falls back to o2 mode (more conservative; will not mis-draw tank aeration)
+  const isAirMode = !!(eq.tankAirBlower && eq.tankAirBlower.enabled);
+  if (isAirMode) {
+    // air mode: K-101 tank aeration blower (serves fish tank T-101)
+    const tankBlower = eq.tankAirBlower;
+    if (tankBlower && tankBlower.enabled) {
+      utilityItems.push({
+        col: 0,
+        spec: {
+          tag: tankBlower.tag, name: 'Tank aeration blower', sub: 'Tank aeration blower · air mode', kind: 'filter',
+          tagOffsetY: -6,
+          params: [
+            'Q ' + fmtNum(tankBlower.airFlowM3min) + ' Nm³/min',
+            fmtNum(tankBlower.powerKw) + ' kW',
+            fmtNum(tankBlower.pressureKPa) + ' kPa',
+          ],
+        },
+        connectsTo: { tag: 'T-101', mediumClass: 'gas-line', label: 'air → diffuser discs' },
+      });
+    }
+  } else {
+    // o2 mode: V-901 LOX station — figure: this stage's daily peak (kg/d, i.e. cone peak ×24); spec: facility-wide config (site-shared)
+    //   v1.7: exactly matches the O₂ cone A-601 (peakSupplyKgH kg/h) × 24, so the owner can cross-check directly
+    utilityItems.push({
+      col: 0,
+      spec: {
+        tag: 'V-901', name: 'LOX station (facility-wide)', sub: 'Liquid O₂ tank · site-level', kind: 'tank',
+        tagOffsetY: -6,
+        params: ['stage daily peak ' + fmtNum(stageLOXKgD) + ' kg/d', _o2TankSpec],
+      },
+      connectsTo: { tag: 'A-601', mediumClass: 'gas-line', label: 'gaseous O₂' },
+    });
+  }
+
+  // O3 generator (drawn only when ozone is used)
+  const usesOzone = (eq.skimmer.enabled && eq.skimmer.mode === 'ozone') || eq.aop.enabled;
+  if (usesOzone && eq.ozoneGen) {
+    // O₃ stub target: prefer X-901 (AOP), otherwise S-701 (ozone skimmer)
+    const o3Target = eq.aop.enabled ? 'X-901' : 'S-701';
+    utilityItems.push({
+      col: 1,
+      spec: {
+        tag: eq.ozoneGen.tag, name: 'O₃ generator', sub: 'Ozone generator', kind: 'aerator',
+        tagOffsetY: -6,
+        params: [
+          fmtNum(eq.ozoneGen.totalKgD) + ' kg/d',
+          fmtNum(eq.ozoneGen.powerKw) + ' kW',
+        ],
+      },
+      connectsTo: { tag: o3Target, mediumClass: 'gas-line', label: 'O₃' },
+    });
+  }
+
+  // Roots blower (biofilter aeration)
+  if (eq.bfBlower && eq.bfBlower.spec) {
+    utilityItems.push({
+      col: 2,
+      spec: {
+        tag: eq.bfBlower.tag, name: 'Roots blower', sub: 'Biofilter blower', kind: 'filter',
+        tagOffsetY: -6,
+        params: [
+          'Q ' + fmtNum(eq.bfBlower.spec.airFlow) + ' Nm³/min',
+          fmtNum(eq.bfBlower.spec.power) + ' kW',
+        ],
+      },
+      connectsTo: { tag: 'B-301', mediumClass: 'gas-line', label: 'air' },
+    });
+  }
+
+  // Heat pump
+  if (thermal && thermal.needsThermal) {
+    const modeLabel = thermal.mode === 'cool' ? 'cooling mode' : (thermal.mode === 'heat' ? 'heating mode' : 'hold');
+    utilityItems.push({
+      col: 3,
+      spec: {
+        tag: 'H-801', name: 'Heat pump unit', sub: 'Heat pump', kind: 'aerator',
+        tagOffsetY: -6,
+        params: [
+          fmtNum(thermal.heatPumpAvgKw) + ' kW (avg)',
+          'COP ' + thermal.cop,
+          modeLabel,
+        ],
+      },
+      connectsTo: { tag: 'T-101', mediumClass: 'thermal-line', label: thermal.mode === 'cool' ? 'heat reject' : 'heat supply' },
+    });
+  }
+
+  // v1.6: the RDF backwash pump (P-202) was removed — it is an integral part of the RDF (F-201),
+  //       shipped as a whole unit by the RDF vendor, so it is not drawn separately on the P&ID
+
+  // v1.3.x: AOP (advanced oxidation) — moved from bypass to utility (run on demand, not permanently in the main flow)
+  // Process: intake from the main line (after CO2) → AOP → treated water back to the main line (before the sump)
+  //   after AOP left the bypass layer, a stub connects to S-101 (sump) to represent "AOP-treated water sent to the sump"
+  if (eq.aop && eq.aop.enabled) {
+    utilityItems.push({
+      col: 5,
+      spec: {
+        tag: eq.aop.tag, name: 'AOP advanced oxidation', sub: 'O₃+UV AOP', kind: 'uv',
+        tagOffsetY: -6,
+        params: [
+          'α ' + eq.aop.flowPct + '%',
+          'V ' + fmtNum(eq.aop.volume) + ' m³',
+          'geosmin ↓' + eq.aop.geosminEff + '%',
+        ],
+      },
+      connectsTo: { tag: 'S-101', mediumClass: 'process-line', label: 'AOP → sump' },
+    });
+  }
+
+  // v1.7: the O₂-cone bypass trio moved to renderBypass — visually consistent with skimmer/denitrification/UV
+  //   early v1.7 once drew P-602/A-601/M-601 in utility col 6/7/8, but that violates P&ID convention:
+  //     - the O₂-cone bypass is a "process bypass", not a utility (utilities = site-shared facilities: LOX/O3/blowers/heat pump)
+  //     - the owner should immediately recognize it as "a process unit branching off the main flow", like the skimmer
+  //   after the fix: the O₂-cone bypass renders in renderBypass, M-601 degraded to a T-junction (an in-line mixer in practice)
+
+  // Render all utility devices
+  // v1.3.x: utility devices use compact spacing (cellW_utility=220), not the global 360 spacing
+  //   small device (140) + 80 channel = 220; 6 devices total 6×220+90=1410, ample margin
+  const UTILITY_CELL_W = 220;
+  const utilityY = GRID.bands.utility.y + GRID.eq.h / 2;
+  utilityItems.forEach((item, idx) => {
+    const c = {
+      x: GRID.marginX + item.col * UTILITY_CELL_W + GRID.eqSmall.w / 2,
+      y: utilityY,
+    };
+
+    if (item.spec) {
+      const node = drawEquipBox(layer, c.x, c.y, item.spec);
+
+      // cross-band connection via stub (drawn only at the source — a target-side label would collide with instrument bubbles)
+      if (item.connectsTo) {
+        const targetPorts = lookupEquipPorts(item.connectsTo.tag);
+        if (targetPorts) {
+          // source stub: from the utility device top, pointing up, labeled "→ target tag (medium)"
+          drawStub(layer, node.ports.top,
+            item.connectsTo.label, item.connectsTo.tag, 'source',
+            item.connectsTo.mediumClass);
+        }
+      }
+    } else if (item.pumpTag) {
+      // utility-style pump: tag above the symbol, name/sub/params on multiple lines below
+      drawMainPump(layer, c.x, c.y, {
+        tag: item.pumpTag, vfd: false,
+        tagSide: 'utility',
+        name: item.pumpName,
+        sub: item.pumpSub,
+        params: item.pumpParams,
+      });
+    }
+  });
+}
+
+// ─── Instrument layer ────────────────────────────────────────
+function renderInstruments(stage) {
+  const layer = $('layer-instrument');
+  layer.innerHTML = '';
+
+  // schema instrument tags look like "DO-101"; split out type and number
+  // loc is the device tag, e.g. "T-101"; the instrument bubble sits 28px above that device
+  // multiple instruments on the same device are offset horizontally
+  const byLoc = {};
+  (stage.instruments || []).forEach(inst => {
+    const loc = inst.loc.replace(/_.*$/, '');   // 'B-301_out' → 'B-301'
+    if (!byLoc[loc]) byLoc[loc] = [];
+    byLoc[loc].push(inst);
+  });
+
+  Object.keys(byLoc).forEach(locTag => {
+    const ports = lookupEquipPorts(locTag);
+    if (!ports) return;
+    const insts = byLoc[locTag];
+    insts.forEach((inst, idx) => {
+      // arranged above the device top, offset left; a single instrument is centered
+      const offset = (idx - (insts.length - 1) / 2) * 32;
+      const pos = { x: ports.top.x + offset, y: ports.top.y - 36 };
+      const parts = inst.tag.split('-');
+      const type = parts[0];
+      const number = parts[1] || '';
+      drawInstrumentBubble(layer, pos, ports.top, type, number);
+    });
+  });
+}
+
+// ─── Control-signal layer ────────────────────────────────────
+function renderControl(stage) {
+  const layer = $('layer-control');
+  layer.innerHTML = '';
+
+  // instrument.controlsTo in the schema gives the control target. Simplified first version:
+  // for each instrument with controlsTo, draw a dashed line from the bubble to a port of the target device
+  // since the bubble is rendered by the instrument layer, its position is recomputed here
+  // using the same algorithm to locate it (duplicated code, acceptable for the M1 first version)
+  const byLoc = {};
+  (stage.instruments || []).forEach(inst => {
+    const loc = inst.loc.replace(/_.*$/, '');
+    if (!byLoc[loc]) byLoc[loc] = [];
+    byLoc[loc].push(inst);
+  });
+
+  // control target → device tag mapping
+  const targetMap = {
+    'P-101_VFD': 'P-101',         // DO controls the pump VFD
+    'NaHCO3_dosing': null,        // dosing pump not on the drawing, skipped for now
+    'H-801': 'H-801',             // T controls the heat pump
+  };
+
+  Object.keys(byLoc).forEach(locTag => {
+    const sourcePorts = lookupEquipPorts(locTag);
+    if (!sourcePorts) return;
+    const insts = byLoc[locTag];
+
+    // first filter instruments that have controlsTo and an existing target
+    const ctrlInsts = insts.filter(inst => {
+      if (!inst.controlsTo) return false;
+      const targetTag = targetMap[inst.controlsTo];
+      if (!targetTag) return false;
+      const targetNode = document.querySelector('.equip[data-tag="' + targetTag + '"] rect.equip-box') ||
+                         document.querySelector('.pump[data-tag="' + targetTag + '"]');
+      return !!targetNode;
+    });
+
+    // control stubs sit above the device top (higher than the bubble), with wide spacing (≥ label width) to avoid label collisions
+    const STUB_X_SPACING = 140;   // compact label ~110 wide, 140 spacing is safe
+    ctrlInsts.forEach((inst, idx) => {
+      const targetTag = targetMap[inst.controlsTo];
+      const offset = (idx - (ctrlInsts.length - 1) / 2) * STUB_X_SPACING;
+      // stub start: 30 above the device top (above the bubble); x = device cx + offset
+      const sourceStubPort = {
+        x: sourcePorts.top.x + offset,
+        y: sourcePorts.top.y - 30,
+        dir: 'N',
+      };
+      drawStub(layer, sourceStubPort, 'control', targetTag, 'source', 'signal-line', 0, { compact: true });
+    });
+  });
+}
+
+
+// ─── Annotation / title-block layer ──────────────────────────
+function renderAnnotation(stage) {
+  const layer = $('layer-annotation');
+  layer.innerHTML = '';
+
+  const d = STATE.data;
+
+  drawTitleBlock(layer, d, stage);
+  drawLegend(layer);
+  drawEquipmentList(layer, stage);
+}
+
+/**
+ * Title block: bottom-right, following the GB/T engineering-drawing format
+ */
+function drawTitleBlock(parent, d, stage) {
+  const x = 1290, y = 1130;
+  const w = 540, h = 130;
+  const g = svgEl('g', { 'class': 'title-block' }, parent);
+
+  svgEl('rect', { x: x, y: y, width: w, height: h,
+    fill: '#fff', stroke: '#1F1F1E', 'stroke-width': 1.4,
+  }, g);
+
+  const rowH = h / 4;
+  for (let i = 1; i < 4; i++) {
+    svgEl('line', { x1: x, y1: y + i * rowH, x2: x + w, y2: y + i * rowH,
+      stroke: '#5C5B57', 'stroke-width': 0.6 }, g);
+  }
+  const c1 = x + w * 0.6;
+  const c2 = x + w * 0.8;
+  for (let i = 0; i < 4; i++) {
+    svgEl('line', { x1: c1, y1: y + i * rowH, x2: c1, y2: y + (i + 1) * rowH,
+      stroke: '#5C5B57', 'stroke-width': 0.6 }, g);
+    svgEl('line', { x1: c2, y1: y + i * rowH, x2: c2, y2: y + (i + 1) * rowH,
+      stroke: '#5C5B57', 'stroke-width': 0.6 }, g);
+  }
+
+  const PAD = 8;
+  function cell(x0, y0, label, value, opts) {
+    opts = opts || {};
+    svgEl('text', {
+      x: x0 + PAD, y: y0 + 11,
+      'font-size': 8, fill: '#5C5B57',
+      'font-family': 'ui-monospace, "SF Mono", Consolas, monospace',
+    }, g).textContent = label;
+    svgEl('text', {
+      x: x0 + PAD, y: y0 + 25,
+      'font-size': opts.size || 11, fill: '#1F1F1E',
+      'font-weight': opts.bold ? 600 : 400,
+    }, g).textContent = value || '—';
+  }
+
+  cell(x,         y + 0 * rowH, 'Project', d.speciesName + '  ' + d.yieldTons + ' t/yr', { size: 13, bold: true });
+  cell(c1,        y + 0 * rowH, 'Design firm', '', { size: 10 });
+  cell(c2,        y + 0 * rowH, 'Date', d.savedAt ? d.savedAt.slice(0, 10) : '—');
+
+  cell(x,         y + 1 * rowH, 'Drawing', 'RAS Process P&ID', { size: 12 });
+  cell(c1,        y + 1 * rowH, 'Checked', '');
+  cell(c2,        y + 1 * rowH, 'Scale', 'NTS');
+
+  cell(x,         y + 2 * rowH, 'Design stage', stage.stageName + ' · main flow ' + fmtNum(stage.flow.flowMain) + ' m³/h', { size: 11 });
+  cell(c1,        y + 2 * rowH, 'Approved', '');
+  cell(c2,        y + 2 * rowH, 'Drawing no.', d.results.summary.tagPrefix + '-PID-001');
+
+  const keyParams = [
+    'O₂ ' + fmtNum(stage.load.o2DailyTotal) + ' kg/d',
+    'System ' + fmtNum(stage.flow.volumeTotal) + ' m³',
+    'Pumps ' + fmtNum(stage.pumps.totalKw) + ' kW',
+  ].join('  ·  ');
+  cell(x,         y + 3 * rowH, 'Key data', keyParams, { size: 10 });
+  cell(c1,        y + 3 * rowH, 'Stage',
+    (d.results.summary.designStageIdx + 1) + ' / ' + d.results.perStage.length);
+  cell(c2,        y + 3 * rowH, 'Version', 'v2.1');
+}
+
+function drawLegend(parent) {
+  // Compact horizontal legend, placed above the equipment list
+  const x = 60, y = 1095;
+  const h = 22;
+  const g = svgEl('g', { 'class': 'legend' }, parent);
+
+  // Line types: 5 entries in a horizontal row, single-line height
+  const lineDefs = [
+    { text: 'Main line',  cls: 'main-line' },
+    { text: 'Bypass',    cls: 'bypass-line' },
+    { text: 'Gas',    cls: 'gas-line' },
+    { text: 'Heat',    cls: 'thermal-line' },
+  ];
+
+  // Title prefix
+  svgEl('text', {
+    x: x, y: y + h * 0.6,
+    'font-size': 9, fill: '#5C5B57',
+    'font-family': 'ui-monospace, "SF Mono", Consolas, monospace',
+  }, g).textContent = 'Legend:';
+
+  let cursorX = x + 50;
+  lineDefs.forEach(def => {
+    // Segment
+    svgEl('line', {
+      x1: cursorX, y1: y + h * 0.6 - 2,
+      x2: cursorX + 26, y2: y + h * 0.6 - 2,
+      'class': def.cls,
+    }, g);
+    // Text
+    const labelX = cursorX + 32;
+    svgEl('text', {
+      x: labelX, y: y + h * 0.6 + 1,
+      'font-size': 10, fill: '#1F1F1E',
+    }, g).textContent = def.text;
+    cursorX = labelX + def.text.length * 11 + 22;   // ~11px per char + spacing
+  });
+}
+
+function drawEquipmentList(parent, stage) {
+  const x = 60, y = 1130;
+  const w = 1200, h = 130;
+  const g = svgEl('g', { 'class': 'equipment-list' }, parent);
+
+  svgEl('rect', { x: x, y: y, width: w, height: h,
+    fill: '#fff', stroke: '#5C5B57', 'stroke-width': 0.8,
+  }, g);
+
+  svgEl('text', {
+    x: x + 12, y: y + 14,
+    'font-size': 9, fill: '#5C5B57',
+    'font-family': 'ui-monospace, "SF Mono", Consolas, monospace',
+  }, g).textContent = 'EQUIPMENT LIST';
+
+  const eq = stage.equipment;
+  const pumps = stage.pumps;
+  const flowMain = stage.flow.flowMain;
+  const uvFlowPct = eq.uv.flow ? Math.round(eq.uv.flow / flowMain * 100) : 0;
+  const items = [];
+  // Main process (process order: fish tank → RDF → MBBR → CO2 → sump → main pump → O₂ cone → back to tank)
+  items.push({ tag: 'T-101', name: 'Fish tank', spec: 'V ' + fmtNum(stage.flow.volumeTank) + ' m³' });
+  items.push({ tag: eq.rdf.tag, name: 'Drum filter', spec: 'Q ' + fmtNum(eq.rdf.flow) + ' m³/h, η ' + eq.rdf.tssEff + '%' });
+  items.push({ tag: eq.bf.tag, name: 'Biofilter (MBBR)', spec: 'V ' + fmtNum(eq.bf.volume) + ' m³, η_TAN ' + eq.bf.tanEff + '%' });
+  if (eq.co2.enabled) items.push({ tag: eq.co2.tag, name: 'CO₂ stripper', spec: 'G:L ' + eq.co2.gToL + ', η ' + eq.co2.eff + '%' });
+  // v1.3.x: sump S-101 (clean-water buffer after CO2, flooded suction for the main pump)
+  if (eq.sump && eq.sump.enabled) {
+    items.push({ tag: eq.sump.tag, name: 'Sump', spec: 'V ' + fmtNum(eq.sump.volume) + ' m³, HRT ' + fmtNum(eq.sump.hrt_min) + ' min' });
+  }
+  // Main pump (after the sump, before the O₂ cone)
+  items.push({ tag: pumps.main.tag, name: 'Main recirculation pump (VFD, post-sump)', spec: fmtNum(pumps.main.kw) + ' kW, H ' + pumps.main.headM + ' m' });
+  // O₂ cone (downstream of the main pump, the last step before oxygenated water enters the tank)
+  if (eq.o2cone.enabled) {
+    items.push({ tag: eq.o2cone.tag, name: 'O₂ cone', spec: fmtNum(eq.o2cone.peakSupplyKgH) + ' kg O₂/h, η ' + eq.o2cone.absorptionEff + '%' });
+  }
+  // Bypasses (3: skimmer/UV/denitrification; AOP moved to utility)
+  if (eq.skimmer.enabled) items.push({ tag: eq.skimmer.tag, name: 'Protein skimmer (bypass)', spec: 'α ' + eq.skimmer.flowPct + '%, V ' + fmtNum(eq.skimmer.volume) + ' m³' });
+  items.push({ tag: eq.uv.tag, name: 'UV disinfection (bypass)', spec: 'α ' + uvFlowPct + '%, ' + fmtNum(eq.uv.powerKw) + ' kW @ ' + eq.uv.dose + ' mJ/cm²' });
+  if (eq.denitri.enabled) items.push({ tag: eq.denitri.tag, name: 'Denitrification reactor (bypass)', spec: 'α ' + eq.denitri.flowPct + '%, V ' + fmtNum(eq.denitri.volume) + ' m³' });
+  // Utilities
+  // v1.3.x: LOX shows the current stage's O₂ use (not the facility total)
+  const stageO2KgD = (stage.load && stage.load.o2DailyTotal != null)
+    ? stage.load.o2DailyTotal
+    : STATE.data.results.summary.totalLOXKgD;
+  items.push({ tag: 'V-901', name: 'LOX tank', spec: fmtNum(stageO2KgD) + ' kg/d' });
+  if (eq.ozoneGen) items.push({ tag: eq.ozoneGen.tag, name: 'O₃ generator', spec: fmtNum(eq.ozoneGen.totalKgD) + ' kg/d, ' + fmtNum(eq.ozoneGen.powerKw) + ' kW' });
+  if (eq.aop.enabled) items.push({ tag: eq.aop.tag, name: 'AOP advanced oxidation (utility)', spec: 'α ' + eq.aop.flowPct + '%, V ' + fmtNum(eq.aop.volume) + ' m³' });
+  if (eq.bfBlower && eq.bfBlower.spec) items.push({ tag: eq.bfBlower.tag, name: 'Roots blower', spec: fmtNum(eq.bfBlower.spec.airFlow) + ' Nm³/min, ' + fmtNum(eq.bfBlower.spec.power) + ' kW' });
+  if (stage.thermal && stage.thermal.needsThermal) items.push({ tag: 'H-801', name: 'Heat pump unit', spec: fmtNum(stage.thermal.heatPumpAvgKw) + ' kW (avg), COP ' + stage.thermal.cop });
+
+  const headerY = y + 28;
+  // Three-column header, two-column layout
+  const colW = w / 2;
+  ['Tag', 'Equipment', 'Spec / key data'].forEach((t, i) => {
+    const offsetX = i === 0 ? 0 : (i === 1 ? 60 : 180);
+    svgEl('text', {
+      x: x + 12 + offsetX, y: headerY,
+      'font-size': 9, fill: '#5C5B57',
+      'font-weight': 600,
+      'font-family': 'ui-monospace, "SF Mono", Consolas, monospace',
+    }, g).textContent = t;
+    // Header for the second column
+    svgEl('text', {
+      x: x + 12 + colW + offsetX, y: headerY,
+      'font-size': 9, fill: '#5C5B57',
+      'font-weight': 600,
+      'font-family': 'ui-monospace, "SF Mono", Consolas, monospace',
+    }, g).textContent = t;
+  });
+  svgEl('line', { x1: x + 6, y1: headerY + 4, x2: x + w - 6, y2: headerY + 4,
+    stroke: '#C8C5BB', 'stroke-width': 0.6 }, g);
+
+  const rowH = 11.5;
+  const PER_COL = Math.ceil(items.length / 2);
+  items.forEach((item, i) => {
+    const colIdx = Math.floor(i / PER_COL);
+    const rowIdx = i % PER_COL;
+    const cx = x + 12 + colIdx * colW;
+    const cy = headerY + 14 + rowIdx * rowH;
+
+    svgEl('text', {
+      x: cx, y: cy,
+      'font-size': 9, fill: '#1F1F1E',
+      'font-family': 'ui-monospace, "SF Mono", Consolas, monospace',
+      'font-weight': 600,
+    }, g).textContent = item.tag;
+    svgEl('text', {
+      x: cx + 60, y: cy,
+      'font-size': 9, fill: '#1F1F1E',
+    }, g).textContent = item.name;
+    svgEl('text', {
+      x: cx + 180, y: cy,
+      'font-size': 9, fill: '#5C5B57',
+      'font-family': 'ui-monospace, "SF Mono", Consolas, monospace',
+    }, g).textContent = item.spec;
+  });
+}
+
+
+function renderProcessFlow(stageData) {
+  const layer = $('layer-process');
+  layer.innerHTML = '';
+
+  const eq = stageData.equipment;
+  const flow = stageData.flow;
+  const pumps = stageData.pumps;
+
+  // Build the main-process device sequence (in process order). Skip disabled optional devices.
+  // v1.3.x: main path (mainline topology, the physically correct flow path):
+  //   T-101 (tank) → RDF → MBBR → CO2 → S-101 (sump) → P-101 (main pump) → A-601 (O₂ cone) → back to T-101
+  // Process notes:
+  //   - gravity flow from the tank bottom drains first passes RDF/MBBR/CO2 (low head, gravity- or low-pressure-driven)
+  //   - treated clean water falls into the sump (clean buffer, flooded suction for the main pump)
+  //   - the main pump pushes clean water through the O₂ cone (which needs positive pressure to absorb LOX)
+  //   - oxygenated water returns to the tank for the fish
+  // the bypass topology is not used yet (the UI option is kept; this version renders mainline only)
+  const seq = [];
+  const o2coneEnabled = eq.o2cone && eq.o2cone.enabled;
+
+  // Fish tank T-101: a virtual device, data derived from flow + farm — the start of the main path (bottom drain to RDF)
+  seq.push({
+    tag: 'T-101',
+    name: 'Fish tank',
+    sub: 'Fish tank',
+    kind: 'tank',
+    params: [
+      'V ' + fmtNum(flow.volumeTank) + ' m³',
+      'T ' + fmtNum(flow.tempOpt) + '°C',
+      'S ' + fmtNum(flow.salinity) + '‰',
+    ],
+  });
+
+  // Drum filter (gravity inflow, first treatment step)
+  seq.push({
+    tag: eq.rdf.tag,
+    name: 'Drum filter',
+    sub: 'Drum filter',
+    kind: 'filter',
+    textAlign: 'middle',     // text centered directly below the device
+    params: [
+      'Q ' + fmtNum(eq.rdf.flow) + ' m³/h',
+      'η_TSS ' + eq.rdf.tssEff + '%',
+    ],
+  });
+
+  // MBBR biofilter
+  seq.push({
+    tag: eq.bf.tag,
+    name: 'Biofilter (MBBR)',
+    sub: 'Biofilter',
+    kind: 'bio',
+    textAlign: 'middle',     // text centered directly below the device
+    params: [
+      'V ' + fmtNum(eq.bf.volume) + ' m³',
+      'η_TAN ' + eq.bf.tanEff + '%',
+      'Fill ratio ' + eq.bf.fillRatio + '%',
+    ],
+  });
+
+  // Note: UV is a bypass, not in the mainline sequence (v1.1 uvFlowPct defaults to 10%, handled by renderBypass)
+
+  // CO2 stripper (optional)
+  if (eq.co2.enabled) {
+    seq.push({
+      tag: eq.co2.tag,
+      name: 'CO₂ stripper',
+      sub: 'CO₂ stripper',
+      kind: 'degas',
+      textAlign: 'middle',     // text centered directly below the device
+      params: [
+        'G:L ' + eq.co2.gToL,
+        'η ' + eq.co2.eff + '%',
+      ],
+    });
+  }
+
+  // v1.3.x: sump S-101 — clean-water buffer after treatment, flooded suction for the main pump. Uses the small icon (140×80) to save space
+  if (eq.sump && eq.sump.enabled) {
+    seq.push({
+      tag: eq.sump.tag,
+      name: 'Sump',
+      sub: 'Sump',
+      kind: 'tank',
+      w: GRID.eqSmall.w, h: GRID.eqSmall.h,    // smaller icon
+      params: [
+        'V ' + fmtNum(eq.sump.volume) + ' m³',
+        'HRT ' + fmtNum(eq.sump.hrt_min) + ' min',
+      ],
+    });
+  }
+
+  // O₂ cone A-601 — downstream of the main pump, the last step before oxygenated water enters the tank (main pump P-101 is rendered separately by drawMainPump, visually between S-101 and A-601)
+  // v1.7: drawn on the main line only in mainline topology; in bypass topology A-601 moves to the utility area (forming the bypass trio with P-602 + M-601)
+  const o2Topology = eq.o2cone && eq.o2cone.topology || 'mainline';
+  const o2InMainline = o2coneEnabled && o2Topology === 'mainline';
+  if (o2InMainline) {
+    seq.push({
+      tag: eq.o2cone.tag,
+      name: 'O₂ cone',
+      sub: 'O₂ cone (mainline, in series)',
+      kind: 'aerator',
+      // the tag (A-601) defaults to centered above the device, but the return main riser back to T-101 runs directly above it (x = A-601.cx)
+      //   → the tag collides with the return riser, so shift it 60px left to clear it
+      tagOffsetX: -60,
+      params: [
+        'sat ' + eq.o2cone.satTarget + '%',
+        'η ' + eq.o2cone.absorptionEff + '%',
+        // v1.7: LOX flow (kg/h, equal to V-901 daily peak / 24, so the owner can cross-check)
+        fmtNum(eq.o2cone.peakSupplyKgH) + ' kg/h',
+      ],
+    });
+  }
+
+  // Render devices — evenly spaced by column
+  const equipNodes = [];
+  seq.forEach((spec, i) => {
+    let c = gridCenter('main', i);
+    // v1.3.x: shift S-101 down so its top inlet y aligns with the previous device's outlet y
+    //   C-501 (stripper) outlet y is at the tower bottom, well below the other devices' right.y
+    //   without shifting S-101, the C-501 → S-101 main line would bend (C-501 bottom → across → up into the S-101 top)
+    //   after shifting S-101 down, the line runs straight into the S-101 top
+    if (spec.tag === 'S-101' && i > 0) {
+      const prevNode = equipNodes[i - 1];
+      if (prevNode && prevNode.ports && prevNode.ports.out) {
+        // v1.3.x: the S-101 inlet port is now W-facing (horizontal left), at (15, 68) in the viewBox
+        // make S-101.in.y_canvas == prevNode.out.y → an E→W same-y straight main line (orthogonalRoute Case 1)
+        // S-101.in.y = (cy-h/2) + 68*(h/140)
+        //   set in.y = prevOutY → cy = prevOutY + h/2 - 68*(h/140) = prevOutY + h*(70-68)/140 = prevOutY + h*2/140
+        // retracting in the W direction only affects x, not y, so no compensation is needed
+        const sumpH = spec.h || GRID.eq.h;
+        c = { x: c.x, y: prevNode.ports.out.y + sumpH * 2 / 140 };
+      }
+    }
+    equipNodes.push(drawEquipBox(layer, c.x, c.y, spec));
+  });
+
+  // v1.3.x: main pump P-101 position: after sump S-101, before O₂ cone A-601
+  //   - the sump provides flooded suction to the pump (avoiding cavitation)
+  //   - the pump pushes water through the O₂ cone (which needs positive pressure to absorb LOX)
+  //   - oxygenated water enters the tank
+  // Compat: if the sump is disabled (in theory never, since V_sump is always >=20), fall back to seq end - 1 (pump inserted before the last segment)
+  // v1.7: in bypass mode the sequence ends at S-101 (no A-601); the main pump sits right of S-101, then returns directly to T-101
+  const sumpIdx = seq.findIndex(s => s.tag === 'S-101');
+  const pumpAnchorIdx = sumpIdx >= 0 ? sumpIdx : Math.max(0, equipNodes.length - 2);
+  const hasPostPumpEquip = pumpAnchorIdx + 1 < equipNodes.length;  // false in bypass (S-101 is the end)
+  let pumpC;
+  if (hasPostPumpEquip) {
+    // mainline: main pump centered between S-101 and A-601
+    pumpC = {
+      x: (equipNodes[pumpAnchorIdx].ports.right.x + equipNodes[pumpAnchorIdx + 1].ports.left.x) / 2,
+      y: equipNodes[pumpAnchorIdx].ports.right.y,
+    };
+  } else {
+    // bypass: main pump in the open space right of S-101 (S-101 right + one cellW/2)
+    pumpC = {
+      x: equipNodes[pumpAnchorIdx].ports.right.x + GRID.cellW / 2,
+      y: equipNodes[pumpAnchorIdx].ports.right.y,
+    };
+  }
+  const pump = drawMainPump(layer, pumpC.x, pumpC.y, {
+    tag: pumps.main.tag,
+    vfd: pumps.main.vfd,
+    params: [fmtNum(pumps.main.kw) + ' kW', 'H ' + pumps.main.headM + 'm'],
+  });
+  // v1.7: expose the main-pump coordinates to renderBypass (the bypass-mode O₂ cone needs the pump cx to compute the intake point)
+  STATE.mainPumpNode = pump;
+
+  // Main-process connections
+  // 0..pumpAnchorIdx-1: gravity / low-pressure segment (T-101 → RDF → MBBR → CO2 → S-101)
+  //                       the first segment (T-101 → RDF) is labeled with the main flow
+  for (let i = 0; i < pumpAnchorIdx; i++) {
+    const label = (i === 0) ? fmtNum(flow.flowMain) + ' m³/h' : null;
+    drawMainLine(layer, equipNodes[i].ports.out, equipNodes[i + 1].ports.in, label);
+  }
+  // S-101 → P-101 short connection to the pump inlet
+  drawMainLine(layer, equipNodes[pumpAnchorIdx].ports.out, pump.ports.in);
+  // Post-pump: in mainline, P-101 → A-601 short connection, then A-601 → end
+  //          in bypass, P-101 returns directly to the tank (no downstream device)
+  if (hasPostPumpEquip) {
+    drawMainLine(layer, pump.ports.out, equipNodes[pumpAnchorIdx + 1].ports.in);
+    // segments after pumpAnchorIdx+1 (usually 0, since A-601 is the end)
+    for (let i = pumpAnchorIdx + 1; i < equipNodes.length - 1; i++) {
+      drawMainLine(layer, equipNodes[i].ports.out, equipNodes[i + 1].ports.in);
+    }
+  }
+
+  // Last device → tank return (routed over the top)
+  // v1.7: in bypass mode there is no A-601 after the pump; the return goes from P-101 outlet along a horizontal segment, then up over the top back to the tank
+  //       mainline mode: the return comes from the top of A-601 (the last device)
+  // v1.7: bypass mode adds an extra BYPASS_PUMP_HORIZ_EXT px (30) horizontal segment so the O₂-cone intake/return points both fall to the right of the main pump
+  //       (in practice: only water pressurized by P-101 can enter the cone; the intake is now taken from the P-101 outlet, not from S-101)
+  const first = equipNodes[0];
+  let returnFromX, returnFromY;
+  const BYPASS_PUMP_HORIZ_EXT = 30;   // bypass mode: length of the post-pump horizontal segment (room for the M-601 T-junction)
+  if (hasPostPumpEquip) {
+    // mainline: return from the top of the last device (A-601)
+    const last = equipNodes[equipNodes.length - 1];
+    returnFromX = last.ports.top.x;
+    returnFromY = last.ports.top.y;
+  } else {
+    // bypass: BYPASS_PUMP_HORIZ_EXT px horizontal segment after the pump → up
+    //   the horizontal segment ends at x = pump right + BYPASS_PUMP_HORIZ_EXT, which is also the M-601 T-junction (right end of the return header)
+    returnFromX = pump.ports.out.x + BYPASS_PUMP_HORIZ_EXT;
+    returnFromY = pump.ports.out.y;
+  }
+  const returnY = first.ports.top.y - 140;   // 140px above the main process (room for stubs + instruments)
+  // bypass mode: an extra post-pump horizontal segment (from pump.out to returnFromX, same y)
+  const returnPath = hasPostPumpEquip ? [
+    'M', returnFromX, returnFromY,
+    'L', returnFromX, returnY,
+    'L', first.ports.top.x, returnY,
+    'L', first.ports.top.x, first.ports.top.y,
+  ].join(' ') : [
+    // bypass: pump right → horizontal 90 → up → header → back to T-101
+    'M', pump.ports.out.x, pump.ports.out.y,
+    'L', returnFromX, returnFromY,           // horizontal segment
+    'L', returnFromX, returnY,                // up
+    'L', first.ports.top.x, returnY,          // header (return)
+    'L', first.ports.top.x, first.ports.top.y,
+  ].join(' ');
+  const retG = svgEl('g', { 'class': 'flow-line return' }, layer);
+  svgEl('path', {
+    'class': 'main-line return',
+    d: returnPath,
+    'marker-end': 'url(#arrow)',
+  }, retG);
+  svgEl('text', {
+    'class': 'line-label',
+    x: (returnFromX + first.ports.top.x) / 2,
+    y: returnY - 6,
+    'text-anchor': 'middle',
+  }, retG).textContent = 'Return to tank ' + fmtNum(flow.flowMain) + ' m³/h';
+}
+
+/**
+ * Clear the contents of all layers
+ */
+function clearAllLayers() {
+  ['process', 'bypass', 'utility', 'instrument', 'control', 'annotation'].forEach(name => {
+    const g = $('layer-' + name);
+    if (g) g.innerHTML = '';
+  });
+}
+
+/**
+ * Master render entry — called after data load or stage switch
+ */
+// ─── Jumpers / Crossover bridges ─────────────────────────────
+//
+// Drawing convention: where two lines cross without connecting, the crossing line draws a semicircular "hump",
+// meaning "passes over, not connected". The simplest rules are used here:
+//   - a horizontal segment crosses a vertical one (the hump appears on the vertical segment)
+//   - all visible lines (main/bypass/gas/heat) take part in crossing detection
+//   - control signals (signal-line) are too thin and short to participate
+//   - each crossing is covered by its own SVG group, without modifying the original path
+//
+// Approach: an SVG path d attribute has the form "M x y L x y L x y ...".
+// We parse each path's point sequence into horizontal/vertical segments, then test pairs for intersection.
+
+const JUMPER_RADIUS = 6;        // semicircular hump radius
+const JUMPER_STROKE = 2.4;      // hump stroke width (matches the main line)
+const JUMPER_BG_PAD = 1.5;      // padding of the white cover rectangle beyond the stroke width
+
+/**
+ * Parse an SVG path d attribute, returning a point-sequence array [{x,y}, ...]
+ * Handles only M / L / Q (Q is treated as a direct move to the endpoint, ignoring the control point)
+ */
+function parsePathPoints(d) {
+  if (!d) return [];
+  const tokens = d.trim().split(/[\s,]+/);
+  const pts = [];
+  let i = 0;
+  while (i < tokens.length) {
+    const cmd = tokens[i];
+    if (cmd === 'M' || cmd === 'L') {
+      const x = parseFloat(tokens[i + 1]);
+      const y = parseFloat(tokens[i + 2]);
+      if (!isNaN(x) && !isNaN(y)) pts.push({ x: x, y: y });
+      i += 3;
+    } else if (cmd === 'Q') {
+      // Q cx cy x y — ignore the control point, take the endpoint
+      // (Q is used for rounded bends; the endpoint is near the previous L endpoint)
+      const x = parseFloat(tokens[i + 3]);
+      const y = parseFloat(tokens[i + 4]);
+      if (!isNaN(x) && !isNaN(y)) pts.push({ x: x, y: y });
+      i += 5;
+    } else {
+      // skip unknown tokens (single-letter commands or stray numbers)
+      i += 1;
+    }
+  }
+  return pts;
+}
+
+/**
+ * Split the point sequence into segments, keeping only horizontal/vertical ones (ignore diagonals — rare in engineering drawings, and the tiny diagonals from rounded corners are insignificant)
+ * each segment: { type: 'H'|'V', x1, y1, x2, y2, src: <pathElement> }
+ */
+function pointsToSegments(pts, src) {
+  const segs = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1];
+    // guard: skip NaN / undefined endpoints
+    if (!isFinite(a.x) || !isFinite(a.y) || !isFinite(b.x) || !isFinite(b.y)) continue;
+    const dx = Math.abs(a.x - b.x);
+    const dy = Math.abs(a.y - b.y);
+    if (dy < 1 && dx >= 2) {
+      segs.push({
+        type: 'H',
+        x1: Math.min(a.x, b.x), y1: a.y,
+        x2: Math.max(a.x, b.x), y2: a.y,
+        src: src,
+      });
+    } else if (dx < 1 && dy >= 2) {
+      segs.push({
+        type: 'V',
+        x1: a.x, y1: Math.min(a.y, b.y),
+        x2: a.x, y2: Math.max(a.y, b.y),
+        src: src,
+      });
+    }
+  }
+  return segs;
+}
+
+/**
+ * Find the intersection of two segments. Must be one H and one V, with V.x strictly inside H and H.y strictly inside V
+ * (excludes endpoint crossings — those are device "joints", not crossovers)
+ */
+function findCrossing(s1, s2) {
+  let h, v;
+  if (s1.type === 'H' && s2.type === 'V') { h = s1; v = s2; }
+  else if (s1.type === 'V' && s2.type === 'H') { h = s2; v = s1; }
+  else return null;
+
+  const eps = 2;
+  // vertical segment x = v.x1 (== v.x2); horizontal segment y = h.y1 (== h.y2)
+  const vx = v.x1;
+  const hy = h.y1;
+  if (vx <= h.x1 + eps || vx >= h.x2 - eps) return null;
+  if (hy <= v.y1 + eps || hy >= v.y2 - eps) return null;
+  return { x: vx, y: hy, hSeg: h, vSeg: v };
+}
+
+/**
+ * Draw a jumper hump at the given point (horizontal line crossing a vertical line)
+ * Semicircle opening downward, centered at (cx, cy), radius r
+ * Since the horizontal line stroke color is known, we draw the semicircle in the same color + a white background to erase the crossed segment
+ */
+function drawJumper(parent, cx, cy, hPath) {
+  const r = JUMPER_RADIUS;
+  const hStroke = window.getComputedStyle(hPath).stroke;
+  const hWidth  = parseFloat(window.getComputedStyle(hPath).strokeWidth) || JUMPER_STROKE;
+
+  const g = svgEl('g', { 'class': 'jumper' }, parent);
+
+  // 1. White background rectangle: "erase" a short stretch of the crossed segment near the intersection
+  //    (the vertical line should not actually be broken here — let it pass; the horizontal line yields at the hump)
+  //    width 2r, height a few pixels more than the stroke width
+  svgEl('rect', {
+    x: cx - r, y: cy - hWidth / 2 - JUMPER_BG_PAD,
+    width: 2 * r, height: hWidth + 2 * JUMPER_BG_PAD,
+    fill: '#fff', stroke: 'none',
+  }, g);
+
+  // 2. Semicircular hump (opening downward): from (cx-r, cy) to (cx+r, cy), apex at (cx, cy-r)
+  //    SVG arc: M start A rx ry rotation large-arc-flag sweep-flag end
+  svgEl('path', {
+    d: 'M ' + (cx - r) + ' ' + cy +
+       ' A ' + r + ' ' + r + ' 0 0 1 ' + (cx + r) + ' ' + cy,
+    fill: 'none',
+    stroke: hStroke,
+    'stroke-width': hWidth,
+    'stroke-linecap': 'round',
+  }, g);
+
+  return g;
+}
+
+/**
+ * Main entry: scan all visible paths, find crossings, draw jumpers
+ * Called at the end of renderAll
+ */
+function processJumpers() {
+  // Collect all paths that participate in crossing detection
+  // Exclude: control signals (signal-line, too thin) and instrument-bubble connector lines (instrument-bubble-line)
+  const selectors = [
+    '#layer-process path.main-line',
+    '#layer-process path.return',
+    '#layer-bypass path.main-line',
+    '#layer-bypass path.bypass-line',
+    '#layer-utility path.main-line',
+    '#layer-utility path.bypass-line',
+    '#layer-utility path.gas-line',
+    '#layer-utility path.thermal-line',
+  ];
+  const paths = [];
+  selectors.forEach(sel => {
+    document.querySelectorAll(sel).forEach(p => paths.push(p));
+  });
+
+  // Parse each path into a set of segments
+  const allSegs = [];
+  paths.forEach(p => {
+    const d = p.getAttribute('d');
+    const pts = parsePathPoints(d);
+    const segs = pointsToSegments(pts, p);
+    allSegs.push.apply(allSegs, segs);
+  });
+
+  // Create the jumpers container (clearing the previous one)
+  let jumpersGroup = $('layer-jumpers');
+  if (jumpersGroup) jumpersGroup.remove();
+  jumpersGroup = svgEl('g', { id: 'layer-jumpers' }, $('pidSvg'));
+
+  // Test pairs for crossings; segments within the same path are skipped (no self-crossing)
+  const drawn = new Set();   // dedupe: one hump per coordinate
+  for (let i = 0; i < allSegs.length; i++) {
+    for (let j = i + 1; j < allSegs.length; j++) {
+      const s1 = allSegs[i], s2 = allSegs[j];
+      if (s1.src === s2.src) continue;       // same path
+      const cx = findCrossing(s1, s2);
+      if (!cx) continue;
+      const key = Math.round(cx.x) + ',' + Math.round(cx.y);
+      if (drawn.has(key)) continue;
+      drawn.add(key);
+      drawJumper(jumpersGroup, cx.x, cx.y, cx.hSeg.src);
+    }
+  }
+  return drawn.size;
+}
+
+
+function renderAll() {
+  clearAllLayers();
+  // Clear the previous jumpers
+  const oldJumpers = $('layer-jumpers');
+  if (oldJumpers) oldJumpers.remove();
+
+  if (!STATE.data) {
+    $('canvasPlaceholder').style.display = '';
+    return;
+  }
+  $('canvasPlaceholder').style.display = 'none';
+  const stage = STATE.data.results.perStage[STATE.designStageIdx];
+
+  // Render the main process first (other layers rely on lookupEquipPorts using the already-rendered device coordinates)
+  renderProcessFlow(stage);
+  renderBypass(stage);
+  renderUtility(stage);
+  renderInstruments(stage);
+  // renderControl(stage);   // control-signal stubs removed (v2.1: too dense, little engineering value)
+  renderAnnotation(stage);
+
+  // Finally scan all visible lines and draw jumpers at crossings
+  processJumpers();
+}
+
+
+// ─── Schema validation ───────────────────────────────────────
+function validateSchema(d) {
+  if (!d || typeof d !== 'object') return { ok: false, error: 'Not a valid JSON object' };
+
+  // Compatibility with designs saved by iRAS v1.2 (has stages but lacks pidSchema/results)
+  const isOldUserScheme = d.stages && Array.isArray(d.stages) && !d.results;
+
+  if (!d.pidSchema) {
+    if (isOldUserScheme) {
+      return {
+        ok: false,
+        error: 'This design file contains no P&ID data (missing the pidSchema and results fields).\n\nFix: load this design on the iRAS main page (index.html) → wait for the calculation to finish → click "💾 Save Design" again → load the new file here.\n\nOr: click "📐 Export P&ID" to jump here directly (recommended).'
+      };
+    }
+    return {
+      ok: false,
+      error: 'Missing the pidSchema field — this looks like an original v1.1 JSON without the P&ID patch. Please re-export with the patched v1.1 (use the "📐 Export P&ID data" button).'
+    };
+  }
+
+  const major = parseInt(String(d.pidSchema).split('.')[0], 10);
+  if (!Number.isFinite(major)) {
+    return { ok: false, error: 'Cannot parse the pidSchema version: ' + d.pidSchema };
+  }
+  if (major > SUPPORTED_SCHEMA_MAJOR) {
+    return {
+      ok: false,
+      error: 'pidSchema ' + d.pidSchema + ' is too new; this v2.0 skeleton only supports ' + SUPPORTED_SCHEMA_MAJOR + '.x'
+    };
+  }
+
+  if (!d.results) {
+    if (isOldUserScheme) {
+      return {
+        ok: false,
+        error: 'This design file contains no equipment data (the results field is missing). Please return to the iRAS main page and re-export.'
+      };
+    }
+    return { ok: false, error: 'Missing the results field' };
+  }
+  if (!Array.isArray(d.results.perStage)) return { ok: false, error: 'results.perStage must be an array' };
+  if (!d.results.perStage.length) return { ok: false, error: 'results.perStage is empty — the v1.1 side has no stage data' };
+  if (!d.results.summary)      return { ok: false, error: 'Missing results.summary' };
+
+  const idx = d.results.summary.designStageIdx;
+  if (idx == null || idx < 0 || idx >= d.results.perStage.length) {
+    return { ok: false, error: 'designStageIdx ' + idx + ' out of range (perStage.length = ' + d.results.perStage.length + ')' };
+  }
+
+  return { ok: true };
+}
+
+// ─── Load logic ──────────────────────────────────────────────
+function loadFromText(text, sourceLabel) {
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (e) {
+    toast('JSON parse failed: ' + e.message, 'error');
+    return;
+  }
+
+  const v = validateSchema(parsed);
+  if (!v.ok) {
+    toast(v.error, 'error');
+    console.error('[v2.0 skeleton] validation failed:', v.error, parsed);
+    return;
+  }
+
+  STATE.data = parsed;
+  STATE.designStageIdx = parsed.results.summary.designStageIdx;
+  refreshAll(text.length, sourceLabel);
+  toast('Loaded: ' + sourceLabel + ' (' + parsed.results.perStage.length + ' stages)');
+}
+
+function loadFromFile(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) { loadFromText(e.target.result, file.name); };
+  reader.onerror = function() { toast('File read failed', 'error'); };
+  reader.readAsText(file);
+}
+
+function loadSample() {
+  const sampleEl = $('sampleData');
+  const txt = sampleEl ? sampleEl.textContent.trim() : '';
+  if (!txt || looksLikePlaceholder(txt)) {
+    toast('Embedded sample data not injected — use "Select JSON file" to load an external file', 'warn');
+    return;
+  }
+  loadFromText(txt, 'Embedded sample (Atlantic salmon 1000 t/yr)');
+}
+
+function clearData() {
+  STATE.data = null;
+  STATE.designStageIdx = null;
+  refreshAll();
+  toast('Cleared');
+}
+
+// ─── UI refresh ──────────────────────────────────────────────
+function refreshAll(byteSize, sourceLabel) {
+  refreshTopSummary();
+  refreshMeta();
+  refreshStageSelect();
+  refreshInspector();
+  refreshLayerEnableState();
+  refreshStatusBar(byteSize, sourceLabel);
+  renderAll();      // ← render the SVG graphics
+  $('btnClear').disabled = !STATE.data;
+}
+
+function refreshTopSummary() {
+  const el = $('topSummary');
+  if (!STATE.data) {
+    el.innerHTML = '<span class="summary-item muted">No data loaded</span>';
+    return;
+  }
+  const d = STATE.data;
+  const ds = d.results.perStage[STATE.designStageIdx];
+  // v1.7: split peak O₂-demand display (fish physiology / biofilter nitrification+DOM / total) — so the owner can see "what goes through the O₂ cone vs the biofilter blower"
+  //   fish physiology → supplied by the O₂ cone A-601 + LOX V-901
+  //   biofilter (nitrification+DOM) → supplied by the biofilter blower K-302 + air
+  // Compatibility with old data (falls back to a single total when o2FishPeakHourly / o2BFPeakHourly are absent)
+  const oxFish = ds.load.o2FishPeakHourly;
+  const oxBF   = ds.load.o2BFPeakHourly;
+  const oxTotal = ds.load.o2PeakHourly;
+  const o2Display = (oxFish != null && oxBF != null)
+    ? 'Peak O₂ demand <b>' + fmtNum(oxTotal) + ' kg/h</b> '
+      + '<span class="summary-sub">(fish ' + fmtNum(oxFish) + ' + BF ' + fmtNum(oxBF) + ')</span>'
+    : 'Peak O₂ demand <b>' + fmtNum(oxTotal) + ' kg/h</b>';
+  el.innerHTML = [
+    '<span class="summary-item">Species<b>' + (d.speciesName || d.species) + '</b></span>',
+    '<span class="summary-item">Scale<b>' + d.yieldTons + ' t/yr</b></span>',
+    '<span class="summary-item">Design stage<b>' + ds.stageName + '</b></span>',
+    '<span class="summary-item">Main flow<b>' + fmtNum(ds.flow.flowMain) + ' m³/h</b></span>',
+    '<span class="summary-item">System volume<b>' + fmtNum(ds.flow.volumeTotal) + ' m³</b></span>',
+    '<span class="summary-item" title="fish physiological O₂ (→ O₂ cone A-601 + LOX V-901) + biofilter O₂ (nitrification+DOM, → biofilter blower K-302 + air)">' + o2Display + '</span>'
+  ].join('');
+}
+
+function refreshMeta() {
+  const el = $('metaList');
+  if (!STATE.data) {
+    el.innerHTML = '<dd style="color:var(--ink-3); font-style:italic;">—</dd>';
+    return;
+  }
+  const d = STATE.data;
+  const savedAt = d.savedAt ? new Date(d.savedAt).toLocaleString('zh-CN', {hour12:false}) : '—';
+  el.innerHTML =
+    '<dt>pidSchema</dt><dd>' + d.pidSchema + '</dd>' +
+    '<dt>iRAS version</dt><dd>' + (d.irasVersion || '—') + '</dd>' +
+    '<dt>Exported</dt><dd>' + savedAt + '</dd>' +
+    '<dt>tag namespace</dt><dd>' + (d.results.summary.tagPrefix || '—') + '</dd>' +
+    '<dt>Facility peak flow</dt><dd>' + fmtNum(d.results.summary.peakFlowM3H) + ' m³/h</dd>' +
+    '<dt>Facility volume</dt><dd>' + fmtNum(d.results.summary.totalSystemVolume) + ' m³</dd>' +
+    '<dt>Facility O₂ use</dt><dd>' + fmtNum(d.results.summary.totalLOXKgD) + ' kg/d</dd>';
+}
+
+function refreshStageSelect() {
+  const sel = $('stageSelect');
+  if (!STATE.data) {
+    sel.innerHTML = '<option>Not loaded</option>';
+    sel.disabled = true;
+    return;
+  }
+  const stages = STATE.data.results.perStage;
+  const designIdx = STATE.data.results.summary.designStageIdx;
+  sel.innerHTML = stages.map(function(s, i) {
+    return '<option value="' + i + '"' +
+      (i === STATE.designStageIdx ? ' selected' : '') + '>' +
+      s.stageName + (i === designIdx ? '  ★ design point' : '') + '</option>';
+  }).join('');
+  sel.disabled = false;
+}
+
+function refreshInspector() {
+  const el = $('inspectorBody');
+  if (!STATE.data) {
+    el.innerHTML =
+      '<div class="empty-state">' +
+        '<div>Waiting for data</div>' +
+        '<div class="hint">' +
+          'You can:<br>' +
+          '• Click <code>📂 Load sample</code> to try it<br>' +
+          '• Click <code>📁 Select JSON file</code> to pick a file<br>' +
+          '• Drag a JSON file onto the canvas' +
+        '</div>' +
+      '</div>';
+    return;
+  }
+  const stage = STATE.data.results.perStage[STATE.designStageIdx];
+  el.innerHTML = '';
+  el.appendChild(renderTreeNode('stage', stage, true));
+}
+
+function renderTreeNode(key, val, isRoot) {
+  if (val === null || val === undefined) return leaf(key, val);
+  if (typeof val !== 'object') return leaf(key, val);
+  if (Array.isArray(val))      return arrayNode(key, val);
+
+  const det = document.createElement('details');
+  det.className = 'tree-node';
+  if (isRoot || ['farm', 'load', 'flow', 'equipment', 'pumps', 'thermal'].indexOf(key) >= 0) {
+    det.open = true;
+  }
+  const sum = document.createElement('summary');
+  const isDisabled = val.enabled === false;
+  let html = '<span class="tree-key' + (isDisabled ? ' disabled' : '') + '">' + key + '</span>';
+  if (val.tag) html += ' <span class="tree-val string">' + val.tag + '</span>';
+  if ('enabled' in val) {
+    html += ' <span class="tree-val ' + (val.enabled ? 'boolean' : 'null') + '">' +
+            (val.enabled ? '✓ enabled' : '✗ disabled') + '</span>';
+  }
+  if (val.kw != null && html.indexOf('kW') < 0) {
+    html += ' <span class="tree-val number">' + fmtNum(val.kw) + '<span class="unit"> kW</span></span>';
+  }
+  if (val.flowMain != null) {
+    html += ' <span class="tree-val number">' + fmtNum(val.flowMain) + '<span class="unit"> m³/h</span></span>';
+  }
+  sum.innerHTML = html;
+  det.appendChild(sum);
+
+  for (const k in val) {
+    if (Object.prototype.hasOwnProperty.call(val, k)) {
+      det.appendChild(renderTreeNode(k, val[k], false));
+    }
+  }
+  return det;
+}
+
+function arrayNode(key, arr) {
+  const det = document.createElement('details');
+  det.className = 'tree-node';
+  const sum = document.createElement('summary');
+  sum.innerHTML = '<span class="tree-key">' + key + '</span> <span class="tree-val null">[' + arr.length + ']</span>';
+  det.appendChild(sum);
+  arr.forEach(function(v, i) { det.appendChild(renderTreeNode('[' + i + ']', v, false)); });
+  return det;
+}
+
+function leaf(key, val) {
+  const div = document.createElement('div');
+  div.className = 'tree-leaf';
+  let cls, txt;
+  if (val === null) { cls = 'null'; txt = 'null'; }
+  else if (val === undefined) { cls = 'null'; txt = 'undefined'; }
+  else if (typeof val === 'string') { cls = 'string'; txt = '"' + val + '"'; }
+  else if (typeof val === 'boolean') { cls = 'boolean'; txt = String(val); }
+  else if (typeof val === 'number') { cls = 'number'; txt = fmtNum(val); }
+  else { cls = ''; txt = String(val); }
+  div.innerHTML = '<span class="tree-key">' + key + '</span>: <span class="tree-val ' + cls + '">' + txt + '</span>';
+  return div;
+}
+
+function refreshLayerEnableState() {
+  document.querySelectorAll('.layer-row').forEach(function(row) {
+    row.dataset.disabled = 'false';
+  });
+}
+
+function refreshStatusBar(byteSize, sourceLabel) {
+  $('statusLeft').textContent = STATE.data
+    ? 'Loaded: ' + (sourceLabel || '(unnamed)')
+    : 'Ready';
+  $('statusSchema').textContent = 'schema: ' + (STATE.data ? STATE.data.pidSchema : '—');
+  $('statusStages').textContent = 'Stages: ' + (STATE.data ? STATE.data.results.perStage.length : '—');
+  $('statusBytes').textContent = 'Size: ' + (byteSize ? fmtBytes(byteSize) : '—');
+}
+
+function toggleLayer(layerName, visible) {
+  const g = $('layer-' + layerName);
+  if (!g) return;
+  g.style.display = visible ? '' : 'none';
+}
+
+function bindEvents() {
+  $('btnLoadSample').addEventListener('click', loadSample);
+  $('btnLoadFile').addEventListener('click', function() { $('fileInput').click(); });
+  $('fileInput').addEventListener('change', function(e) {
+    const f = e.target.files[0];
+    if (f) loadFromFile(f);
+    e.target.value = '';
+  });
+  $('btnClear').addEventListener('click', clearData);
+
+  const area = $('canvasArea');
+  ['dragover', 'dragenter'].forEach(function(evt) {
+    area.addEventListener(evt, function(e) { e.preventDefault(); area.classList.add('drag-over'); });
+  });
+  ['dragleave', 'dragend', 'drop'].forEach(function(evt) {
+    area.addEventListener(evt, function(e) { e.preventDefault(); area.classList.remove('drag-over'); });
+  });
+  area.addEventListener('drop', function(e) {
+    const f = e.dataTransfer.files[0];
+    if (f) {
+      if (!f.name.endsWith('.json')) { toast('Please drop a .json file', 'warn'); return; }
+      loadFromFile(f);
+    }
+  });
+
+  document.querySelectorAll('.layer-row input[type="checkbox"]').forEach(function(cb) {
+    cb.addEventListener('change', function(e) {
+      const row = e.target.closest('.layer-row');
+      toggleLayer(row.dataset.layer, e.target.checked);
+    });
+  });
+
+  $('stageSelect').addEventListener('change', function(e) {
+    STATE.designStageIdx = parseInt(e.target.value, 10);
+    refreshTopSummary();
+    refreshInspector();
+    renderAll();    // ← redraw on stage switch
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  bindEvents();
+  refreshAll();
+  console.info('[iRAS P&ID v2.0 skeleton] ready. Debug: window.STATE');
+  window.STATE = STATE;
+
+  // v1.3 integration: auto-load the design data passed from the iRAS main page via localStorage
+  // (v1.3.x: switched from sessionStorage to localStorage to avoid new windows occasionally not reading it)
+  function tryLoadFromSessionStorage(label) {
+    try {
+      const stashed = localStorage.getItem('iRAS_pidExport') || sessionStorage.getItem('iRAS_pidExport');
+      if (stashed) {
+        loadFromText(stashed, label || 'iRAS main-page design (auto-loaded)');
+        // clear once consumed to avoid stale data
+        localStorage.removeItem('iRAS_pidExport');
+        sessionStorage.removeItem('iRAS_pidExport');
+        return true;
+      }
+    } catch(e) { console.warn('storage auto-load failed:', e); }
+    return false;
+  }
+  // First window open: read directly on DOMContentLoaded
+  tryLoadFromSessionStorage();
+
+  // Window-reuse scenario: when the main page clicks "Export P&ID" again, it notifies via postMessage and we reload here
+  window.addEventListener('message', function(ev) {
+    if (ev && ev.data && ev.data.type === 'iRAS_PID_RELOAD') {
+      tryLoadFromSessionStorage('iRAS main-page design (reloaded)');
+    }
+  });
+});
+</script>
+</body>
+</html>

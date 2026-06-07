@@ -1,0 +1,3613 @@
+<!DOCTYPE html>
+<!--
+  iRAS · Feasibility Report Generator (v1.7)
+  Generates a feasibility report as a .docx document
+
+  Data source: localStorage['iRAS_reportExport'] (passed from the "📄 Generate Feasibility Report" button on the main page)
+  Output: a structured .docx feasibility document
+
+  Copyright (C) 2026 Hainan Dengdeng Technology Consulting Co., Ltd.
+  Copyright (C) 2026 Sun Cheng <6881509@qq.com>
+
+  This program is free software: you can redistribute it and/or modify it
+  under the terms of the GNU Affero General Public License (AGPL v3)
+  as published by the Free Software Foundation, either version 3, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  See the GNU Affero General Public License for more details.
+
+  You should have received a copy of the GNU AGPL v3 License along with this program.
+  If not, see <https://www.gnu.org/licenses/agpl-3.0.html>.
+
+  Contact: 6881509@qq.com
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Sun Cheng / Hainan Dengdeng Technology Consulting Co., Ltd.">
+<meta name="copyright" content="© 2026 Hainan Dengdeng Technology Consulting Co., Ltd.">
+<title>iRAS · Feasibility Report Generator v1.7</title>
+<script src="https://cdn.jsdelivr.net/npm/nunjucks@3.2.4/browser/nunjucks.min.js"></script>
+<!-- v1.5: shared financial calculation module (shared with finance.html, Bug 6 fix) -->
+<script src="finance-core.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  header {
+    border-bottom: 2px solid #6366f1;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  h1 { color: #a5b4fc; font-size: 20px; font-weight: 600; margin: 0; }
+  h2 { color: #a5b4fc; font-size: 16px; margin: 24px 0 8px 0; padding-bottom: 4px; border-bottom: 1px solid #475569; }
+  h3 { color: #c7d2fe; font-size: 14px; margin: 16px 0 6px 0; }
+  .meta { color: #94a3b8; font-size: 12px; }
+
+  .btn {
+    background: #312e81; color: #c7d2fe; border: 1px solid #6366f1;
+    padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;
+  }
+  .btn:hover { background: #4338ca; color: #e0e7ff; }
+  .btn:disabled { background: #1e293b; color: #64748b; cursor: not-allowed; border-color: #475569; }
+  .btn-primary { background: #6366f1; color: white; border-color: #6366f1; padding: 8px 18px; font-size: 13px; }
+  .btn-primary:hover { background: #4f46e5; color: white; }
+  .btn-primary:disabled { background: #312e81; color: #94a3b8; }
+
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #94a3b8;
+  }
+  .empty .big { font-size: 48px; margin-bottom: 12px; }
+
+  /* Progress bar / status */
+  .status-bar {
+    background: #1e293b;
+    border: 1px solid #6366f1;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    display: none;
+  }
+  .status-bar.visible { display: block; }
+  .status-bar.error { border-color: #ef4444; background: #2a1414; color: #fca5a5; }
+  .status-bar.success { border-color: #10b981; background: #14241a; color: #86efac; }
+
+  /* Form groups (collapsible) */
+  .form-group {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .form-group-header {
+    padding: 10px 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #1e293b;
+    user-select: none;
+  }
+  .form-group-header:hover { background: #2a3f5f; }
+  .form-group-title {
+    color: #a5b4fc;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .form-group-status {
+    color: #64748b;
+    font-size: 11px;
+  }
+  .form-group-status.complete { color: #86efac; }
+  .form-group-toggle {
+    color: #94a3b8;
+    font-size: 12px;
+    margin-left: 8px;
+  }
+  .form-group-body {
+    padding: 12px 14px;
+    border-top: 1px solid #334155;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px 16px;
+  }
+  .form-group.collapsed .form-group-body { display: none; }
+  .form-group.collapsed .form-group-toggle::after { content: '▼'; }
+  .form-group:not(.collapsed) .form-group-toggle::after { content: '▲'; }
+
+  .field { display: flex; flex-direction: column; }
+  .field-wide { grid-column: 1 / -1; }
+  .field label {
+    font-size: 11px;
+    color: #cbd5e1;
+    margin-bottom: 3px;
+  }
+  .field label .required { color: #ef4444; margin-left: 2px; }
+  .field label .hint { color: #64748b; font-size: 10px; margin-left: 4px; }
+  .field input, .field select, .field textarea {
+    background: #0f172a;
+    color: #e2e8f0;
+    border: 1px solid #475569;
+    border-radius: 3px;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-family: inherit;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+  }
+  .field textarea { resize: vertical; min-height: 60px; }
+
+  /* Report summary */
+  .summary-box {
+    background: #1e293b;
+    border-left: 3px solid #6366f1;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: #cbd5e1;
+  }
+  .summary-box .label { color: #a5b4fc; font-weight: 600; }
+  .summary-box .row { margin: 3px 0; }
+
+  /* Chapter preview */
+  .chapter-list {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+  .chapter-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 6px;
+    font-size: 12px;
+    border-radius: 3px;
+  }
+  .chapter-item:hover { background: #2a3f5f; }
+  .chapter-item .name { color: #cbd5e1; }
+  .chapter-item .auto-rate { color: #64748b; font-size: 11px; font-family: ui-monospace, monospace; }
+  .chapter-item.ready .auto-rate { color: #86efac; }
+  .chapter-item.placeholder .auto-rate { color: #fcd34d; }
+
+  /* Action area */
+  .action-bar {
+    background: #1e293b;
+    border: 1px solid #6366f1;
+    border-radius: 6px;
+    padding: 16px;
+    margin-top: 24px;
+    text-align: center;
+  }
+  .action-bar .hint { font-size: 11px; color: #94a3b8; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>📄 iRAS Feasibility Report Generator</h1>
+      <div class="meta" id="metaLine">Waiting for design data from the main page…</div>
+    </div>
+    <div class="no-print" style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="btn" id="btnReloadData" title="Reload design data from the main page">🔄 Reload</button>
+      <button class="btn" id="btnClearForm" title="Clear the form">🗑️ Clear form</button>
+    </div>
+  </header>
+
+  <div class="status-bar" id="statusBar"></div>
+
+  <!-- Main content: shown only after data loads -->
+  <div id="mainContent">
+    <div class="empty">
+      <div class="big">⏳</div>
+      <div>Click <strong>📄 Generate Feasibility Report</strong> on the main page to load the design data</div>
+      <div style="margin-top: 8px; font-size: 11px; color: #64748b;">
+        If you opened this page directly, complete a design on the main page first, then click the button
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Embedded templates (script type="text/njk", read by nunjucks) -->
+<!-- The chapter templates live here -->
+
+<script type="text/njk-template" id="tpl-ch13">
+@@H1@@Chapter 12. Financial Analysis
+
+@@H2@@12.1 Basis of the financial evaluation
+
+The financial evaluation follows standard project economic-evaluation methodology and current tax and fiscal rules to assess the financial feasibility of the project.
+
+The evaluation uses discounted cash-flow analysis to compute financial indicators at both the total-investment and equity levels, including the internal rate of return (IRR), net present value (NPV), payback period and break-even point, together with a sensitivity analysis of the main uncertainties.
+
+@@H2@@12.2 Input data and parameters
+
+The base data and calculation parameters are as follows:
+
+@@TABLE@@
+Item|Value
+Evaluation period|{{ finance.params.years }} years (construction {{ finance.params.buildYears }} years, then operation)
+Product sales price|{{ finance.params.price }} EUR/kg
+Design annual output|{{ farm.yieldTons }} t/yr
+Production ramp|Year 1 {{ (finance.params.ramp1*100)|round(0) }}%, Year 2 {{ (finance.params.ramp2*100)|round(0) }}%, Year 3+ {{ (finance.params.ramp3*100)|round(0) }}% of capacity
+Equity ratio|{{ (finance.params.ownPct*100)|round(0) }}%
+Bank loan rate|{{ (finance.params.loanRate*100)|round(1) }}%/yr (repayment {{ finance.params.loanYears }} years)
+Discount rate|{{ (finance.params.discount*100)|round(1) }}%
+Income tax rate|{{ (finance.params.taxRate*100)|round(0) }}%
+@@END_TABLE@@
+
+@@H2@@12.3 Sales revenue and sales taxes
+
+At the design capacity of {{ farm.yieldTons }} t/yr and a price of {{ finance.params.price }} EUR/kg, full-capacity annual revenue is about {{ (farm.yieldTons * 1000 * finance.params.price)|eur }} EUR. Revenue grows year by year with the capacity ramp, as shown below:
+
+@@TABLE@@
+Year|Capacity ratio|Output (t)|Revenue (EUR)
+{% for y in finance.tables.revenue %}Year {{ y.year }}|{{ (y.ramp*100)|round(0) }}%|{{ y.tons|round(1) }}|{{ y.revenue|wan }}
+{% endfor %}@@END_TABLE@@
+
+{% if finance.params.salesTax > 0 %}
+Sales tax and surcharge are levied at {{ (finance.params.salesTax*100)|round(1) }}%.
+{% else %}
+As a primary agricultural product, the output is exempt from VAT under current tax law, so the sales tax and surcharge are zero.
+{% endif %}
+
+@@H2@@12.4 Total cost estimate
+
+The full-capacity total cost breaks down as follows:
+
+@@TABLE@@
+Item|Amount (EUR)|% of total cost
+Operating cost (feed / power / LOX / chemicals)|{{ finance.tables.totalCost.operatingCost|wan }}|{{ finance.tables.totalCost.operatingPct }}%
+Repairs ({{ (finance.params.repairRate*100)|round(1) }}% × equipment cost)|{{ finance.tables.totalCost.repairCost|wan }}|{{ finance.tables.totalCost.repairPct }}%
+Admin ({{ (finance.params.adminRate*100)|round(1) }}% × revenue)|{{ finance.tables.totalCost.adminCost|wan }}|{{ finance.tables.totalCost.adminPct }}%
+Labor|{{ finance.tables.totalCost.laborCost|wan }}|{{ finance.tables.totalCost.laborPct }}%
+Depreciation (equipment {{ capex.depYearsEquip }} yr + civil works {{ capex.depYearsCivil }} yr)|{{ finance.tables.totalCost.dep|wan }}|{{ finance.tables.totalCost.depPct }}%
+Finance cost (loan interest)|{{ finance.tables.totalCost.interest|wan }}|{{ finance.tables.totalCost.interestPct }}%
+@@SUBTOTAL@@Total cost|{{ finance.tables.totalCost.total|wan }}|100.0%
+@@END_TABLE@@
+
+@@H2@@12.5 Profit & loss analysis
+
+The profit & loss analysis covers the {{ finance.params.years }}-year evaluation period; the main figures for the key years (Year 1, Year 2, full-capacity year, final year) are:
+
+@@TABLE@@
+Item (EUR)|Year 1|Year 2|Full year (Year 3)|Final year (Year {{ finance.params.years }})
+Sales revenue|{{ finance.tables.profitLoss.y1.revenue|wan }}|{{ finance.tables.profitLoss.y2.revenue|wan }}|{{ finance.tables.profitLoss.y3.revenue|wan }}|{{ finance.tables.profitLoss.yN.revenue|wan }}
+Operating cost|{{ finance.tables.profitLoss.y1.opCost|wan }}|{{ finance.tables.profitLoss.y2.opCost|wan }}|{{ finance.tables.profitLoss.y3.opCost|wan }}|{{ finance.tables.profitLoss.yN.opCost|wan }}
+Depreciation|{{ finance.tables.profitLoss.y1.dep|wan }}|{{ finance.tables.profitLoss.y2.dep|wan }}|{{ finance.tables.profitLoss.y3.dep|wan }}|{{ finance.tables.profitLoss.yN.dep|wan }}
+Interest|{{ finance.tables.profitLoss.y1.interest|wan }}|{{ finance.tables.profitLoss.y2.interest|wan }}|{{ finance.tables.profitLoss.y3.interest|wan }}|{{ finance.tables.profitLoss.yN.interest|wan }}
+Pre-tax profit|{{ finance.tables.profitLoss.y1.profitBefore|wan }}|{{ finance.tables.profitLoss.y2.profitBefore|wan }}|{{ finance.tables.profitLoss.y3.profitBefore|wan }}|{{ finance.tables.profitLoss.yN.profitBefore|wan }}
+Income tax|{{ finance.tables.profitLoss.y1.tax|wan }}|{{ finance.tables.profitLoss.y2.tax|wan }}|{{ finance.tables.profitLoss.y3.tax|wan }}|{{ finance.tables.profitLoss.yN.tax|wan }}
+@@SUBTOTAL@@Net profit|{{ finance.tables.profitLoss.y1.profitNet|wan }}|{{ finance.tables.profitLoss.y2.profitNet|wan }}|{{ finance.tables.profitLoss.y3.profitNet|wan }}|{{ finance.tables.profitLoss.yN.profitNet|wan }}
+@@END_TABLE@@
+
+@@H2@@12.6 Cash-flow analysis
+
+@@H3@@12.6.1 Total-investment cash flow
+
+The total-investment cash flow evaluates the return on the project itself, before financing. The results are:
+
+@@P@@Total-investment IRR (after tax) = {{ (finance.indicators.irrTotal*100)|round(2) }}%
+@@P@@Total-investment NPV @ {{ (finance.params.discount*100)|round(1) }}% = {{ finance.indicators.npvTotal|wan }} EUR
+
+{% if finance.indicators.irrTotal > finance.params.discount %}
+The total-investment IRR exceeds the discount rate of {{ (finance.params.discount*100)|round(1) }}% and the NPV is positive, indicating the project is financially feasible on an investment basis.
+{% else %}
+The total-investment IRR is below the discount rate of {{ (finance.params.discount*100)|round(1) }}% and the NPV is negative, indicating insufficient feasibility on an investment basis; price, cost or investment scale should be optimized.
+{% endif %}
+
+@@IMG@@id=cashflow|caption=Figure 12-1 Cumulative net cash flow (solid: total investment; dashed: equity)|w=560|h=290@@
+
+@@H3@@12.6.2 Equity cash flow
+
+The equity cash flow evaluates the project from the shareholders' perspective, accounting for loan leverage. The results are:
+
+@@P@@Equity IRR = {{ (finance.indicators.irrEquity*100)|round(2) }}%
+@@P@@Equity NPV @ {{ (finance.params.discount*100)|round(1) }}% = {{ finance.indicators.npvEquity|wan }} EUR
+
+{% if finance.params.ownPct < 1.0 %}
+The equity IRR is {{ ((finance.indicators.irrEquity - finance.indicators.irrTotal)*100)|round(2) }} percentage points higher than the total-investment IRR, reflecting the amplifying effect of loan leverage.{% if finance.indicators.irrEquity > finance.params.discount %} Shareholder returns are healthy.{% endif %}
+{% else %}
+The project is financed entirely from equity, with no loan leverage, so the equity IRR equals the total-investment IRR.
+{% endif %}
+
+@@H2@@12.7 Static indicators
+
+The static evaluation indicators are:
+
+@@TABLE@@
+Indicator|Value|Benchmark|Result
+Total-investment static payback|{{ finance.indicators.paybackTotal|round(2) }} yr|≤ benchmark (8 yr)|{{ 'Met' if finance.indicators.paybackTotal <= 8 else 'Watch' }}
+Equity static payback|{{ finance.indicators.paybackEquity|round(2) }} yr|—|—
+Return on total investment (full year)|{{ finance.tables.totalCost.roi|round(2) }}%|—|—
+@@END_TABLE@@
+
+@@H2@@12.8 Dynamic indicators
+
+@@TABLE@@
+Indicator|Value|Benchmark|Result
+Total-investment after-tax IRR|{{ (finance.indicators.irrTotal*100)|round(2) }}%|≥ {{ (finance.params.discount*100)|round(1) }}%|{{ 'Met' if finance.indicators.irrTotal >= finance.params.discount else 'Not met' }}
+Equity IRR|{{ (finance.indicators.irrEquity*100)|round(2) }}%|—|—
+Total-investment NPV|{{ finance.indicators.npvTotal|wan }} EUR|≥ 0|{{ 'Met' if finance.indicators.npvTotal >= 0 else 'Not met' }}
+Total-investment dynamic payback|{{ finance.indicators.paybackTotalDisc|round(2) }} yr|—|—
+@@END_TABLE@@
+
+@@H2@@12.9 Break-even analysis
+
+The break-even point (BEP) = {{ finance.indicators.bepPct|round(1) }}% of full capacity.
+
+{% if finance.indicators.bepPct < 60 %}
+This is well below the design capacity (BEP < 60%), giving a large safety margin: the project breaks even even if actual output is well below design, indicating strong resilience.
+{% elif finance.indicators.bepPct < 75 %}
+This falls in the 60–75% range, giving a moderate safety margin: the project breaks even within a reasonable output swing.
+{% elif finance.indicators.bepPct < 90 %}
+This is on the high side (75–90%): the project depends heavily on reaching target output and must operate near design to break even; production management and sales should be strengthened.
+{% else %}
+This is too high (≥ 90%): the project has almost no safety margin and any shortfall causes a loss; the risk is high and feasibility should be reassessed.
+{% endif %}
+
+@@H2@@12.10 Financial conclusion
+
+In summary, the project's main financial indicators are:
+
+@@TABLE@@
+Indicator|Value|Result
+Total-investment IRR (after tax)|{{ (finance.indicators.irrTotal*100)|round(2) }}%|{{ 'Feasible' if finance.indicators.irrTotal >= finance.params.discount else 'Not feasible' }}
+Equity IRR|{{ (finance.indicators.irrEquity*100)|round(2) }}%|—
+Total-investment NPV|{{ finance.indicators.npvTotal|wan }} EUR|{{ 'Feasible' if finance.indicators.npvTotal >= 0 else 'Not feasible' }}
+Static payback|{{ finance.indicators.paybackTotal|round(2) }} yr|{{ 'Met' if finance.indicators.paybackTotal <= 8 else 'Watch' }}
+Break-even point|{{ finance.indicators.bepPct|round(1) }}% of capacity|{{ 'Large margin' if finance.indicators.bepPct < 75 else 'Watch' }}
+@@END_TABLE@@
+
+{% if finance.indicators.irrTotal >= finance.params.discount and finance.indicators.npvTotal >= 0 %}
+@@P@@Conclusion: the project's financial indicators are sound overall — the total-investment IRR exceeds the discount rate, the NPV is positive, the payback period is reasonable, and the break-even point {% if finance.indicators.bepPct < 75 %}leaves a comfortable safety margin{% else %}is within a manageable range{% endif %}. On a financial-feasibility basis, the project is suitable for investment.
+{% else %}
+@@P@@Conclusion: the project's financial indicators are weak and do not meet the required rate of return. The following should be optimized and the project re-evaluated:
+@@LIST@@
+{% if finance.params.price < 50 %}- Raise pricing or add higher-value product lines{% endif %}
+- Optimize equipment investment (current CAPEX {{ capex.fixedAsset|wan }} EUR)
+- Reduce operating cost (current annual OPEX {{ opex.totalExclDep|wan }} EUR)
+- Adjust scale (currently {{ farm.yieldTons }} t/yr)
+@@END_LIST@@
+{% endif %}
+
+{# Note: the sensitivity analysis is a separate, longer section in 12.11 #}
+
+@@H2@@12.11 Sensitivity analysis
+
+To assess the project's tolerance to the main uncertainties, a single-factor ±20% sensitivity analysis was run on the following key factors:
+
+@@TABLE@@
+Factor|Low IRR|Base IRR|High IRR|IRR swing
+{% for f in finance.tables.sensitivity %}{{ f.label }}|{{ (f.irrLow*100)|round(1) }}%|{{ (finance.indicators.irrTotal*100)|round(1) }}%|{{ (f.irrHigh*100)|round(1) }}%|{{ (f.irrSwing*100)|round(1) }}%
+{% endfor %}@@END_TABLE@@
+
+@@IMG@@id=tornado|caption=Figure 12-2 Sensitivity tornado chart (factors ordered by IRR swing)|w=560|h=200@@
+
+{% set top1 = finance.tables.sensitivity[0] %}
+@@P@@The analysis shows the project IRR is most sensitive to {{ top1.label }} (swing {{ (top1.irrSwing*100)|round(1) }}%), making it the key factor to control during execution. {% if 'price' in top1.label or 'Sales' in top1.label %}A long-term supply agreement with downstream customers is recommended before construction to lock in sales price and volume and hedge against market-price volatility.{% elif 'CAPEX' in top1.label %}Investment control during execution is recommended — through competitive equipment tendering and design-to-budget — to keep construction cost in check.{% endif %}
+</script>
+
+<!-- Chapter templates -->
+<script type="text/njk-template" id="tpl-ch01">@@H1@@Chapter 1. Executive Summary
+
+@@H2@@1.1 Project overview
+
+@@TABLE@@
+Item|Detail
+Project name|{{ project.name }}
+{% if project.code %}Project code|{{ project.code }}
+{% endif %}Project type|{{ project.nature }}
+Site|{{ project.location.full or '(to be filled)' }}
+Owner|{{ project.owner }}
+{% if project.ownerCreditCode %}Company registration no.|{{ project.ownerCreditCode }}
+{% endif %}Capacity|{{ farm.yieldTons }} t/yr of {{ farm.speciesName }}
+Total investment|{{ capex.totalInvestment|wan }} EUR
+of which fixed-asset investment|{{ capex.fixedAsset|wan }} EUR
+Working capital|{{ capex.workingCapital|wan }} EUR
+Construction period|{{ finance.params.buildYears|round(1) }} yr
+Evaluation period|{{ finance.params.years }} yr (incl. construction)
+Prepared by|{{ project.editor }}
+{% if project.editorQualification %}Preparer qualification|{{ project.editorQualification }}
+{% endif %}Report date|{{ project.editDate }}
+@@END_TABLE@@
+
+@@H2@@1.2 Basis of preparation
+
+{% if project.editorBasis %}This feasibility study is based primarily on:
+
+{{ project.editorBasis }}
+
+In addition, the following references were consulted:{% else %}This feasibility study is based primarily on:
+{% endif %}
+
+@@LIST@@
+- Standard project economic-evaluation methodology and parameters
+- Recognized guidance on the required depth of feasibility studies
+- Recognized procedures for investment estimating and review
+- Relevant policies promoting modern fisheries, aquaculture and controlled-environment agriculture
+- Current equipment price information and fee standards
+- Engineering data and field cases from comparable RAS (recirculating aquaculture) projects
+@@END_LIST@@
+
+@@H2@@1.3 Guiding principles
+
+This report follows these principles:
+
+@@LIST@@
+- <strong>Sound engineering</strong>: the process design is based on a mature international RAS framework, with key parameters (mass balance, equipment selection, heat balance) calibrated against published literature and field data
+- <strong>State of the art</strong>: a hybrid series-mainline + parallel-bypass architecture with multiple parallel modules and N+1 redundancy balances advanced technology with reliability
+- <strong>Cost-effectiveness</strong>: the investment estimate considers sourcing, scale factors and regional factors to keep the budget realistic
+- <strong>Practicality</strong>: equipment selection considers supply-chain maturity and the schedule follows industry norms, so the project can be delivered smoothly
+- <strong>Compliance</strong>: the report is complete in structure and emphasizes the core content — technical concept, investment estimate, financial analysis and risk
+@@END_LIST@@
+
+@@H2@@1.4 Scope
+
+This study examines the feasibility of {{ project.name }}, covering:
+
+@@LIST@@
+- Background and rationale
+- Market analysis and scale
+- Site and conditions
+- Technical concept (process flow, unit design, key water-quality control)
+- Equipment design (equipment list, specifications, procurement strategy)
+- Civil works / site layout / utilities
+- Energy and water efficiency
+- Preliminary environmental impact
+- Occupational safety, health and fire protection
+- Implementation schedule and organization
+- Investment estimate and financing
+- Financial analysis (NPV / IRR / sensitivity)
+- Risk analysis and mitigation
+- Conclusion and recommendation
+
+@@END_LIST@@
+
+@@P@@This report does not replace formal environmental, safety or energy assessments, which must be issued independently by qualified bodies. The investment estimate has an accuracy of about ±40%; the detailed figure is governed by the construction contract.
+
+@@H2@@1.5 Key techno-economic indicators
+
+The project's key techno-economic indicators are summarized below:
+
+@@TABLE@@
+Category|Indicator|Value
+@@SUBTOTAL@@Scale|—|—
+Scale|Species|{{ farm.speciesName }}
+Scale|Annual output|{{ farm.yieldTons }} t
+Scale|Number of stages|{{ farm.stages|length }}
+Scale|Independent recirculation modules|{{ farm.totalSubSystems }}
+Scale|Total fish tanks|{{ farm.totalPools }}
+Scale|Total system volume|{{ farm.totalSystemVolume|round(0) }} m³
+Scale|Steady-state standing biomass|{{ farm.totalBiomass|round(1) }} t
+{% if farm.land %}Scale|Total building area|approx. {{ farm.land.totalBuildingArea|round(0) }} m²
+Scale|Total site area|approx. {{ farm.land.totalLandArea|round(0) }} m²
+{% endif %}@@SUBTOTAL@@Consumption & loads|—|—
+Consumption & loads|Daily feed|{{ farm.totalFeedDaily|round(0) }} kg/d
+Consumption & loads|Weighted average FCR|{{ farm.weightedFCR|round(2) }} (feed-weighted)
+Consumption & loads|Daily LOX use|{{ farm.totalLOXKgD|round(0) }} kg/d
+Consumption & loads|Design-stage peak flow|{{ farm.peakFlowM3H|round(0) }} m³/h
+@@SUBTOTAL@@Investment|—|—
+Investment|Fixed-asset investment|{{ capex.fixedAsset|wan }} EUR
+Investment|of which equipment|{{ capex.equipDirect|wan }} EUR
+Investment|of which civil / installation / electrical|{{ capex.civilEtc|wan }} EUR
+Investment|Working capital|{{ capex.workingCapital|wan }} EUR
+Investment|Total investment|{{ capex.totalInvestment|wan }} EUR
+Investment|Equity (fixed assets {{ (finance.params.ownPct*100)|round(0) }}% + working capital 100%)|{{ capex.ownEquity|eur }} EUR
+Investment|Bank loan (fixed assets {{ ((1-finance.params.ownPct)*100)|round(0) }}%)|{{ capex.loan|eur }} EUR
+@@SUBTOTAL@@Operations|—|—
+Operations|Annual revenue (full capacity)|{{ (farm.yieldTons * 1000 * finance.params.price)|eur }} EUR
+Operations|Annual total cost (full capacity)|{{ finance.tables.totalCost.total|wan }} EUR
+Operations|Annual net profit (full capacity)|{{ finance.tables.profitLoss.y3.profitNet|wan }} EUR
+Operations|All-in cost|{{ opex.costPerKg|round(2) }} EUR/kg
+@@SUBTOTAL@@Financial indicators|—|—
+Financial indicators|Total-investment IRR (after tax)|{{ (finance.indicators.irrTotal*100)|round(2) }}%
+Financial indicators|Equity IRR|{{ (finance.indicators.irrEquity*100)|round(2) }}%
+Financial indicators|Total-investment NPV @ {{ (finance.params.discount*100)|round(1) }}%|{{ finance.indicators.npvTotal|wan }} EUR
+Financial indicators|Static payback|{{ finance.indicators.paybackTotal|round(2) }} yr
+Financial indicators|Dynamic payback|{{ finance.indicators.paybackTotalDisc|round(2) }} yr
+Financial indicators|Break-even point|{{ finance.indicators.bepPct|round(1) }}% of capacity
+@@END_TABLE@@
+
+@@H2@@1.6 Main conclusions and recommendations
+
+@@H3@@1.6.1 Technology
+
+@@P@@The project uses a mature international RAS process. The mainline runs "fish tank → drum filter → protein skimmer (bypass) → biofilter → UV → CO₂ stripping → oxygenation → fish tank", with denitrification and AOP bypasses. Unit design parameters align with international field data, so the process is <strong>mature and reliable</strong>.
+
+@@H3@@1.6.2 Economics and finance
+
+{% if finance.indicators.irrTotal >= finance.params.discount and finance.indicators.npvTotal >= 0 %}
+@@P@@The financial indicators are sound. The total-investment IRR is <strong>{{ (finance.indicators.irrTotal*100)|round(2) }}%</strong>, above the discount rate of {{ (finance.params.discount*100)|round(1) }}%; the equity IRR is {{ (finance.indicators.irrEquity*100)|round(2) }}%; the NPV is positive at {{ finance.indicators.npvTotal|wan }} EUR; the static payback is {{ finance.indicators.paybackTotal|round(2) }} years and the dynamic payback {{ finance.indicators.paybackTotalDisc|round(2) }} years; the break-even point is {{ finance.indicators.bepPct|round(1) }}% of capacity. The project is <strong>financially feasible</strong>.
+{% else %}
+@@P@@The financial indicators are weak. The total-investment IRR is {{ (finance.indicators.irrTotal*100)|round(2) }}%, {% if finance.indicators.irrTotal < finance.params.discount %}below the discount rate of {{ (finance.params.discount*100)|round(1) }}%; {% endif %}{% if finance.indicators.npvTotal < 0 %}with a negative NPV of {{ finance.indicators.npvTotal|wan }} EUR; {% endif %}the project <strong>does not meet the required return</strong>. Price, investment scale or operating cost should be optimized and the project re-evaluated.
+{% endif %}
+
+@@H3@@1.6.3 Overall conclusion
+
+{% if finance.indicators.irrTotal >= finance.params.discount and finance.indicators.npvTotal >= 0 %}
+@@P@@Considering technology, equipment, investment, financial analysis and risk together, the project is technically mature, equipment-reliable, reasonably costed, financially feasible and manageable in risk. <strong>Investment in the project is recommended</strong>.
+{% else %}
+@@P@@On balance, the project is technically feasible, but the financial indicators are not yet strong enough to support an investment decision. <strong>The design should be optimized before proceeding</strong>, focusing on improving pricing, reducing investment scale and lowering operating cost.
+{% endif %}
+
+@@P@@Detailed analysis follows in the subsequent chapters.
+</script>
+<script type="text/njk-template" id="tpl-ch02">@@H1@@Chapter 2. Background & Rationale
+
+@@H2@@2.1 Industry context
+
+{% if farm.species == "salmon" %}
+@@P@@Atlantic salmon (Salmo salar) is a flagship premium seafood product, with global farmed output of about 2.8 million t/yr — roughly 50% from Norway, with Scotland, Chile, Canada and the Faroe Islands as the main traditional regions. Constrained sea-cage space, rising sea temperatures and sea-lice pressure have driven the industry toward <strong>land-based RAS</strong> since around 2015.
+
+@@P@@Notable international projects include Atlantic Sapphire's Bluehouse plant in Miami (planned 100,000 t/yr), Salmon Evolution in Norway and similar large industrial RAS salmon projects. AKVA Group and Billund Aquaculture are among the established RAS EPC contractors.
+
+@@P@@Demand for premium salmon is strong in many markets that currently rely heavily on imports. Local RAS salmon pilot projects have begun to appear, and demand for locally farmed high-quality salmon is robust, with prices around 60–90 EUR/kg.
+
+{% elif farm.species == "turbot" %}
+@@P@@Turbot (Scophthalmus maximus) is a premium marine species introduced from the UK and now a mainstay of cold-water marine aquaculture, with annual output of roughly 50,000–60,000 t.
+
+@@P@@Traditional flow-through farming is energy-intensive (pumping thermostatically controlled groundwater), with large water use and variable quality. Since around 2010 producers have moved toward <strong>RAS</strong> for water and land savings and stable output. Field studies report stocking densities of 50–70 kg/m² (floor area) and an all-in cost of about 46–50 EUR/kg.
+
+@@P@@Turbot demand is stable at 60–90 EUR/kg, with growing export demand in Japan and Korea.
+
+{% elif farm.species == "grouper" %}
+@@P@@Grouper is a premium warm-water marine species (including hybrid, giant and coral varieties), with annual output of roughly 150,000–200,000 t in its main producing regions.
+
+@@P@@Traditional sea cages suffer high losses from typhoons, pollution and disease. RAS allows precise control of temperature, salinity and dissolved oxygen, sharply reducing losses and improving product quality. Several RAS grouper projects are in operation, with an all-in cost of 60–100 EUR/kg against a sales price of 100–200 EUR/kg — a healthy margin.
+
+{% elif farm.species == "perch" %}
+@@P@@Largemouth bass (Micropterus salmoides) is a fast-growing freshwater carnivorous species, with annual output of about 700,000 t, now a major freshwater species in its producing regions.
+
+@@P@@Pond stocking density is limited by water quality and disease, so producers are moving toward <strong>controlled-environment / industrial</strong> bass farming, with RAS an important option. The sales price is stable at 30–50 EUR/kg and the industrial all-in cost is about 25–35 EUR/kg, leaving a reasonable margin.
+
+{% elif farm.species == "mandarin" %}
+@@P@@Mandarin fish (Siniperca chuatsi) is a traditional premium freshwater species with a high sales price (80–150 EUR/kg) aimed at high-end consumption. Traditional farming relies on live-bait feeding, which has limited its scale.
+
+@@P@@Breakthroughs in formulated feed, combined with RAS, have made industrial mandarin-fish farming a leading direction for premium freshwater species. Several RAS mandarin-fish projects are now in operation.
+
+{% elif farm.species == "tilapia" %}
+@@P@@Tilapia is the world's second-largest farmed fish, with global output of about 6 million t/yr, much of it exported to Europe, the Americas and Southeast Asia, alongside stable domestic consumption.
+
+@@P@@Traditional pond tilapia is very low cost (20–25 EUR/kg), but RAS still offers distinct advantages for water and land savings, disease control and export-grade quality control.
+
+{% elif farm.species == "eel" %}
+@@P@@Eel (Japanese or European eel) is a high-value migratory species whose juveniles are wild-caught, increasingly restricted under international conventions. Output is concentrated in a few regions and exported largely to Japan.
+
+@@P@@RAS allows precise control of temperature (26–28°C), water quality and powdered-feed dosing, and is a mature process for intensive eel farming, with an all-in cost of about 60–100 EUR/kg against a sales price of 100–200 EUR/kg.
+
+{% elif farm.species == "shrimp" %}
+@@P@@Whiteleg shrimp (Litopenaeus vannamei) is the leading farmed shrimp, with annual output of about 2 million t, farmed at scale across coastal regions.
+
+@@P@@Diseases such as white-feces syndrome and early-mortality syndrome have become serious, and traditional earthen ponds suffer high losses. Clear-water RAS (as opposed to turbid Biofloc systems) offers biosecurity, precise temperature control and stable water quality, making it a leading direction for premium shrimp.
+
+{% else %}
+@@P@@{{ farm.speciesName }} is an important aquaculture species. Against the problems of traditional farming — high water use, disease risk and variable product quality — recirculating aquaculture (RAS) is developing rapidly as a representative modern-fisheries technology.
+{% endif %}
+
+@@H2@@2.2 Local socio-economic context
+
+@@P@@{{ project.location.full or 'The project site' }}{% if project.upperPlanName %} falls within the <strong>{{ project.upperPlanName }}</strong>,{% endif %} and offers good location, an established industrial base and a supportive policy environment.
+
+@@P@@(The owner or preparer should add a description of the local population, economy, industry, transport and municipal infrastructure.)
+
+@@H2@@2.3 Rationale for the project
+
+The rationale rests on the following points:
+
+@@H3@@2.3.1 Meeting strong demand for high-quality {{ farm.speciesName }}
+
+{% if farm.species == "salmon" %}
+@@P@@Salmon consumption in the target market exceeds 300,000 t/yr, while local output is under 10,000 t — over 95% is imported (mainly from Norway, Chile and the Faroe Islands). Supply-chain, currency and shipping-cost volatility make import prices unstable, and heavy import reliance is unfavorable for the local value chain and consumers.
+
+@@P@@At 1,000 t/yr of land-based RAS salmon, the project is a meaningful addition to local supply capacity, helping reduce import reliance, stabilize prices and improve food-supply security.
+
+{% elif farm.species == "turbot" %}
+@@P@@Turbot is an important mid-to-high-end marine species with steadily growing demand. The project's RAS process removes the traditional dependence on pumping thermostatically controlled groundwater, achieving high density, water savings and stable output as a model for industry upgrading.
+
+{% elif farm.species == "shrimp" %}
+@@P@@Whiteleg shrimp is the most-consumed shrimp, but traditional earthen ponds now suffer serious disease and quality variability. The project's clear-water RAS process delivers a fully traceable, antibiotic-free, consistent premium shrimp product to meet rising consumer expectations.
+
+{% else %}
+@@P@@At {{ farm.yieldTons }} t/yr of {{ farm.speciesName }}, the project provides a consistent, traceable premium product through industrial farming, meeting both domestic upgrading and export demand.
+{% endif %}
+
+@@H3@@2.3.2 Driving the upgrading of aquaculture
+
+@@P@@Industrial RAS is a major direction in world aquaculture, embodying the modern-fisheries ideals of saving water, land and energy while remaining controllable and environmentally sound. With {{ farm.totalSubSystems }} independent modules and N+1 redundancy, the project is a model for shifting regional aquaculture from extensive practice toward intensive, controlled-environment and sustainable operation.
+
+@@H3@@2.3.3 Conserving water and protecting the environment
+
+@@P@@Water reuse reaches 85–95%, requiring only 0.5–1 m³ of new water per kg of fish — just 5–10% of traditional flow-through farming. Wastewater is treated centrally and discharged to standard, with almost no diffuse pollution. {% if farm.totalSystemVolume > 0 %}With a total system volume of {{ farm.totalSystemVolume|round(0) }} m³ and a daily exchange rate of 5–10%, daily make-up water is about {{ (farm.totalSystemVolume * 0.075)|round(0) }} m³ and annual make-up about {{ (farm.totalSystemVolume * 0.075 * 365 / 10000)|round(1) }}×10⁴ m³, far below traditional farming at the same capacity.{% endif %}
+
+@@H3@@2.3.4 Creating quality jobs and supporting the value chain
+
+@@P@@Once in normal operation the project is expected to provide about {{ ((finance.params.laborCost / 50000)|round(0)) if finance.params.laborCost else 20 }} direct jobs (assuming an average annual wage of 50,000 EUR), while supporting upstream and downstream activity — feed, equipment, logistics and sales — and creating an estimated 3–5× indirect employment.
+
+@@H2@@2.4 Favorable conditions
+
+@@LIST@@
+- <strong>Good market</strong>: demand for {{ farm.speciesName }} is stable, prices are firm, and sales channels are established
+- <strong>Mature technology</strong>: RAS has many proven projects internationally, with abundant references for process design, equipment selection and operation
+- <strong>Available supply chain</strong>: the RAS equipment supply chain is well developed, keeping investment controllable
+- <strong>Policy support</strong>: national plans explicitly support modern controlled-environment agriculture, RAS and green low-carbon industry, with grants and tax incentives in many regions
+{% if project.upperPlanName %}- <strong>Planning fit</strong>: the project aligns with the industrial positioning of the <strong>{{ project.upperPlanName }}</strong>{% endif %}
+@@END_LIST@@
+
+@@H2@@2.5 Policy basis
+
+@@LIST@@
+- National fisheries development plan
+- Guidance on accelerating green development of aquaculture
+- Modern controlled-environment agriculture development plan
+- Guidance on high-quality development of modern agricultural parks
+{% if project.upperPlanName %}- {{ project.upperPlanName }}{% endif %}
+- (Other local policy documents to be added by the owner)
+@@END_LIST@@
+</script>
+<script type="text/njk-template" id="tpl-ch03">@@H1@@Chapter 3. Market & Demand
+
+@@H2@@3.1 Market analysis
+
+{% if farm.species == "salmon" %}
+@@P@@<strong>International market</strong>: global Atlantic salmon output is about 2.8 million t/yr, a market worth over USD 20 billion. Norway supplies roughly 50%, with Scotland, Chile, Canada and the Faroe Islands as the other main regions. Limited sea space, rising temperatures and sea lice have slowed supply growth, supporting a long-term upward price trend.
+
+@@P@@<strong>Target market</strong>: consumption in the target market is about 300,000 t/yr with over 95% import reliance (mainly Norway, the Faroe Islands, Chile and Canada). Major-city demand, premium restaurants, supermarkets and fresh-food e-commerce are the main channels, at 60–90 EUR/kg ex-works and 100–200 EUR/kg at retail.
+
+{% elif farm.species == "turbot" %}
+@@P@@<strong>Market</strong>: turbot output is about 50,000–60,000 t/yr, serving cold-region cities and export markets in Japan and Korea. Prices are stable at 60–90 EUR/kg, sold mainly through premium restaurants, supermarkets and live-fish distribution. Tight groundwater and high energy use in traditional farming are pushing the industry toward RAS.
+
+{% elif farm.species == "grouper" %}
+@@P@@<strong>Market</strong>: grouper output is about 150,000–200,000 t/yr, serving premium restaurants and live-fish distribution, at 80–200 EUR/kg depending on variety. Export demand in Hong Kong and Southeast Asia is steady.
+
+{% elif farm.species == "perch" %}
+@@P@@<strong>Market</strong>: largemouth bass output is about 700,000 t/yr. Prices are stable at 30–50 EUR/kg through supermarkets, live-fish e-commerce and restaurants. Given pond water-quality and disease limits, premium industrial product commands a 50–70 EUR/kg premium.
+
+{% elif farm.species == "shrimp" %}
+@@P@@<strong>Market</strong>: whiteleg shrimp output is about 2 million t/yr, sold through supermarkets, e-commerce, restaurants and export. Amid disease pressure such as white-feces syndrome, premium RAS shrimp commands a 30–50% premium at 50–80 EUR/kg.
+
+{% elif farm.species == "tilapia" %}
+@@P@@<strong>Market</strong>: tilapia is an export-oriented species with output of about 1.7 million t/yr, exported mainly to Europe, the Americas and Southeast Asia, with stable domestic consumption at 18–25 EUR/kg.
+
+{% elif farm.species == "eel" %}
+@@P@@<strong>Market</strong>: eel is a traditional export species to Japan and Korea with stable domestic demand, at 100–200 EUR/kg depending on quality, sold mainly through export processors, premium restaurants and live-fish e-commerce.
+
+{% else %}
+@@P@@{{ farm.speciesName }} is an important aquaculture species with stable demand, sold through supermarkets, restaurants, live-fish distribution and export.
+{% endif %}
+
+@@H2@@3.2 Target-market analysis
+
+@@P@@(This section — target customers, sales radius, channels and offtake intentions — should be completed by the owner or preparer based on the actual project.)
+
+@@P@@Based on the {{ farm.yieldTons }} t/yr output, a preliminary channel split is:
+
+@@LIST@@
+- Premium supermarkets and fresh e-commerce: typically 30–50% of sales, relatively stable pricing
+- Premium restaurants (hotel chains, Japanese restaurants, etc.): typically 20–40%, demanding on quality
+- Live-fish wholesale: typically 20–30%, slightly lower price but steady volume
+- Export or branded custom: typically 0–20%, higher unit price but more volatile orders
+@@END_LIST@@
+
+@@P@@<strong>Recommendation</strong>: before execution, sign 3–5 year supply agreements with at least 2–3 core customers to lock in base volume and a price floor.
+
+@@H2@@3.3 Price trends
+
+{% if farm.species == "salmon" %}
+@@P@@The international Atlantic salmon price (NASDAQ Salmon Index) has long ranged 5–10 USD/kg; landed import prices run 40–60 EUR/kg and retail 100–200 EUR/kg. The project's assumed ex-works price of {{ finance.params.price }} EUR/kg sits within a reasonable range.
+
+{% else %}
+@@P@@{{ farm.speciesName }} prices have been relatively stable over the past five years; the project's assumed ex-works price of {{ finance.params.price }} EUR/kg is within a reasonable industry range.
+{% endif %}
+
+@@P@@<strong>Price volatility is the project's largest risk factor.</strong> The sensitivity analysis shows a ±20% price change swings the IRR by about 11.1%, far more than any other factor. Long-term supply agreements, branding and export certification are recommended to lock in price before execution.
+
+@@H2@@3.4 Sales channels and plan
+
+@@P@@(This section — specific channels, offtake intentions and branding — should be completed by the owner, covering key customers, contract values, payment terms, brand strategy and marketing spend.)
+
+@@H2@@3.5 Project scale
+
+@@H3@@3.5.1 Basis for the scale
+
+@@P@@The design scale is <strong>{{ farm.yieldTons }} t/yr of {{ farm.speciesName }}</strong>, set on the following basis:
+
+@@LIST@@
+- <strong>Market demand</strong>: per the analysis above, the scale matches target-market capacity and expected sales can absorb the output
+- <strong>Reasonable investment</strong>: total investment of {{ capex.totalInvestment|wan }} EUR is within the owner's capacity
+- <strong>Operability</strong>: {{ farm.totalSubSystems }} independent modules capture scale benefits while remaining manageable
+- <strong>Economies of scale</strong>: RAS shows strong scale effects, and this scale falls in the typical economic range for the industry (500–3,000 t)
+- <strong>Site fit</strong>: the required building area, site area and utility connections are within the site's capacity
+@@END_LIST@@
+
+@@H3@@3.5.2 Stage configuration
+
+The farm runs {{ farm.stages|length }} staggered grow-out stages for continuous harvest:
+
+@@TABLE@@
+Stage|Fish size|Duration|Standing biomass (t)|Temp (°C)|Density (kg/m³)|FCR|Modules|Tanks
+{% for s in farm.stages %}{{ s.name }}|{{ s.weightStart|round(0) }}-{{ s.weightEnd|round(0) }} g|{{ s.months }} mo|{{ s.biomass|round(1) }}|{{ s.tempOpt|round(1) }}|{{ s.density|round(0) }}|{{ s.FCR|round(2) }}|{{ s.subSystemCount }}|{{ s.subSystemCount * s.poolsPerSet }}
+{% endfor %}@@END_TABLE@@
+
+@@P@@Total steady-state standing biomass is about {{ farm.totalBiomass|round(1) }} t over a full cycle of about {{ farm.totalMonths }} months. Staggered stocking means a portion of fish is harvested each month in steady state, yielding {{ farm.yieldTons }} t/yr.
+
+@@H2@@3.6 Product plan
+
+@@P@@The main product is <strong>live / fresh {{ farm.speciesName }}</strong> at a market size of about {{ farm.stages[farm.stages|length-1].weightEnd|round(0) }} g (per actual harvest weight).
+
+@@P@@Product forms, adjusted to demand, mainly include:
+
+@@LIST@@
+- Live fish: delivered by live-haul truck to supermarkets, restaurants and distributors
+- Fresh-chilled fish: slaughtered and delivered via cold chain
+- Fillets / portions: processed and vacuum-packed for retail and e-commerce
+- Juveniles or intermediate-size fish: sold externally as market conditions allow
+@@END_LIST@@
+
+@@P@@Products are produced to applicable food-safety and seafood-quality standards. Organic, eco-label or geographical-indication certification is recommended to enhance brand premium.
+</script>
+<script type="text/njk-template" id="tpl-ch04">@@H1@@Chapter 4. Site & Conditions
+
+@@H2@@4.1 Site
+
+@@H3@@4.1.1 Location
+
+@@P@@The site is at <strong>{{ project.location.full or '(to be provided by the owner)' }}</strong>{% if project.upperPlanName %}, within the <strong>{{ project.upperPlanName }}</strong>{% endif %}.
+
+@@P@@(The owner or preparer should provide the site's coordinates, boundaries, land-use lines and relationship to surroundings, including:
+
+@@LIST@@
+- site-center coordinates (lat/long)
+- the land-use boundary
+- distances to towns, main roads, airports, rail and ports
+- current land use around the site
+- distances to water sources, nature reserves and sensitive areas
+@@END_LIST@@
+
+{% if farm.land %}@@H3@@4.1.2 Site-area estimate
+
+@@P@@Based on the process design (total system volume {{ farm.totalSystemVolume|round(0) }} m³, average tank depth {{ farm.land.avgPoolDepth|round(1) }} m), the site area is estimated as:
+
+@@TABLE@@
+Item|Area|Note
+Main culture hall|{{ farm.land.mainHallArea|round(0) }} m²|V_total / avg depth × 1.6 (incl. aisles, platforms, cable/pipe runs)
+Water-treatment room|{{ farm.land.utilityArea|round(0) }} m²|main hall × 0.4 (pumps, blowers, UV, CO₂ stripping, electrical/control)
+Ancillary facilities|{{ farm.land.auxArea|round(0) }} m²|LOX station + switchroom + backup power + office + dorm + warehouse + gatehouse
+@@SUBTOTAL@@Total building area|{{ farm.land.totalBuildingArea|round(0) }} m²|sum of building footprints
+Total site area|{{ farm.land.totalLandArea|round(0) }} m²|at a plot ratio of {{ farm.land.FAR|round(2) }} (incl. roads, landscaping, fire lanes)
+Site area per tonne|{{ farm.land.landPerTon|round(1) }} m²/t|far less than traditional flow-through farming (50–200 m²/t)
+@@END_TABLE@@
+
+@@P@@<strong>Note</strong>: the above is an early-stage estimate with ±20% accuracy. A 20–30% buffer is recommended for functional changes during detailed design. <strong>The estimate excludes any future-expansion reserve</strong>; if the owner foresees phase 2/3 expansion, an additional 50–100% reserve should be sought when applying for land. The detailed site layout appears in Chapter 7 (Civil Works & Utilities).
+
+{% endif %}@@H3@@4.1.{% if farm.land %}3{% else %}2{% endif %} Typical RAS siting criteria
+
+@@P@@Core RAS site requirements (a reference checklist for assessing this site):
+
+@@TABLE@@
+Criterion|RAS requirement|Note
+Water source|ample volume, stable quality, temperature near culture temperature|reduces treatment and temperature-control cost
+Power|sufficient grid capacity, dual feeders|full-capacity load about {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000)|round(0) }} kW (estimated)
+Drainage|an outlet for, or reuse of, treated wastewater|to applicable discharge standards
+Transport|good access suited to live-fish delivery|a major market within 1–2 h drive is preferred
+Climate|temperate or subtropical preferred, few extremes|reduces HVAC and insulation energy
+Land|developed, level land with good ground|RAS equipment is heavy, so foundations matter
+Amenities|nearby medical, retail and housing|convenient for staff
+Environment|away from heavy pollution sources (feed mills, chemical plants)|prevents air/water pollution affecting culture
+@@END_TABLE@@
+
+@@H2@@4.2 Natural conditions
+
+@@H3@@4.2.1 Climate
+
+@@P@@(Site-specific climate data to be provided by the owner, including:
+
+@@LIST@@
+- mean annual temperature and extreme high/low
+- mean annual and maximum daily precipitation
+- maximum frost depth
+- prevailing wind, maximum wind speed, storm exposure
+- seismic design intensity and base acceleration
+@@END_LIST@@
+
+@@P@@The iRAS process design uses the following climate parameters:
+
+@@TABLE@@
+Parameter|Design value|Note
+Design temperature|{{ farm.stages[farm.stages|length-1].tempOpt|round(1) }} °C|culture water temperature
+Source-water temperature|—|read from the iRAS global thermal configuration
+Relative humidity|—|read from the iRAS global thermal configuration
+@@END_TABLE@@
+
+@@H3@@4.2.2 Hydrology and geology
+
+@@P@@(To be completed by the owner or surveyor from site investigation, including:
+
+@@LIST@@
+- regional geology and seismicity
+- groundwater level and quality
+- bearing capacity and foundation recommendations
+- surface water and flood-protection standard
+@@END_LIST@@
+
+@@H2@@4.3 Construction conditions
+
+@@H3@@4.3.1 Water supply
+
+@@P@@Project water demand:
+
+@@TABLE@@
+Use|Daily (m³/d)|Annual (×10⁴ m³/yr)|Note
+Culture make-up|{{ (farm.totalSystemVolume * 0.075)|round(0) }}|{{ (farm.totalSystemVolume * 0.075 * 365 / 10000)|round(2) }}|at 7.5%/d exchange of total volume (incl. evaporation)
+Hall washdown|approx. 5–10|approx. 0.2–0.4|—
+Office/domestic|approx. 5–10|approx. 0.2–0.4|estimated from staffing
+@@SUBTOTAL@@Total new water|approx. {{ (farm.totalSystemVolume * 0.075 + 15)|round(0) }}|approx. {{ ((farm.totalSystemVolume * 0.075 + 15) * 365 / 10000)|round(2) }}|—
+@@END_TABLE@@
+
+@@P@@<strong>Water-source recommendations</strong>:
+
+@@LIST@@
+{% if farm.stages[farm.stages|length-1].salinity > 5 %}- Marine project: prefer a coastal location drawing seawater or saline groundwater. Seawater needs pre-treatment (settling + filtration + disinfection)
+- salinity must meet culture needs (design salinity {{ farm.stages[farm.stages|length-1].salinity }} ‰)
+{% else %}- Freshwater project: municipal water, groundwater or surface water are all options
+- water quality must meet fishery water-quality standards, pH 6.5–9.0, moderate total hardness
+{% endif %}
+- supply must meet design make-up demand with a 20–30% margin
+- a dual water source (primary + backup) is recommended against interruption
+@@END_LIST@@
+
+@@H3@@4.3.2 Drainage
+
+@@P@@Main discharges (see Chapter 8, Environmental Impact & Permitting):
+
+@@LIST@@
+- System discharge (all wastewater crossing the system boundary — RDF / skimmer / exchange overflow, by mass balance): collected and treated to standard before discharge
+- Stormwater: roof + site runoff, via the storm network
+- Outlet: to be specified by the owner (municipal sewer / on-site treatment then to a receiving water body)
+@@END_LIST@@
+
+@@H3@@4.3.3 Power supply
+
+@@P@@Project power demand:
+
+@@TABLE@@
+Item|Value|Note
+Full-capacity annual energy|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 10000)|round(0) }}×10⁴ kWh|estimated from iRAS
+Full-capacity average power|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000)|round(0) }} kW|at 8,000 operating hours/yr
+Peak power|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 1.3)|round(0) }} kW|average × 1.3
+Transformer capacity|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 1.5)|round(0) }} kVA|peak × 1.2 with margin
+@@END_TABLE@@
+
+@@P@@<strong>Power requirements</strong>:
+
+@@LIST@@
+- Supply voltage: 10 kV dedicated line (per project scale, dual feeders recommended)
+- Backup power: diesel generator at 100% site load, auto-start within 30 s
+- UPS: for control systems and critical instruments, ≥ 30 min ride-through
+- Tariff: a long-term agreement with the utility to lock in the electricity price
+@@END_LIST@@
+
+@@H3@@4.3.4 Transport
+
+@@P@@(Transport conditions to be provided by the owner, including:
+
+@@LIST@@
+- distance to the nearest motorway exit
+- distance to the nearest port / airport / rail
+- site access road condition (load rating, width)
+- best route and time for live-fish transport to the main markets
+@@END_LIST@@
+
+@@H3@@4.3.5 Communications and IT
+
+@@LIST@@
+- fiber coverage on site, good 4G/5G signal
+- an on-site network center supporting PLC/SCADA data to the cloud
+- full coverage by CCTV and remote monitoring
+@@END_LIST@@
+
+@@H2@@4.4 Utility connections
+
+@@TABLE@@
+Utility|Project demand|Connection
+Water|approx. {{ (farm.totalSystemVolume * 0.075 + 15)|round(0) }} m³/d|municipal mains / own well
+Drainage|approx. {{ (farm.totalSystemVolume * 0.075 + 15)|round(0) }} m³/d|treated, then to municipal sewer or receiving water
+Power|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 1.5)|round(0) }} kVA|10 kV dedicated line
+Liquid oxygen|approx. {{ farm.totalLOXKgD|round(0) }} kg/d|purchased LOX, on-site {{ farm.oxygenTank.size_t }} t × {{ farm.oxygenTank.count }} tanks + vaporizer
+Gas (optional)|—|depending on the HVAC method, e.g. a gas heat pump
+Communications|fiber|municipal or telecom operator
+@@END_TABLE@@
+
+@@P@@The detailed utilities design appears in Chapter 7 (Civil Works & Utilities).
+</script>
+<script type="text/njk-template" id="tpl-ch05">@@H1@@Chapter 5. Technical Concept
+
+@@H2@@5.1 Choice of process
+
+{% if farm.species == "salmon" %}
+@@P@@Atlantic salmon is a cold-water migratory species requiring water tightly held at 12–15°C. In many regions ambient temperatures sit well above this band — coastal summer water can reach 25–30°C — so salmon cannot be farmed directly. Precise temperature control via RAS is the <strong>only viable process</strong> for land-based salmon production.
+@@P@@Through integrated physical filtration, biofiltration, disinfection, oxygenation, degassing and temperature control, RAS achieves 85–95% water reuse and creates a stable, controllable environment in a closed loop. The design draws on mature international references such as Atlantic Sapphire (Miami RAS salmon plant, design 100,000 t/yr) and Loch Duart in Scotland.
+{% elif farm.species == "turbot" %}
+@@P@@Turbot (Scophthalmus maximus) is a cool-water benthic marine fish requiring 14–18°C and 25–32‰ salinity, with high demands on clarity and dissolved oxygen. In cold regions winter water is too cold and summer too warm; traditional flow-through farming is energy-intensive with variable quality. RAS sharply improves growth and survival through precise temperature control and water purification, with field densities of 50–70 kg/m² (floor area), and is now the mainstream process for industrial turbot.
+{% elif farm.species == "grouper" %}
+@@P@@Grouper is an important warm-water marine species (optimal 24–30°C) with high water-quality and oxygen demands, especially sensitive to fluctuation in the juvenile stage. RAS addresses the core problems of cages/ponds — temperature swings, disease and low juvenile survival — through precise temperature control, stable water quality and biosecurity.
+{% elif farm.species == "perch" %}
+@@P@@Largemouth bass is a freshwater carnivore (optimal 22–28°C) with fairly high water-quality demands. Versus ponds, RAS saves water and land, controls disease and stabilizes the product, and is the leading direction for land-based industrial bass farming.
+{% elif farm.species == "mandarin" %}
+@@P@@Mandarin fish is a premium freshwater carnivore with a high price and stable market. It prefers 22–28°C with strict water-quality and feed demands (traditionally live bait). Combined with formulated feed, RAS enables stable industrial production and is a leading direction for premium freshwater species.
+{% elif farm.species == "tilapia" %}
+@@P@@Tilapia is highly adaptable (tolerating 25–32°C) and the world's second-largest farmed fish. RAS is adopted here mainly for water and land savings, disease control and multiple crops per year.
+{% elif farm.species == "eel" %}
+@@P@@Eel (Japanese or European eel) is a high-value migratory species with wild-caught juveniles and a long cycle (2–3 years). RAS allows precise control of temperature (26–28°C), water quality and powdered-feed dosing, and is a mature process for intensive eel farming with many industrial cases.
+{% elif farm.species == "shrimp" %}
+@@P@@Whiteleg shrimp tolerates high temperature (28–32°C) and a wide salinity range (5–35‰) and is the most important farmed shrimp. The project uses a clear-water RAS process (as opposed to turbid Biofloc) with high density for water and land savings, disease control and stable output.
+{% else %}
+@@P@@The project uses a recirculating aquaculture process (RAS) with integrated physical filtration, biofiltration, disinfection, oxygenation and degassing for high-density, water- and land-saving, controlled-environment production.
+{% endif %}
+
+@@P@@Key advantages of RAS:
+@@LIST@@
+- <strong>Water saving</strong>: 85–95% reuse, 0.5–1 m³ of water per kg of fish — just 5–10% of flow-through farming
+- <strong>Land saving</strong>: high density (30–100 kg/m³), with site area per unit output 1/10–1/50 of earthen ponds
+- <strong>Controllable</strong>: temperature, DO, pH and TAN are controlled throughout, independent of season or weather, enabling year-round production
+- <strong>Environmental</strong>: wastewater is treated centrally, solids can be used as fertilizer, with near-zero discharge and no diffuse pollution
+- <strong>Biosecurity</strong>: the closed system excludes external pathogens, reduces drug use and safeguards food safety
+- <strong>Siting flexibility</strong>: not reliant on natural water bodies, it can be built near cities, inland or in non-traditional locations
+@@END_LIST@@
+
+@@H2@@5.2 Process flow
+
+The process uses a hybrid "series mainline + parallel bypass" architecture; the mainline runs:
+
+@@P@@<strong>Fish tank → drum filter → protein skimmer (bypass) → biofilter → UV disinfection → CO₂ stripper → oxygenation → fish tank</strong>
+
+@@P@@Three bypass branches are also provided:
+@@LIST@@
+- <strong>Protein-skimmer branch</strong>: diverts about {{ workflow.skimmer.flowPct|round(0) if workflow.skimmer.enabled else 0 }}% of the recirculation flow to remove dissolved organic matter (DOM) and fine TSS{% if workflow.skimmer.enabled and workflow.skimmer.mode == 'ozone' %}, with ozone enhancement{% endif %}
+- <strong>Denitrification branch</strong>: {% if workflow.denitri.enabled %}diverts about {{ workflow.denitri.flowPct|round(0) }}% of the flow, reducing NO₃ to N₂ with methanol under anoxic conditions to cut water exchange{% else %}not used in this project; NO₃ build-up is controlled by 5–10% daily water exchange{% endif %}
+- <strong>AOP (advanced oxidation) branch</strong>: {% if workflow.aop.enabled %}diverts about {{ workflow.aop.flowPct|round(0) }}% of the flow, using ozone+UV to oxidize geosmin/2-MIB (off-flavor compounds) and residual DOM{% else %}not used in this project{% endif %}
+@@END_LIST@@
+
+@@P@@The detailed P&ID is provided as an appendix figure (generated automatically by iRAS).
+
+@@IMG@@id=processFlow|caption=Figure 5-1 Process flow schematic (generated by iRAS; the detailed P&ID is exported from the iRAS pid.html page)|w=600|h=250@@
+
+@@H2@@5.3 Unit design
+
+@@H3@@5.3.1 Fish tanks
+
+The farm has {{ farm.stages|length }} grow-out stages on independent loops, with {{ farm.totalSubSystems }} independent modules and {{ farm.totalPools }} fish tanks in total. The per-stage tank configuration is:
+
+@@TABLE@@
+Stage|Fish size|Standing biomass (t)|Volume (m³)|Density (kg/m³)|Temp (°C)|Salinity (‰)|Modules|Tanks/module|Depth (m)|Diameter (m)
+{% for s in farm.stages %}{{ s.name }}|{{ s.weightStart|round(0) }}-{{ s.weightEnd|round(0) }} g|{{ s.biomass|round(1) }}|{{ s.volume|round(0) }}|{{ s.density|round(0) }}|{{ s.tempOpt|round(1) }}|{{ s.salinity|round(0) }}|{{ s.subSystemCount }}|{{ s.poolsPerSet }}|{{ s.poolDepth_m|round(1) }}|{{ s.poolDiameter|round(1) }}
+{% endfor %}@@END_TABLE@@
+
+@@P@@Tanks are HDPE composite or fiberglass (FRP), circular deep-water design with a dual drainage system (center sludge drain + side outlet) and strong self-cleaning. Each module recirculates independently, so a fault in one module does not affect the others, greatly improving biosecurity.
+
+@@H3@@5.3.2 Drum filter (RDF)
+
+The rotating drum filter is the first treatment unit, physically retaining suspended solids (waste feed, feces, biofilm fragments) on a 60 μm stainless-steel screen. Design parameters:
+
+@@TABLE@@
+Parameter|Value
+Design flow|{{ workflow.rdf.flow|round(0) }} m³/h (peak)
+Screen aperture|60 μm
+TSS removal|{{ workflow.rdf.tssEff|round(0) }}%
+Backwash source|filtered clean water (integral to the RDF; backwash returns to the loop and is not a system discharge)
+@@END_TABLE@@
+
+@@H3@@5.3.3 MBBR biofilter
+
+The biofilter (MBBR, Moving Bed Biofilm Reactor) is the core unit, oxidizing TAN (NH₄) to NO₃ via nitrifiers on the surface of suspended media — the key to ammonia removal. Design parameters:
+
+@@TABLE@@
+Parameter|Value
+Media volume|{{ workflow.bf.volume|round(0) }} m³
+Media fill ratio|{{ workflow.bf.fillRatio|round(0) }}%
+Media type|HDPE K1/K3, specific surface 500 m²/m³
+Design TAN load|{{ workflow.bf.designTAN|round(2) }} kg/d
+TAN removal|{{ workflow.bf.tanEff|round(0) }}%
+Temperature-corrected VTR|{{ workflow.bf.vtrAtT|round(3) }} kg/(m³·d)
+{% if workflow.bf.vdrAtT %}Salinity-corrected VTR|includes a salinity correction factor{% endif %}
+@@END_TABLE@@
+
+@@P@@The MBBR uses coarse-bubble aeration (from a Roots blower) to supply oxygen for the biofilm and keep the media suspended. This aeration is separate from the main tank oxygenation, avoiding double-counting of dissolved oxygen.
+
+@@H3@@5.3.4 UV disinfection
+
+UV disinfection uses 254 nm medium-pressure lamps to inactivate bacteria/viruses/parasites by damaging their DNA. Design parameters:
+
+@@TABLE@@
+Parameter|Value
+Design flow|{{ workflow.uv.flow|round(0) }} m³/h
+UV dose|{{ workflow.uv.dose|round(0) }} mJ/cm²
+Lamp power|{{ workflow.uv.powerKw|round(1) }} kW
+Reactor|flow-through stainless steel, 304/316L
+Lamp life|8,000–12,000 h
+@@END_TABLE@@
+
+@@P@@A UV dose of {{ workflow.uv.dose|round(0) }} mJ/cm² effectively inactivates common fish pathogens (bacteria 99.7%, fish viruses 86–98%, protozoa 99.7–99.99%).
+
+@@H3@@5.3.5 CO₂ stripper
+
+The CO₂ stripper uses counter-current air stripping: water is distributed at the top and air blown in at the bottom, so gas and liquid meet counter-currently and dissolved CO₂ is stripped out. Design parameters:
+
+@@TABLE@@
+Parameter|Value
+Method|counter-current air stripping
+G:L ratio|{{ workflow.co2.gToL|round(1) if workflow.co2.gToL else 3 }}
+Single-pass removal|{{ workflow.co2.eff|round(0) if workflow.co2.eff else 65 }}%
+Blower|Roots blower, 2.5 kPa, 60% efficiency
+Packing|structured packing, 1.0 m height
+@@END_TABLE@@
+
+{% if workflow.skimmer.enabled %}
+@@H3@@5.3.6 Protein skimmer
+
+The protein skimmer uses foam fractionation to remove DOM and fine suspended solids, in {% if workflow.skimmer.mode == "ozone" %}<strong>ozone-enhanced mode</strong> (ozone + foam){% else %}<strong>air mode</strong> (fine-bubble foaming){% endif %}.
+
+@@TABLE@@
+Parameter|Value
+Bypass flow ratio|{{ workflow.skimmer.flowPct|round(0) }}%
+Mode|{% if workflow.skimmer.mode == "ozone" %}ozone + foam{% else %}air foam{% endif %}
+DOM single-pass removal|{{ workflow.skimmer.domEff|round(0) }}%
+TSS single-pass removal|{{ workflow.skimmer.tssEff|round(0) }}%
+Column water volume|{{ workflow.skimmer.volume|round(1) }} m³
+{% if workflow.skimmer.mode == "ozone" %}Ozone dose|{{ workflow.skimmer.ozoneKgD|round(2) }} kg O₃/d{% endif %}
+@@END_TABLE@@
+{% endif %}
+
+{% if workflow.denitri.enabled %}
+@@H3@@5.3.7 Denitrification reactor
+
+Under anoxic conditions (DO < 0.5 mg/L), heterotrophic bacteria use methanol to reduce NO₃ to N₂ gas — the only unit in a RAS that truly "removes" nitrogen.
+
+@@TABLE@@
+Parameter|Value
+Reactor volume|{{ workflow.denitri.volume|round(0) }} m³
+Bypass flow ratio|{{ workflow.denitri.flowPct|round(0) }}%
+NO₃ single-pass removal|{{ workflow.denitri.no3Eff|round(0) }}%
+NO₃ removed|{{ workflow.denitri.no3RemovedKgD|round(2) }} kg/d
+Methanol dose|{{ workflow.denitri.methanolKgD|round(2) }} kg/d (stoichiometric 2.47 g/g NO₃-N)
+@@END_TABLE@@
+{% endif %}
+
+{% if workflow.aop.enabled %}
+@@H3@@5.3.8 Advanced oxidation (AOP)
+
+AOP (Advanced Oxidation Process) combines ozone + UV to generate hydroxyl radicals (·OH), removing off-flavor compounds such as geosmin and 2-MIB along with residual DOM.
+
+@@TABLE@@
+Parameter|Value
+Reactor type|{{ workflow.aop.type }}
+Reactor volume|{{ workflow.aop.volume|round(1) }} m³
+Bypass flow ratio|{{ workflow.aop.flowPct|round(0) }}%
+Geosmin removal|{{ workflow.aop.geosminEff|round(0) }}%
+DOM removal|{{ workflow.aop.domEff|round(0) }}%
+Ozone dose|{{ workflow.aop.ozoneKgD|round(2) }} kg O₃/d
+@@END_TABLE@@
+{% endif %}
+
+@@H3@@5.3.{% if workflow.aop.enabled %}9{% elif workflow.denitri.enabled %}8{% elif workflow.skimmer.enabled %}7{% else %}6{% endif %} Oxygenation system
+
+{% if workflow.aerator.enabled %}
+{% if workflow.aerator.topology == 'bypass' %}The project oxygenates with <strong>liquid oxygen + a high-pressure oxygenation cone (bypass topology)</strong>: about {{ workflow.aerator.bypassRatio|round(0) }}% of the post-pump flow is diverted through a high-pressure cone (similar to a Linde SOLVOX cone / PR Aqua PPC), supersaturated, then returned and mixed into the main line. The main pump does not pass through the cone, which suits energy-efficient mid-to-large RAS (an international mainstream approach).{% else %}The project oxygenates with <strong>liquid oxygen + a low-head oxygenator (LHO, in-series)</strong>: all recirculated water passes through the cone for uniform DO, suited to high-density culture (mainstream in large RAS such as Atlantic Sapphire).{% endif %} Design parameters:
+
+@@TABLE@@
+Parameter|Value
+Method|liquid oxygen + cone absorption{% if workflow.aerator.topology == 'bypass' %} (side-stream){% else %} (in-series, low-head oxygenator){% endif %}
+DO target saturation|{{ workflow.aerator.satTarget|round(0) }}%
+Cone absorption efficiency|{{ workflow.aerator.absorptionEff|round(0) }}%
+Peak O₂ supply|{{ workflow.aerator.peakSupplyKgH|round(1) }} kg O₂/h
+{% if workflow.aerator.topology == 'bypass' %}Bypass flow ratio|{{ workflow.aerator.bypassRatio|round(0) }}% (of the main flow)
+Bypass pump (P-602)|{{ workflow.aerator.bypassPumpKw|round(1) }} kW, head {{ workflow.aerator.bypassPumpHead_m|round(0) }} m, flow {{ workflow.aerator.bypassFlow|round(0) }} m³/h
+{% endif %}Facility daily LOX use|{{ farm.totalLOXKgD|round(0) }} kg/d
+LOX station|{{ farm.oxygenTank.size_t }} t vacuum-insulated vertical tanks × {{ farm.oxygenTank.count }} (duty + standby) + vaporizer + pressure control, shared facility-wide (total storage {{ farm.oxygenTank.storage_t }} t, {{ farm.oxygenTank.reserveDays|round(0) }}-day reserve)
+@@END_TABLE@@
+{% else %}
+The project oxygenates by <strong>air aeration</strong>, dissolving air into the water via a Roots blower (K-101) and fine-bubble diffuser discs, typically reaching about 95% DO saturation — suited to low-to-moderate density culture (e.g. warm-water fish/shrimp such as tilapia or shrimp). Design parameters:
+
+@@TABLE@@
+Parameter|Value
+Method|air aeration (Roots blower + fine-bubble diffuser discs)
+DO target saturation|~95% (air-aeration limit)
+Blower tag|{{ workflow.tankAirBlower.tag if workflow.tankAirBlower.tag else 'K-101' }} (tank aeration blower, serving tank T-101)
+Air flow|{{ workflow.tankAirBlower.airFlowM3min|round(1) }} Nm³/min (peak)
+Blower power|{{ workflow.tankAirBlower.powerKw|round(1) }} kW
+Blower pressure|{{ workflow.tankAirBlower.pressureKPa|round(0) }} kPa (suited to diffuser discs at {{ (workflow.tankAirBlower.pressureKPa / 10)|round(1) }} m depth)
+Blower efficiency|{{ workflow.tankAirBlower.etaPct|round(0) }}% (typical for a Roots blower)
+Redundancy|1+1 standby (primary oxygenation; a failure suffocates the fish, so two units must alternate)
+@@END_TABLE@@
+{% endif %}
+
+@@H2@@5.4 Key water-quality control
+
+Target ranges for the core water-quality parameters:
+
+@@TABLE@@
+Parameter|Target range|Process control
+TAN (total ammonia N)|< 1.0 mg/L|MBBR biofilter nitrification
+NO₂-N (nitrite)|< 0.3 mg/L|mature, stable nitrifier community
+NO₃-N (nitrate)|< {% if workflow.denitri.enabled %}80{% else %}100{% endif %} mg/L|{% if workflow.denitri.enabled %}denitrification + exchange{% else %}5–10% daily exchange{% endif %}
+DO (dissolved oxygen)|> 6 mg/L (tank)|{% if workflow.aerator.enabled %}LOX + cone, 110–165% saturation{% else %}Roots blower + diffuser discs, ~95% saturation{% endif %}
+CO₂|< 15 mg/L|CO₂ stripper, G:L=3, 65% single-pass removal
+TSS (suspended solids)|< 10 mg/L|RDF 60 μm + {% if workflow.skimmer.enabled %}skimmer{% endif %} + secondary capture in the biofilter
+DOM|< 30 mg/L|{% if workflow.skimmer.enabled %}skimmer (70% single-pass){% else %}mainly water exchange{% endif %}{% if workflow.aop.enabled %} + AOP deep oxidation{% endif %}
+pH|7.0–7.5|sodium-bicarbonate dosing for alkalinity
+Geosmin/2-MIB|< 5 ng/L|{% if workflow.aop.enabled %}AOP 80–95% removal{% else %}mainly dilution by daily exchange{% endif %}
+@@END_TABLE@@
+
+@@H2@@5.5 Process design summary
+
+Key process parameters by stage:
+
+@@TABLE@@
+Stage|Biomass (t)|Volume (m³)|Flow (m³/h)|Turnover (/d)|FCR|Daily feed (kg/d)|TAN (kg/d)|LOX (kg/d)
+{% for s in farm.stages %}{{ s.name }}|{{ s.biomass|round(1) }}|{{ s.volumeTotal|round(0) }}|{{ s.flowM3h|round(0) }}|{{ s.turnover|round(1) }}|{{ s.FCR|round(2) }}|{{ s.feedDailyMax|round(0) }}|{{ s.tanDaily|round(2) }}|{{ s.o2DailyTotal|round(0) }}
+{% endfor %}@@END_TABLE@@
+
+@@P@@At the design stage (market size), peak flow is {{ farm.peakFlowM3H|round(0) }} m³/h, total system volume {{ farm.totalSystemVolume|round(0) }} m³, facility daily feed about {{ farm.totalFeedDaily|round(0) }} kg/d, and facility daily LOX demand about {{ farm.totalLOXKgD|round(0) }} kg/d.
+</script>
+<script type="text/njk-template" id="tpl-ch06">@@H1@@Chapter 6. Equipment & Process Design
+
+@@H2@@6.1 Equipment-selection principles
+
+Equipment selection follows these principles:
+
+@@LIST@@
+- <strong>Advanced yet proven</strong>: core process equipment (drum filter, biofilter, oxygenation, etc.) uses advanced, mature technology, avoiding anything not validated in long-term industrial use
+- <strong>N+1 redundancy on critical equipment</strong>: main pumps, blowers, drum filters and UV are configured N+1, so any single failure switches over automatically within 30 s without interrupting production
+- <strong>Modular layout</strong>: the facility is split into {{ farm.totalSubSystems }} independent recirculation modules so a fault in one does not affect the others, greatly improving biosecurity and production continuity
+- <strong>Supply-chain pragmatism</strong>: water-treatment equipment (drum filter, blowers, pumps, UV) favors established mainstream brands; high-end core items (LOX cone, automated valves, high-precision instruments) may use specialist brands
+- <strong>Energy efficiency</strong>: the main recirculation pumps use VFD drives, the biofilter blowers are high-efficiency Roots units, and oxygenation favors pure oxygen + cone (80–90% absorption)
+- <strong>Corrosion resistance</strong>: {% if (farm.stages|length > 0) and (farm.stages[farm.stages|length-1].salinity > 5) %}this project has seawater/brackish stages, so all wetted parts use 316L stainless steel, HDPE or FRP, one grade above a freshwater project{% else %}this is a freshwater system, so 304 stainless steel, HDPE or FRP wetted parts meet the corrosion requirement{% endif %}
+@@END_LIST@@
+
+@@H2@@6.2 Main equipment list
+
+The table below lists the main process equipment (including N+1 standby):
+
+@@TABLE@@
+No.|Equipment|Specification|Total qty|Note
+{% for eq in workflow.equipmentSummary %}{{ loop.index }}|{{ eq.name }}|{{ eq.perStage[0].spec }}{% if eq.perStage|length > 1 %} (varies by stage){% endif %}|{{ eq.totalQty }}|across {{ farm.totalSubSystems }} independent modules
+{% endfor %}@@END_TABLE@@
+
+@@H2@@6.3 Equipment configuration by stage
+
+@@TABLE@@
+Stage|Drum filter|Biofilter|UV|Main pump|O₂ cone
+{% for ps in workflow.perStage %}{{ ps.stageName }}|incl. N+1|incl. N+1|incl. N+1|incl. N+1|incl. N+1
+{% endfor %}@@END_TABLE@@
+
+@@P@@A detailed equipment schedule (per-unit design parameters, unit prices and totals) is generated automatically by iRAS; see the appended Equipment List (exported from equipment.html).
+
+@@H2@@6.4 Sourcing and procurement strategy
+
+@@LIST@@
+- <strong>Core water-treatment equipment</strong> (drum filter, biofilter, UV, CO₂ stripper): established mainstream brands, reasonable price and convenient service. Suppliers such as AKVA Group (Norway) and other established RAS vendors are candidates
+- <strong>Pumps and blowers</strong>: mainstream brands; large main pumps should use VFD drives for efficiency, and critical pumps need N+1 standby
+- <strong>Oxygenation</strong>: the LOX cone from a specialist brand, with established suppliers for the LOX tank and vaporizer
+- <strong>Instrumentation and control</strong>: online water-quality monitors (DO/pH/temperature) favor specialist brands (e.g. WTW, Hach); the control system can use an established PLC + SCADA
+- <strong>Procurement</strong>: main equipment by competitive tender, instruments and pipe/valve items by competitive negotiation, with a total procurement cycle of about 4–6 months
+@@END_LIST@@
+
+@@H2@@6.5 Equipment investment breakdown
+
+Direct equipment purchase totals {{ capex.equipDirect|wan }} EUR ({{ ((capex.equipDirect/capex.fixedAsset)*100)|round(1) }}% of fixed-asset investment); the detailed estimate is in Chapter 11.
+
+@@P@@Approximate split by category (estimated):
+@@LIST@@
+- Process water-treatment equipment (drum filter, biofilter, UV, stripper): ~35–40%
+- Oxygenation (LOX station + cone): ~15–20%
+- Pump and blower systems: ~15–20%
+- Fish tanks (FRP/HDPE): ~10–15%
+- Instrumentation and control: ~8–12%
+- Other (piping, valves, fittings): ~5–10%
+@@END_LIST@@
+</script>
+<script type="text/njk-template" id="tpl-ch07">@@H1@@Chapter 7. Civil Works & Utilities
+
+@@H2@@7.1 Site layout
+
+@@P@@(The detailed site layout — functional zoning, building orientation, roads and landscaping — is to be designed by the owner or architect based on the actual site.)
+
+@@P@@Basic principles and recommendations for a RAS site layout:
+
+@@LIST@@
+- <strong>Clear zoning</strong>: separate the production area, office/living area and ancillary area (logistics, storage, equipment rooms)
+- <strong>Orientation</strong>: the main culture hall is best aligned north–south to limit solar gain on water temperature and aid ventilation
+- <strong>Clean/dirty separation</strong>: intake, recirculation, drainage and make-up pipes should not cross
+- <strong>Material flow</strong>: a one-way flow from juvenile intake → grow-out stages → market-size dispatch, to limit disease spread
+- <strong>Fire access</strong>: a ring fire lane at least 4 m wide around the main buildings
+- <strong>Green-space ratio</strong>: ≥ 20% (subject to local planning requirements)
+- <strong>Expansion reserve</strong>: land set aside for phase 2/3 expansion
+@@END_LIST@@
+
+@@H2@@7.2 Main buildings
+
+@@H3@@7.2.1 Schedule of buildings
+
+@@TABLE@@
+Building|Estimated area|Height|Structure|Main function
+Main culture hall|approx. {% if farm.land %}{{ farm.land.mainHallArea|round(0) }}{% else %}{{ ((farm.totalVolumeTank or farm.totalSystemVolume * 0.5) * 1.6 / (farm.stages[farm.stages|length-1].poolDepth_m or 5) * 1.0)|round(0) }}{% endif %} m²|6.0 m|steel + concrete|{{ farm.totalSubSystems }} independent modules, {{ farm.totalPools }} fish tanks
+Water-treatment room|approx. {% if farm.land %}{{ farm.land.utilityArea|round(0) }}{% else %}{{ ((farm.totalVolumeTank or farm.totalSystemVolume * 0.5) * 0.5)|round(0) }}{% endif %} m²|6.0 m|steel|main pumps, blowers, UV, CO₂ stripping
+LOX station|approx. 100–200 m²|—|reinforced concrete|3 t vertical vacuum tank + vaporizer + control
+Switchroom|approx. 100 m²|3.5 m|frame|HV/LV switchgear, transformer
+Emergency generator room|approx. 80–150 m²|4.5 m|frame|backup generator + fuel tank
+Office building|approx. 200–500 m²|3.5 m × 2 floors|frame|offices, meeting rooms, laboratory
+Dormitory|approx. 200–400 m²|3.5 m × 2–3 floors|frame|staff housing + canteen
+Warehouse & ancillary|approx. 200–300 m²|6.0 m|steel|feed store, chemical store, spare-parts store
+Gatehouse & biosecurity station|approx. 30–50 m²|3.0 m|concrete|entry/exit disinfection, people/vehicle control
+@@END_TABLE@@
+
+@@P@@<strong>Note</strong>: these areas are preliminary; detailed architectural design should be completed by an architect to the specific functional needs.
+
+@@H3@@7.2.2 Main-hall design requirements
+
+@@LIST@@
+- <strong>Height</strong>: a 6 m hall height to accommodate equipment (O₂ cone, UV reactor, biofilter)
+- <strong>Column grid</strong>: long-span steel, 9 m × 9 m or 12 m × 9 m as needed
+- <strong>Floor</strong>: corrosion-resistant epoxy floor, graded 0.5–1%, with drainage channels
+- <strong>Walls</strong>: anti-corrosion, hygienic anti-mold internal coating; insulated external walls (for energy efficiency)
+- <strong>Roof</strong>: steel roof panels + insulation + waterproofing, with skylights for daylight
+- <strong>Ventilation</strong>: roof ventilators or mechanical ventilation at 6–10 air changes/h to prevent ammonia and moisture build-up
+- <strong>Insulation</strong>: envelope insulation to applicable building energy-efficiency standards
+- <strong>Waterproofing</strong>: the floor plus a 1 m wall skirt are waterproofed
+@@END_LIST@@
+
+@@H2@@7.3 Water and drainage
+
+@@H3@@7.3.1 Water supply
+
+@@LIST@@
+- Main source: {% if farm.stages[farm.stages|length-1].salinity > 5 %}seawater (pre-treated) + municipal water (auxiliary){% else %}municipal water + own deep well (backup){% endif %}
+- Total daily water: approx. {{ (farm.totalSystemVolume * 0.075 + 15)|round(0) }} m³/d
+- Storage: elevated tank / underground reservoir holding 2–3 days' supply against short interruptions
+- Supply network: PE or PVC mains, stainless-steel branches (corrosion-resistant), dual-line redundancy
+@@END_LIST@@
+
+@@H3@@7.3.2 Drainage
+
+@@LIST@@
+- Separated systems: stormwater discharged directly, wastewater treated before discharge
+- Wastewater treatment: an on-site plant (settling + filtration + biological treatment + disinfection), with effluent meeting the applicable discharge standard
+- Sludge handling: thickening + dewatering, then outsourced for resource recovery
+@@END_LIST@@
+
+@@H2@@7.4 Power system
+
+@@H3@@7.4.1 Electrical load
+
+@@TABLE@@
+Load category|Installed capacity|Note
+Pumps|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 0.40)|round(0) }} kW|main pump + bypass pumps (denitrification/UV/AOP/skimmer)
+Blowers|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 0.15)|round(0) }} kW|biofilter blower + CO₂ stripper blower
+UV / oxygenation / control|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 0.10)|round(0) }} kW|—
+Heat pump / cooling|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 0.20)|round(0) }} kW|depending on climate
+Lighting + office + other|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 0.15)|round(0) }} kW|—
+@@SUBTOTAL@@Total installed|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 1.5)|round(0) }} kVA|transformer sized at average power × 1.5
+@@END_TABLE@@
+
+@@H3@@7.4.2 Power-supply plan
+
+@@LIST@@
+- <strong>Main supply</strong>: 10 kV dedicated line, dual feeders
+- <strong>Transformation/distribution</strong>: a dedicated switchroom with N+1 transformers
+- <strong>Backup power</strong>: a diesel generator at 100% site load, auto-start within 30 s (ATS transfer)
+- <strong>UPS</strong>: 30-minute ride-through for control systems and critical instruments
+- <strong>Power-factor correction</strong>: capacitor banks in the switchroom, power factor ≥ 0.95
+@@END_LIST@@
+
+@@H2@@7.5 HVAC
+
+@@H3@@7.5.1 HVAC load
+
+@@LIST@@
+- Culture hall: maintain the design water temperature (see Chapter 5 for process parameters)
+- Offices: cooling to 26°C in summer, heating to 18–20°C in winter
+- Laboratory: year-round 22°C ± 2°C, 50% RH
+@@END_LIST@@
+
+@@H3@@7.5.2 HVAC system selection
+
+@@LIST@@
+- <strong>Culture-hall temperature control</strong>: an industrial heat pump (air/water/ground source, per site conditions), for both heating and cooling
+- <strong>Plate heat exchanger</strong>: between discharge and intake, recovering ≥ 75% of the heat
+- <strong>Offices</strong>: VRF or split-system air conditioning
+- <strong>Fresh-air system</strong>: the culture hall has fresh-air supply at 6–10 air changes/h to prevent ammonia build-up
+@@END_LIST@@
+
+@@P@@The detailed HVAC design should be optimized for local climate, water-source conditions and energy prices to find the most economical solution.
+
+@@H2@@7.6 Automation and control
+
+@@LIST@@
+- <strong>Control platform</strong>: industrial PLC + SCADA + industrial Ethernet
+- <strong>Online monitoring</strong>: 24×7 monitoring of DO, pH, temperature, TAN, NO₂, flow and other key parameters
+- <strong>Alarms</strong>: three-tier alarms (local audible/visual + control-room screen + mobile push)
+- <strong>Data logging</strong>: historical data retained for over a year, with remote query and analysis
+- <strong>CCTV</strong>: full coverage of the hall, equipment rooms and entrances, retained 30 days
+@@END_LIST@@
+</script>
+<script type="text/njk-template" id="tpl-ch09">@@H1@@Chapter 8. Environmental Impact & Permitting
+
+@@P@@<strong>Note</strong>: this chapter is a preliminary environmental analysis within the feasibility study and does not replace a formal Environmental Impact Assessment (EIA). Once the project is approved, a qualified body should carry out a dedicated EIA and issue an independent report; permitting requirements vary by jurisdiction.
+
+@@H2@@8.1 Baseline environment
+
+@@P@@(The baseline environment — air, water, soil, noise and ecology — should be completed by the owner or preparer from local data.)
+
+@@H2@@8.2 Pollution-source identification
+
+The main pollution sources are identified below:
+
+@@H3@@8.2.1 Wastewater
+
+@@TABLE@@
+Stream|Source|Main pollutants|Daily volume
+System discharge (exchange overflow)|exchange/overflow crossing the system boundary|TAN, NO₃, TSS|approx. {{ farm.dischargeM3D|round(0) }} m³/d (dissolved: TAN {{ farm.dischargeTAN_mg_L|round(2) }} mg/L · NO₃-N {{ farm.dischargeNO3_mg_L|round(1) }} mg/L; solid TSS is captured by the RDF + skimmer into sludge treatment, not discharged to the water phase)
+{% if workflow.denitri.enabled %}Denitrification sludge|denitrification reactor|biological sludge|approx. 0.1–0.3 m³/d
+{% endif %}Hall washdown|floors, equipment exterior|low-concentration TSS|approx. 5–10 m³/d
+@@END_TABLE@@
+
+@@H3@@8.2.2 Solid waste
+
+@@LIST@@
+- Waste feed and feces (filtered concentrate): about {{ (farm.totalFeedDaily * 0.30)|round(0) }} kg/d (estimated at 30% of feed becoming solids, high moisture)
+- Mortalities: at a normal 1–3% rate, estimated at 1% ≈ {{ (farm.yieldTons * 0.01 * 1000 / 365)|round(1) }} kg/d
+- Medication packaging and office/domestic waste: small quantities
+@@END_LIST@@
+
+@@H3@@8.2.3 Air emissions
+
+@@LIST@@
+- CO₂ stripper off-gas: mainly CO₂ and water vapor, low concentration, discharged directly
+- Biofilter blower off-gas: a little ammonia, diluted by hall ventilation
+- Ozone-equipment off-gas{% if workflow.skimmer.mode == "ozone" or workflow.aop.enabled %}: residual ozone must be destroyed (ozone destructor), emission < 0.1 mg/m³{% endif %}
+@@END_LIST@@
+
+@@H3@@8.2.4 Noise
+
+@@LIST@@
+- Main pump room: approx. 80–85 dB(A)
+- Blower room: approx. 80–90 dB(A)
+- Oxygen generator / LOX vaporizer: approx. 70–80 dB(A)
+@@END_LIST@@
+
+@@H2@@8.3 Discharge standards
+
+Discharges follow the standards below:
+
+@@TABLE@@
+Pollutant class|Standard|Key limits
+Aquaculture discharge|applicable aquaculture-discharge standard or local rules|TSS ≤ 10 mg/L, COD ≤ 30 mg/L, NH₃-N ≤ 4 mg/L
+Industrial solid waste|applicable solid-waste storage/landfill standard|—
+Noise|applicable industrial boundary-noise standard|class-2 area: 60 dB(A) day, 50 dB(A) night
+@@END_TABLE@@
+
+@@H2@@8.4 Environmental protection measures
+
+@@H3@@8.4.1 Wastewater treatment
+
+@@LIST@@
+- <strong>Treatment plant</strong>: settling + filtration + biological treatment (MBR or SBR), with effluent meeting the applicable discharge standard
+- <strong>Water reuse</strong>: treated water meeting standard is reused for hall washdown and landscaping, reducing discharge
+- <strong>Separated drainage</strong>: stormwater discharged directly, wastewater treated before discharge
+- <strong>Discharge monitoring</strong>: online analyzers for COD, ammonia, TSS and flow
+@@END_LIST@@
+
+@@H3@@8.4.2 Solid-waste handling
+
+@@LIST@@
+- <strong>Waste-feed/feces recovery</strong>: thickened and sent off-site as organic-fertilizer feedstock
+- <strong>Mortality disposal</strong>: a mortality-handling facility (burial, incineration or outsourcing) to prevent disease spread
+- <strong>Sludge dewatering</strong>: denitrification sludge is dewatered and outsourced
+- <strong>Office/domestic waste</strong>: segregated and collected by the municipal service
+@@END_LIST@@
+
+@@H3@@8.4.3 Noise control
+
+@@LIST@@
+- Pump and blower rooms use acoustic walls and silencers to keep boundary noise within limits
+- Equipment bases have anti-vibration pads to reduce structure-borne noise
+- Noisy equipment is placed inside the building, away from the boundary
+@@END_LIST@@
+
+@@H3@@8.4.4 Air-emission control
+
+@@LIST@@
+- Ozone equipment has an ozone destructor, emission < 0.1 mg/m³
+- Biofilter blower off-gas is diluted by hall ventilation, keeping site ammonia within limits
+- The emergency generator has exhaust treatment (if used)
+@@END_LIST@@
+
+@@H2@@8.5 Preliminary impact assessment
+
+@@P@@Based on the sources and measures above, the overall environmental impact is:
+
+@@LIST@@
+- <strong>Water</strong>: discharge volumes are small and treated to standard, with minimal impact on the receiving water
+- <strong>Air</strong>: emissions are mainly low-concentration CO₂ and water vapor, with no SO₂ or NOₓ
+- <strong>Noise</strong>: with controls in place, boundary noise meets the standard
+- <strong>Ecology</strong>: the closed system does not directly contact natural aquatic ecosystems; saving water and land, its impact on surrounding ecology is small
+- <strong>Solid waste</strong>: recovery and safe disposal prevent secondary pollution
+@@END_LIST@@
+
+{% if farm.yieldTons > 2000 %}
+@@P@@<strong>Note</strong>: given its size ({{ farm.yieldTons }} t/yr, total investment {{ capex.totalInvestment|wan }} EUR), the project may require a full EIA report (rather than a short form). The owner should confirm with the local environmental authority.
+{% else %}
+@@P@@<strong>Preliminary conclusion</strong>: the project is moderate in scale and, with sound environmental facilities and management, its impact is manageable. The next step is a formal EIA by a qualified body.
+{% endif %}
+
+@@H2@@8.6 ESG considerations
+
+@@P@@Beyond regulatory compliance, the project's environmental, social and governance (ESG) profile is summarized below, drawing on the technical and operating parameters established earlier in this report. These points are intended as a basis for the owner's own ESG reporting and for discussions with lenders and customers.
+
+@@H3@@8.6.1 Environmental
+
+@@LIST@@
+- <strong>Water</strong>: 85–95% recirculation means about 0.5–1 m³ of new water per kg of fish — roughly 5–10% of flow-through farming — with treated discharge and near-zero diffuse pollution.
+- <strong>Land</strong>: high stocking density gives a site-area intensity far below earthen ponds, easing pressure on coastal and agricultural land.
+- <strong>Energy and carbon</strong>: RAS is more electricity-intensive than flow-through systems; sourcing low-carbon power, heat recovery (plate exchange ≥ 75%) and efficient pumps/blowers are the main levers for reducing the operational carbon footprint.
+- <strong>Resource recovery</strong>: captured solids are routed to organic-fertilizer use rather than discharged.
+@@END_LIST@@
+
+@@H3@@8.6.2 Social
+
+@@LIST@@
+- <strong>Food safety and biosecurity</strong>: the closed system excludes external pathogens, reduces or eliminates antibiotic use and yields a fully traceable product.
+- <strong>Local supply and jobs</strong>: the project adds local production capacity, reducing import reliance, and creates direct and indirect employment along the feed, equipment, logistics and sales chain.
+- <strong>Occupational health and safety</strong>: see Chapter 9 (HSE) for the safety, oxygen-handling and fire measures protecting the workforce.
+@@END_LIST@@
+
+@@H3@@8.6.3 Governance
+
+@@LIST@@
+- <strong>Monitoring and transparency</strong>: 24×7 online water-quality and discharge monitoring, with logged data, supports verifiable environmental reporting.
+- <strong>Standards and permitting</strong>: operation to recognized discharge, solid-waste and noise standards, with a formal EIA to follow, provides an auditable compliance basis.
+- <strong>Risk management</strong>: N+1 redundancy, backup power and the risk framework in Chapter 13 underpin operational resilience and responsible governance.
+@@END_LIST@@
+</script>
+<script type="text/njk-template" id="tpl-ch10">@@H1@@Chapter 9. Health, Safety & Fire (HSE)
+
+@@H2@@9.1 Hazard identification
+
+The main hazards are identified below:
+
+@@H3@@9.1.1 Chemical hazards
+
+@@TABLE@@
+Chemical|Hazard|Storage|Emergency measures
+Liquid oxygen|strong oxidizer, supports combustion, cryogenic|3 t vertical vacuum-insulated tank, ventilated outdoors|no fire, no oils, no organic contact
+{% if workflow.skimmer.mode == "ozone" or workflow.aop.enabled %}Ozone|strong oxidizer, toxic (8 ppm lethal)|generated on site, not stored; ozone monitor + destructor|evacuate and ventilate on leak
+{% endif %}{% if workflow.denitri.enabled %}Methanol|flammable, toxic|in explosion-proof drums, ventilated store|fire prevention, leak prevention, no ingestion
+{% endif %}NaHCO₃|moderately corrosive (dust irritant)|dry store|wear mask and goggles
+Organic acids / disinfectants|corrosive, some toxic|corrosion-resistant store|wear protective gloves
+@@END_TABLE@@
+
+@@H3@@9.1.2 Electrical hazards
+
+@@LIST@@
+- HV distribution: 10 kV incomer + transformer; electrical work requires certification
+- Pumps and blowers: earthing and earth-leakage protection
+- Wet environment: the culture hall is humid, so electrical equipment is rated ≥ IP54
+- Emergency lighting: in escape routes, the switchroom and the control room
+@@END_LIST@@
+
+@@H3@@9.1.3 Mechanical hazards
+
+@@LIST@@
+- Drum filter: rotating parts, pinch-point guarding
+- Fish tanks: high water level, drowning risk, guardrails fitted
+- Pumps and blowers: high-speed rotation, entanglement guarding
+- Maintenance areas: safety signage, railings and warning lights
+@@END_LIST@@
+
+@@H3@@9.1.4 Biological hazards
+
+@@LIST@@
+- Fish pathogens: entry/exit disinfection to prevent cross-contamination
+- Mortality handling: wear gloves, avoid puncture injuries
+- Staff: health certificates and periodic check-ups to prevent disease spread
+@@END_LIST@@
+
+@@H2@@9.2 Occupational safety measures
+
+@@H3@@9.2.1 Safety management system
+
+@@LIST@@
+- A safety committee chaired by the general manager
+- A safety officer (full-time if staff > 100, otherwise part-time)
+- Documented safety responsibilities, work-safety SOPs and emergency plans
+- Pre-shift safety briefings, monthly safety meetings, quarterly drills
+- Certification: electricians, pressure-vessel (LOX) and special-operation staff must be certified
+@@END_LIST@@
+
+@@H3@@9.2.2 Personal protective equipment
+
+@@LIST@@
+- Work clothing + non-slip shoes (all staff)
+- Hard hats (equipment rooms, maintenance areas)
+- Goggles + corrosion-resistant gloves (chemical handling)
+- Dust masks (dusty work)
+- Life jackets + harnesses (work at height/over water)
+@@END_LIST@@
+
+@@H3@@9.2.3 Safety facilities
+
+@@LIST@@
+- Comprehensive warning signs and safety notices
+- Emergency-stop buttons by major equipment
+- Emergency eyewash and showers (chemical areas)
+- Life rings and guardrails (around tanks)
+- Safe passageways and evacuation signage
+@@END_LIST@@
+
+@@H2@@9.3 Health and hygiene
+
+@@H3@@9.3.1 Working-environment hygiene
+
+@@LIST@@
+- Hall ventilation at 6–10 air changes/h, ammonia kept < 5 ppm
+- Noise: < 85 dB(A) in work areas, < 60 dB(A) in offices
+- Lighting: ≥ 200 lux in work areas, ≥ 300 lux in offices, ≥ 500 lux in the lab
+- Temperature/humidity: offices 18–26°C/40–70% RH, lab 22°C/50% RH
+@@END_LIST@@
+
+@@H3@@9.3.2 Food safety and hygiene
+
+@@LIST@@
+- Staff hold health certificates, have annual check-ups, and may not work with a communicable disease
+- Hand disinfection before work; change into work clothing and disinfect footwear when entering the hall
+- Disinfection baths at hall entries/exits
+- Pest control: insect curtains and rodent boards at entrances
+- Laboratory: GMP standard, with full sampling and analysis records
+@@END_LIST@@
+
+@@H3@@9.3.3 Staff welfare
+
+@@LIST@@
+- Canteen: meets food-safety law, with supplier documentation and food sampling
+- Dormitory: ventilation, daylight, hot water and washing facilities
+- Medical room: first-aid supplies and an AED
+- Health records kept for every employee
+@@END_LIST@@
+
+@@H2@@9.4 Fire-protection design
+
+@@H3@@9.4.1 Basis of fire design
+
+@@LIST@@
+- Applicable building fire-protection code
+- Applicable fire-extinguisher placement standard
+- Applicable automatic sprinkler standard
+- Applicable fire-alarm system standard
+- Specific requirements of the local fire authority
+@@END_LIST@@
+
+@@H3@@9.4.2 Fire-hazard classification
+
+@@TABLE@@
+Building|Fire hazard|Fire-resistance grade
+Main culture hall|Class E (low)|Grade 2
+Water-treatment room|Class E (low)|Grade 2
+LOX station|Class A (strong oxidizer)|Grade 2
+Diesel generator room|Class D|Grade 2
+Office building|Civil|Grade 2
+Warehouse (chemicals)|Class C|Grade 2
+@@END_TABLE@@
+
+@@H3@@9.4.3 Fire-fighting facilities
+
+@@LIST@@
+- <strong>Fire water</strong>: outdoor hydrants + an on-site fire tank (volume per the applicable code)
+- <strong>Indoor hydrants</strong>: in the main buildings per code
+- <strong>Automatic sprinklers</strong>: in the switchroom, lab and office
+- <strong>Gaseous suppression</strong>: FM-200 or IG541 in the switchroom and PLC room
+- <strong>Extinguishers</strong>: provided per code (dry powder, CO₂, ABC, etc.)
+- <strong>Fire alarm</strong>: a site-wide automatic system (smoke, heat, manual call points)
+- <strong>Emergency lighting + exit signage</strong>: on main routes and exits
+@@END_LIST@@
+
+@@H3@@9.4.4 Special fire requirements for the LOX station
+
+@@LIST@@
+- No combustibles, oils or organics within 5 m of the LOX tank
+- A dedicated fire bund isolating the non-oxygen area
+- Signage: "no smoking or open flame", "keep free of oil and organics"
+- Platforms and valves treated to be oil-free and corrosion-resistant
+- The tank has relief valves, pressure gauge, thermometer and burst disc
+- Lightning protection: tank earthing and a lightning rod
+@@END_LIST@@
+
+@@H2@@9.5 Emergency plans
+
+@@H3@@9.5.1 Emergency organization
+
+@@LIST@@
+- An emergency command group led by the general manager, with department heads as members
+- Response teams: firefighting, rescue, medical and security
+- A 24×7 duty roster of safety officers and technicians
+@@END_LIST@@
+
+@@H3@@9.5.2 Key emergency procedures
+
+@@TABLE@@
+Incident|Key response
+Fire|evacuate → call emergency services → activate fire systems → cut power/gas → extinguish
+LOX leak|stop work → evacuate → ventilate → close valves → call for help (if major)
+{% if workflow.skimmer.mode == "ozone" or workflow.aop.enabled %}Ozone leak|don respirators → evacuate → ventilate → shut down ozone equipment → engage the destructor
+{% endif %}Power loss|start the diesel generator → check critical equipment → contact the utility
+Equipment failure (main pump/blower)|switch to standby → repair → alert (if biosecurity is affected)
+Water-quality excursion (DO crash, TAN spike)|increase LOX/exchange → alert → investigate
+Fire incident|handle per the fire emergency plan
+Personal injury|first aid → hospital → report
+@@END_TABLE@@
+
+@@H3@@9.5.3 Drills and training
+
+@@LIST@@
+- Safety training: ≥ 24 h/yr for all staff (≥ 72 h for new hires)
+- Drills: ≥ 1 per quarter, covering fire, LOX leak, power loss and biosecurity
+- Certified work: electricians and special-operation staff certified, reviewed annually
+- Safety inspections: monthly, with prompt correction of any hazards
+@@END_LIST@@
+
+@@P@@<strong>Note</strong>: this chapter is a preliminary HSE design at the feasibility stage and does not replace a formal safety assessment or occupational-health assessment, which should be commissioned from qualified bodies once the project is approved.
+</script>
+<script type="text/njk-template" id="tpl-ch11">@@H1@@Chapter 10. Implementation & Organization
+
+@@H2@@10.1 Implementation schedule
+
+@@H3@@10.1.1 Overall schedule
+
+The construction period is {{ finance.params.buildYears|round(1) }} years, followed by a 2-year ramp, reaching design capacity from Year 3. The overall schedule is:
+
+@@TABLE@@
+Phase|Timing|Main work|Duration (months)
+T1: Pre-construction|6 months before start|feasibility/approval, land, EIA, planning permit|6
+T2: Design & procurement|construction months 1–3|detailed design, equipment tendering, contracting|3
+T3: Civil works|construction months 3–9|hall structure, equipment rooms, offices|6
+T4: Equipment installation|construction months 6–10|delivery, installation, piping|4
+T5: Commissioning|construction months 10–12|integrated testing, biofilter seeding, trial run|3
+T6: Production ramp|operating years 1–2|gradual loading, Year 1 to {{ (finance.params.ramp1*100)|round(0) }}%, Year 2 to {{ (finance.params.ramp2*100)|round(0) }}%|24
+T7: Full operation|from operating year 3|steady full capacity at {{ (finance.params.ramp3*100)|round(0) }}%|—
+@@END_TABLE@@
+
+@@H3@@10.1.2 Key milestones
+
+@@LIST@@
+- <strong>Approval</strong>: complete feasibility, approval and land formalities; obtain the construction permit
+- <strong>Mobilization</strong>: design complete, main equipment contracts signed, civil works started
+- <strong>Equipment on site</strong>: 80% of main process equipment delivered
+- <strong>Main works complete</strong>: civil structure and equipment installation largely finished
+- <strong>Integrated commissioning</strong>: water, power and control all connected; single-unit and interlock tests passed
+- <strong>Biofilter seeded</strong>: the nitrifier community is mature and fish can be stocked
+- <strong>First stocking</strong>: fish stocked into the fry-stage modules
+- <strong>Acceptance</strong>: formal acceptance after a 6-month trial with all indicators stably on target
+@@END_LIST@@
+
+@@H2@@10.2 Implementation steps
+
+@@H3@@10.2.1 Forming the project team
+
+@@P@@A project team should be formed 3–6 months before construction, with a project manager and technical, construction, procurement and quality leads. Engaging a consultant/EPC with RAS delivery experience is recommended.
+
+@@H3@@10.2.2 Tendering and procurement
+
+@@LIST@@
+- <strong>Main equipment by open tender</strong>: drum filter, UV, oxygenation, biofilter and other main process equipment
+- <strong>Instruments/control by competitive negotiation</strong>: online analyzers, PLC, SCADA
+- <strong>Civil works as a main contract</strong>: open-tender EPC or PC, not piecemeal
+- <strong>Long-term LOX supply agreement</strong>: to lock in price and supply stability
+@@END_LIST@@
+
+@@H3@@10.2.3 Construction quality control
+
+@@LIST@@
+- A supervisor on site throughout, witnessing critical operations
+- Concealed works (buried pipes, waterproofing) accepted in sections with strict records
+- Delivery acceptance (unpacking, nameplate check, accessory count, performance test)
+- Three-stage acceptance: single-unit → interlock → full-load trial
+@@END_LIST@@
+
+@@H2@@10.3 Organization and staffing
+
+@@H3@@10.3.1 Organization structure
+
+{% if farm.yieldTons < 500 %}
+@@P@@Given its small scale, a simplified structure is proposed:
+@@LIST@@
+- General manager (1)
+- Production (culture technicians + operators, 5–8)
+- Technology & equipment (2–3)
+- Sales & administration (2–3)
+@@END_LIST@@
+{% elif farm.yieldTons < 2000 %}
+@@P@@Given its moderate scale, a standard RAS-plant structure is proposed:
+@@LIST@@
+- General manager (1)
+- Deputy GM / plant manager (1–2)
+- Production: culture supervisor + per-stage technicians + operators (10–20 total)
+- Technology & equipment: process engineer + control/water engineers + maintenance (4–6 total)
+- Quality & biosecurity (2–3)
+- Sales & marketing (3–5)
+- Finance & administration (3–5)
+@@END_LIST@@
+{% else %}
+@@P@@Given its larger scale, a full plant structure is adopted:
+@@LIST@@
+- GM + deputy GM (2–3)
+- Production (supervisors + team leads + operators, 30–50 total)
+- Technology & equipment (process, control, water engineers + maintenance, 8–12 total)
+- Quality & biosecurity (4–6)
+- Procurement (2–3)
+- Sales & marketing (5–8)
+- Finance & administration (5–8)
+@@END_LIST@@
+{% endif %}
+
+@@H3@@10.3.2 Headcount
+
+@@P@@Total headcount is estimated at about {{ ((finance.params.laborCost / 50000)|round(0)) if finance.params.laborCost else '—' }} (at an average annual wage of 50,000 EUR, total labor cost {{ finance.params.laborCost|eur if finance.params.laborCost else '—' }} EUR/yr), split as:
+
+@@LIST@@
+- Front-line production: 60–70%
+- Technical & equipment: 15–20%
+- Management & support: 15–20%
+@@END_LIST@@
+
+@@H2@@10.4 Training plan
+
+@@H3@@10.4.1 Induction training
+
+@@LIST@@
+- Company policies, safety rules, biosecurity SOPs (2–3 days)
+- RAS process fundamentals and equipment familiarization (3–5 days)
+- Operating SOPs (role-specific, 1–2 weeks)
+- Emergency drills (monthly)
+@@END_LIST@@
+
+@@H3@@10.4.2 Key-role training
+
+@@LIST@@
+- Culture technicians: fish biology, water-quality management, disease control (2–3 months)
+- Process engineers: RAS principles, key-equipment maintenance, fault diagnosis (2–3 months)
+- Control engineers: PLC programming, SCADA operation, sensor calibration (2–3 months)
+- Maintenance staff: pump/blower repair, pipe/valve upkeep, electrical work (1–2 months)
+@@END_LIST@@
+
+@@P@@<strong>Recommendation</strong>: for key technical roles, bring in 1–2 experienced specialists from established RAS operators to lead the team in building operating SOPs and emergency plans.
+
+@@H2@@10.5 Tender packages
+
+@@TABLE@@
+Package|Scope|Method|Est. value (EUR)
+1. Main process equipment|drum filter, UV, CO₂ stripper, oxygenation, biofilter|open tender|approx. {{ (capex.equipDirect * 0.6)|eur }}
+2. Pumps & blowers|main pump, bypass pumps, Roots blowers|open tender|approx. {{ (capex.equipDirect * 0.2)|eur }}
+3. Fish tanks|FRP/HDPE tanks|open tender|approx. {{ (capex.equipDirect * 0.1)|eur }}
+4. Instruments & control|online analyzers, PLC, SCADA|competitive negotiation|approx. {{ (capex.equipDirect * 0.1)|eur }}
+5. Civil main contract|hall, equipment rooms, offices|open tender|approx. {{ (capex.civilEtc * 0.5)|eur }}
+6. Installation|piping, electrical, equipment installation|open tender|approx. {{ (capex.civilEtc * 0.3)|eur }}
+7. Supervision|construction supervision|open tender|approx. {{ (capex.civilEtc * 0.05)|eur }}
+@@END_TABLE@@
+
+@@P@@The total tendered value is about {{ (capex.equipDirect + capex.civilEtc)|eur }} EUR, {{ ((capex.equipDirect + capex.civilEtc) / capex.totalInvestment * 100)|round(0) }}% of total investment.
+</script>
+<script type="text/njk-template" id="tpl-ch12">@@H1@@Chapter 11. Capital & Financing
+
+@@H2@@11.1 Basis of the investment estimate
+
+The investment estimate is based on:
+
+@@LIST@@
+- Standard project economic-evaluation methodology and parameters
+- Recognized procedures for investment estimating and review
+- Current equipment price information and fee standards
+- cost data from comparable RAS projects
+- equipment-vendor quotations (2026 price level)
+@@END_LIST@@
+
+@@H2@@11.2 Investment estimate
+
+Total investment is estimated at <strong>{{ capex.totalInvestment|wan }} EUR</strong>, of which fixed-asset investment is <strong>{{ capex.fixedAsset|wan }} EUR</strong> and working capital <strong>{{ capex.workingCapital|wan }} EUR</strong>.
+
+@@H3@@11.2.1 Investment summary
+
+@@TABLE@@
+Item|Amount (EUR)|% of total
+1. Equipment purchase|{{ capex.equipDirect|wan }}|{{ ((capex.equipDirect/capex.totalInvestment)*100)|round(1) }}%
+2. Civil/installation/electrical/control/design|{{ capex.civilEtc|wan }}|{{ ((capex.civilEtc/capex.totalInvestment)*100)|round(1) }}%
+@@SUBTOTAL@@3. Fixed-asset investment|{{ capex.fixedAsset|wan }}|{{ ((capex.fixedAsset/capex.totalInvestment)*100)|round(1) }}%
+4. Working capital ({{ (finance.params.workingCap*100)|round(0) }}% × annual OPEX)|{{ capex.workingCapital|wan }}|{{ ((capex.workingCapital/capex.totalInvestment)*100)|round(1) }}%
+@@SUBTOTAL@@5. Total investment|{{ capex.totalInvestment|wan }}|100.0%
+@@END_TABLE@@
+
+@@H3@@11.2.2 Notes on the estimate
+
+@@P@@The direct equipment cost of {{ capex.equipDirect|wan }} EUR is estimated automatically by iRAS from the process design, drawing on historical RAS project costs, mainstream vendor quotations and scale factors.
+
+@@P@@Civil/installation/electrical/control/design cost of {{ capex.civilEtc|wan }} EUR is about {{ ((capex.civilEtc/capex.equipDirect)|round(2)) }}× the direct equipment cost and covers:
+
+@@LIST@@
+- Pipes and valves (15–20% of direct equipment)
+- Electrical (switchgear, cabling, lighting; 10–15%)
+- Automation/control (PLC, SCADA, sensors; 5–10%)
+- Installation and commissioning (10–15%)
+- Civil buildings (hall, equipment rooms, offices; 30–40%)
+- Design, supervision and consulting (5–8%)
+@@END_LIST@@
+
+@@P@@Working capital is set at {{ (finance.params.workingCap*100)|round(0) }}% of full-capacity OPEX, covering early-operation turnover of feed, juveniles, labor and energy. It is recovered in the final year (Year {{ finance.params.years }}).
+
+@@P@@<strong>Estimate accuracy</strong>: this is a budget-stage estimate with about ±40% accuracy. The final figure is governed by the formal construction contracts.
+
+@@H2@@11.3 Financing
+
+The total investment of {{ capex.totalInvestment|wan }} EUR is to be financed as follows:
+
+@@TABLE@@
+Source|Amount (EUR)|Share
+Equity (fixed assets + all working capital)|{{ capex.ownEquity|eur }}|{{ ((capex.ownEquity/capex.totalInvestment)*100)|round(1) }}%
+Bank loan (fixed assets {{ ((1-finance.params.ownPct)*100)|round(0) }}%)|{{ capex.loan|eur }}|{{ ((capex.loan/capex.totalInvestment)*100)|round(1) }}%
+@@SUBTOTAL@@Total|{{ capex.totalInvestment|wan }}|100%
+@@END_TABLE@@
+
+@@P@@<strong>Equity</strong>: provided by the owner, used mainly for early-construction outlays to start the project.
+
+{% if finance.params.ownPct < 1.0 %}
+@@P@@<strong>Bank loan</strong>: a fixed-asset investment loan of about {{ capex.loan|eur }} EUR (covering {{ ((1-finance.params.ownPct)*100)|round(0) }}% of fixed assets; working capital of {{ capex.workingCapital|eur }} EUR is self-funded), at {{ (finance.params.loanRate*100)|round(1) }}% annual interest over {{ finance.params.loanYears }} years, repaid by {% if finance.params.loanMethod == 'equal_payment' %}equal installments (annuity){% else %}equal principal{% endif %} from the first operating year.
+{% else %}
+@@P@@The project is financed 100% from equity, with no bank loan and therefore no interest or repayment burden, minimizing financial risk.
+{% endif %}
+
+@@H2@@11.4 Repayment schedule
+
+{% if finance.params.ownPct < 1.0 %}
+Under the loan terms above, the repayment schedule (interest and principal by year) is:
+
+@@TABLE@@
+Year|Interest (EUR)|Principal (EUR)|Total payment|Remaining principal
+{% for s in finance.tables.cashflowTotal %}{% if s.year >= 1 and s.year <= finance.params.loanYears and s.interest > 0 %}Year {{ s.year }}|{{ s.interest|wan }}|{{ s.loanPrincipalRepay|wan }}|{{ (s.interest + s.loanPrincipalRepay)|wan }}|—
+{% endif %}{% endfor %}@@END_TABLE@@
+
+@@P@@Total loan interest is about {{ (capex.loan * finance.params.loanRate * finance.params.loanYears / 2)|eur }} EUR (estimated), roughly {{ ((finance.params.loanRate * finance.params.loanYears / 2)*100)|round(0) }}% of the principal (varying slightly by repayment method).
+{% else %}
+@@P@@With no bank loan, no repayment schedule applies.
+{% endif %}
+
+@@H2@@11.5 Drawdown plan
+
+Investment is drawn down over the {{ finance.params.buildYears }}-year construction period:
+
+@@TABLE@@
+Phase|Timing|Funds|Main use
+Early construction|3 months before start|~30%|design, supervision, equipment deposits, civil mobilization
+Mid construction|months 4–9|~50%|equipment delivery, installation/commissioning, civil structure
+Late construction|months 10–12|~20%|integrated commissioning, biofilter seeding, trial run
+Operating year 1|first operating year|working capital {{ capex.workingCapital|wan }} EUR|juveniles, feed, labor and energy turnover
+@@END_TABLE@@
+
+@@P@@A <strong>staged-payment</strong> model is used: equipment contracts pay "30% advance + 50% on delivery + 15% on commissioning + 5% on warranty", reducing cash-flow pressure.
+
+@@P@@After commissioning, capacity reaches {{ (finance.params.ramp1*100)|round(0) }}% in Year 1, {{ (finance.params.ramp2*100)|round(0) }}% in Year 2 and {{ (finance.params.ramp3*100)|round(0) }}% from Year 3. The detailed financial analysis is in Chapter 12.
+</script>
+<script type="text/njk-template" id="tpl-ch15">@@H1@@Chapter 13. Risk & Sensitivity
+
+@@H2@@13.1 Risk identification
+
+The main risks are identified below, grouped into four categories — market, technical, financial and policy:
+
+@@H3@@13.1.1 Market risk
+
+@@LIST@@
+- <strong>Price volatility</strong>: the price of {{ farm.speciesName }} is driven by supply/demand, imports and exchange rates and can swing ±20–30% year to year. Price is the project's most sensitive factor, directly affecting feasibility
+- <strong>Demand shift</strong>: changing consumer preferences and substitutes (other species, plant protein) may affect sales
+- <strong>Sales-channel risk</strong>: without committed core customers, product may sell slowly and accumulate losses
+- <strong>Competition</strong>: comparable RAS projects may come online within 2–3 years, intensifying regional competition
+@@END_LIST@@
+
+@@H3@@13.1.2 Technical risk
+
+@@LIST@@
+- <strong>Biofilter start-up failure</strong>: biofilter seeding takes 4–8 weeks; stocking to full load too soon causes a TAN spike and mass mortality
+- <strong>Biosecurity</strong>: once a pathogen enters the loop it spreads fast and can wipe out a module or the whole site
+- <strong>Equipment failure</strong>: failure of critical systems (main pump, blowers, LOX supply) can drop DO to lethal levels
+- <strong>Water-quality excursion</strong>: poor operation (overfeeding, neglected exchange) can cause NO₃ build-up, falling pH and rising nitrite
+- <strong>Power outage</strong>: a sudden outage can cause mass mortality within 30 minutes, so backup power is essential
+@@END_LIST@@
+
+@@H3@@13.1.3 Financial risk
+
+@@LIST@@
+- <strong>Cost overrun</strong>: actual investment may exceed the estimate by up to ±40%, so a 10–15% contingency is needed
+- <strong>Construction delay</strong>: late equipment delivery or civil-works delays can extend the schedule and raise finance costs
+- <strong>Interest-rate risk</strong>: a higher loan rate increases finance costs
+- <strong>FX risk</strong>: {% if farm.species == "salmon" %}imported juveniles and some imported equipment are exposed to exchange-rate movements{% else %}some imported equipment is exposed to exchange-rate movements{% endif %}
+- <strong>Liquidity risk</strong>: insufficient equity or undrawn loans could halt construction
+@@END_LIST@@
+
+@@H3@@13.1.4 Policy risk
+
+@@LIST@@
+- <strong>Tighter environmental rules</strong>: stricter discharge standards may require additional treatment investment
+- <strong>Land-policy risk</strong>: changes in land use or zoning could affect continued operation
+- <strong>Food-safety regulation</strong>: tightening rules on antibiotics and medication mean non-compliance could affect sales
+- <strong>Trade-policy risk</strong>: export-oriented projects are exposed to trade measures (tariffs, quotas)
+@@END_LIST@@
+
+@@H2@@13.2 Sensitivity analysis
+
+Chapter 12 ran a ±20% sensitivity analysis on the main uncertainties; the results (ordered by IRR swing) are:
+
+@@TABLE@@
+Factor|Low IRR|Base IRR|High IRR|IRR swing
+{% for f in finance.tables.sensitivity %}{{ f.label }}|{{ (f.irrLow*100)|round(1) }}%|{{ (finance.indicators.irrTotal*100)|round(1) }}%|{{ (f.irrHigh*100)|round(1) }}%|{{ (f.irrSwing*100)|round(1) }}%
+{% endfor %}@@END_TABLE@@
+
+{% set top1 = finance.tables.sensitivity[0] %}
+@@P@@<strong>Key finding</strong>: the project is most sensitive to {{ top1.label }} (IRR swing {{ (top1.irrSwing*100)|round(1) }}%){% if 'price' in top1.label or 'Sales' in top1.label %}, meaning securing sales is decisive for success{% elif 'CAPEX' in top1.label %}, meaning investment control during construction is decisive for execution{% endif %}.
+
+@@H2@@13.3 Mitigation measures
+
+@@H3@@13.3.1 Market risk
+
+@@LIST@@
+- Sign 3–5 year supply agreements with core customers (supermarket chains, restaurant groups, exporters) before execution, locking in 60–70% of capacity
+- Pursue branding, organic and geographical-indication certification to raise the product premium
+- Diversify product forms (live + chilled + fillets + ready-to-eat) to spread channel risk
+- Track domestic and international market trends and adjust the sales strategy as needed
+@@END_LIST@@
+
+@@H3@@13.3.2 Technical risk
+
+@@LIST@@
+- Follow the biofilter start-up schedule strictly (4–8 weeks seeding + 12 weeks gradual loading), without rushing to full load
+- Establish full biosecurity SOPs (intake disinfection, personnel disinfection, no shared tools, quarantine of new stock)
+- N+1 redundancy on critical equipment + automatic changeover + manual inspection + remote monitoring
+- Provide a backup generator (100% site load + 30 s auto-start)
+- Build a 24×7 monitoring system (online DO, TAN, temperature, pH, flow + alarms)
+- Bring in 1–2 experienced RAS specialists and systematically train new staff
+@@END_LIST@@
+
+@@H3@@13.3.3 Financial risk
+
+@@LIST@@
+- Include a 10–15% contingency in the estimate
+- Phase equipment delivery and impose strict default clauses on vendors
+- Use fixed-price (non-floating) main contracts to lock in construction cost
+- Consider an interest-rate swap or a fixed-rate loan to hedge rate risk
+- Keep ample working capital (6–12 months recommended); do not run on zero reserves
+@@END_LIST@@
+
+@@H3@@13.3.4 Policy risk
+
+@@LIST@@
+- Leave room in the design for environmental upgrades (reserved space and pipe connections)
+- Produce to national food-safety standards and proactively obtain ISO 22000, HACCP and similar certification
+- Keep land formalities fully compliant to avoid policy-change risk
+- Monitor industry policy and apply for national and local grants in good time
+@@END_LIST@@
+
+@@H2@@13.4 Overall risk rating
+
+@@TABLE@@
+Category|Rating|Main risk|Mitigation
+Market|<strong>High</strong>|price volatility|long-term contracts + branding
+Technical|<strong>Medium</strong>|biofilter start-up + biosecurity|SOPs + N+1 redundancy + emergency response
+Financial|<strong>Medium</strong>|cost overrun + construction delay|contingency + tight control
+Policy|<strong>Low</strong>|tighter environmental rules|reserved upgrade capacity
+@@END_TABLE@@
+
+{% if finance.indicators.irrTotal >= finance.params.discount + 0.04 %}
+@@P@@<strong>Overall assessment</strong>: at {{ (finance.indicators.irrTotal*100)|round(2) }}%, the IRR is well above the discount rate of {{ (finance.params.discount*100)|round(1) }}% (a margin of {{ ((finance.indicators.irrTotal - finance.params.discount)*100)|round(2) }}%), giving strong resilience: the project remains feasible even under moderately adverse conditions.
+{% elif finance.indicators.irrTotal >= finance.params.discount %}
+@@P@@<strong>Overall assessment</strong>: at {{ (finance.indicators.irrTotal*100)|round(2) }}%, the IRR is only slightly above the discount rate of {{ (finance.params.discount*100)|round(1) }}% (a margin of {{ ((finance.indicators.irrTotal - finance.params.discount)*100)|round(2) }}%), giving limited resilience; the mitigation measures must be enforced rigorously or adverse factors could push the project below the benchmark.
+{% else %}
+@@P@@<strong>Overall assessment</strong>: at {{ (finance.indicators.irrTotal*100)|round(2) }}%, the IRR is below the discount rate of {{ (finance.params.discount*100)|round(1) }}% and does not meet the financial benchmark. The design should be optimized before implementation is considered.
+{% endif %}
+
+@@P@@Key risk-control recommendations appear in Chapter 14 (Conclusion & Recommendation).
+</script>
+<script type="text/njk-template" id="tpl-ch16">@@H1@@Chapter 14. Conclusion & Recommendation
+
+@@H2@@14.1 Feasibility conclusions
+
+@@H3@@14.1.1 Technical feasibility
+
+@@P@@The project uses a recirculating aquaculture (RAS) process with 20+ years of industrial application in Norway, Denmark, Scotland and elsewhere, alongside many mature projects in other regions. The architecture is a hybrid series-mainline + parallel-bypass design with {{ farm.totalSubSystems }} independent recirculation modules and N+1 redundancy; key parameters (mass balance, equipment selection, heat balance) are calibrated against international literature and field data.
+
+@@P@@<strong>Conclusion: fully feasible on technical grounds.</strong>
+
+@@H3@@14.1.2 Economic and financial feasibility
+
+@@P@@The project's main financial indicators:
+
+@@TABLE@@
+Indicator|Value|Benchmark|Result
+Total-investment IRR (after tax)|{{ (finance.indicators.irrTotal*100)|round(2) }}%|≥ {{ (finance.params.discount*100)|round(1) }}%|{{ 'Met' if finance.indicators.irrTotal >= finance.params.discount else 'Not met' }}
+Equity IRR|{{ (finance.indicators.irrEquity*100)|round(2) }}%|—|—
+Total-investment NPV|{{ finance.indicators.npvTotal|wan }} EUR|≥ 0|{{ 'Met' if finance.indicators.npvTotal >= 0 else 'Not met' }}
+Static payback|{{ finance.indicators.paybackTotal|round(2) }} yr|≤ 8 yr|{{ 'Met' if finance.indicators.paybackTotal <= 8 else 'Watch' }}
+Break-even point|{{ finance.indicators.bepPct|round(1) }}% of capacity|≤ 75%|{{ 'Large margin' if finance.indicators.bepPct < 75 else 'Watch' }}
+@@END_TABLE@@
+
+{% if finance.indicators.irrTotal >= finance.params.discount and finance.indicators.npvTotal >= 0 %}
+@@P@@<strong>Conclusion: financially feasible.</strong> Profitability is good, the payback period is reasonable, resilience is strong, and the required rate of return is met.
+{% else %}
+@@P@@<strong>Conclusion: financial feasibility is insufficient.</strong> Price, investment scale or operating cost should be optimized and the project re-evaluated.
+{% endif %}
+
+@@H3@@14.1.3 Social and environmental feasibility
+
+@@P@@With a closed recirculating system achieving 85–95% water reuse, the project uses just 5–10% of the water of traditional flow-through farming, greatly reducing draw on natural resources. Wastewater is treated to standard before discharge, with almost no diffuse pollution, in line with green, high-quality development goals. In normal operation it creates direct jobs and supports upstream and downstream activity (feed, logistics, sales), contributing to the local economy and food-supply security.
+
+@@P@@<strong>Conclusion: feasible on social and environmental grounds</strong>, in line with modern-fisheries and green-agriculture directions.
+
+@@H2@@14.2 Key issues and recommendations
+
+@@H3@@14.2.1 Price volatility is the largest risk
+
+{% set top1 = finance.tables.sensitivity[0] %}
+@@P@@The sensitivity analysis shows the project is most sensitive to <strong>{{ top1.label }}</strong>, with an IRR swing of {{ (top1.irrSwing*100)|round(1) }}%. {% if 'price' in top1.label or 'Sales' in top1.label %}If the actual price is 20% below expectation, the IRR falls from {{ (finance.indicators.irrTotal*100)|round(1) }}% to {{ (top1.irrLow*100)|round(1) }}%, potentially below the discount rate, leaving the project only marginally feasible.
+
+@@P@@<strong>Recommendation</strong>: before execution, the owner should prioritize <strong>3–5 year supply agreements</strong> with core customers (supermarkets, restaurant chains, exporters), locking in base volume and a price floor to hedge market volatility. In parallel, pursue mid-to-high-end branding, raising unit price through organic certification, geographical indication and eco-label premiums.{% endif %}
+
+@@H3@@14.2.2 Biofilter start-up is critical to delivery
+
+@@P@@The biofilter (MBBR) needs a 4–8 week seeding period during which the nitrifier community establishes and TAN capacity rises from zero to the design value. Stocking to full load too soon causes a TAN spike and mass mortality.
+
+@@P@@<strong>Recommendation</strong>: follow the start-up sequence strictly — "seed first → stock at low load → ramp gradually":
+
+@@LIST@@
+- Weeks 1–4: seed the empty system, dosing inoculum + NH₄Cl
+- Weeks 4–6: considered mature once TAN < 0.5 and NO₂ < 0.3 hold for 3 days
+- Weeks 6–8: stock 20–30% of capacity with juveniles
+- Weeks 8–12: increase load 15–20% per week
+- After week 12: full-load production
+@@END_LIST@@
+
+@@P@@This 12-week start-up is already built into the ramp assumption (Year 1 at {{ (finance.params.ramp1*100)|round(0) }}%), but there is a real temptation to rush in practice; the schedule must be respected.
+
+@@H3@@14.2.3 N+1 redundancy on critical equipment must be delivered
+
+@@P@@RAS places extreme demands on reliability: a main-pump failure can drop DO to lethal levels within 30 minutes; a biofilter-blower failure can collapse the nitrifier community in 2 hours; a 1-hour LOX interruption can directly kill fish. The design includes N+1 redundancy + automatic changeover, but this must be carried through into procurement — standby units should not be cut to save money.
+
+@@P@@<strong>Recommendation</strong>: critical standby equipment list:
+
+@@LIST@@
+- Main recirculation pump: N+1, auto-changeover ≤ 30 s
+- Biofilter Roots blower: N+1, changeover ≤ 60 s
+- Drum filter: N+1 (already included)
+- LOX station: dual tanks + backup supply
+- Backup generator: 100% site load, 30 s auto-start
+- UV lamps: 100% spare-lamp stock
+@@END_LIST@@
+
+@@H3@@14.2.4 Prioritize biosecurity
+
+@@P@@A closed RAS is inherently fairly biosecure, but once a pathogen enters it spreads quickly through the loop. A full biosecurity SOP should be established:
+
+@@LIST@@
+- Intake water disinfected by UV at 60 mJ/cm² or ozone at 0.5 mg/L residual for 5 minutes
+- Workers change into work clothes + boots and pass through a foot-disinfection bath
+- Tools not shared between modules, color-coded
+- New juveniles quarantined and observed for 2–4 weeks
+- Sick fish isolated immediately; mortalities buried or incinerated
+@@END_LIST@@
+
+@@H3@@14.2.5 Strengthen workforce development
+
+@@P@@RAS is technology-intensive, requiring staff with both aquaculture and water-treatment knowledge. The staffing plan should include at least 1–2 experienced RAS specialists (recruited from established operators or specifically trained), with other operators receiving systematic pre-job training (2–3 months recommended).
+
+@@H2@@14.3 Overall recommendation
+
+@@P@@Based on the analysis above, the preparer ({{ project.editor }}) makes the following overall recommendation:
+
+{% if finance.indicators.irrTotal >= finance.params.discount and finance.indicators.npvTotal >= 0 %}
+@@P@@<strong>1. Recommended to proceed.</strong> The project is technically mature, equipment-reliable, reasonably costed, financially feasible and sound in social/environmental terms, in line with modern-fisheries directions; the approval process should be advanced promptly.
+
+@@P@@<strong>2. Implement the key risk controls:</strong>
+
+@@LIST@@
+- Sales: sign long-term supply agreements with core customers before execution, locking in 60–70% of capacity
+- Engineering: build to N+1 redundancy without simplifying critical equipment
+- Start-up: respect the 12-week sequence, avoiding a rush to full load
+- Biosecurity: establish full SOPs — prevention over cure
+- People: bring in 1–2 RAS specialists and provide systematic training
+@@END_LIST@@
+
+@@P@@<strong>3. Next steps:</strong>
+
+@@LIST@@
+- Commission a formal EIA from a qualified body
+- Commission detailed engineering design (this study is budget-stage, ±40% accuracy)
+- Run open enquiry/tender with vendors to lock in main-equipment contract prices
+- Advance land approval, EIA sign-off and planning permits
+- Establish the project delivery organization and control mechanisms
+@@END_LIST@@
+
+{% else %}
+@@P@@<strong>1. Defer approval and optimize first.</strong> The project is technically feasible, but the financial indicators do not yet support an investment decision. Optimization should focus on:
+
+@@LIST@@
+- Raising the price: through branding, quality and differentiation (current price {{ finance.params.price }} EUR/kg)
+- Reducing investment: simplify non-essential units and optimize equipment selection (current fixed-asset investment {{ capex.fixedAsset|wan }} EUR)
+- Improving ramp efficiency: reach full capacity faster to reduce capital tied up during construction
+- Seeking grants: modern-fisheries parks, agricultural-industrialization funds, etc.
+- Optimizing the financing structure: a higher equity ratio / lower-rate loans
+@@END_LIST@@
+
+@@P@@<strong>2. Re-evaluate</strong>: after optimization, recompute the financial indicators in iRAS and proceed only if the IRR exceeds the discount rate and the NPV is positive.
+{% endif %}
+
+@@P@@— End of report —
+</script>
+
+<script>
+// =============================================================================
+//   iRAS Report Generator — v1.5
+//   Responsibilities:
+//   1. Load the iRAS main-page design data (from localStorage)
+//   2. Let the user fill in project metadata fields (stored locally)
+//   3. Render the chapter templates with nunjucks
+//   4. Generate a .docx file for download with docx.js
+// =============================================================================
+
+const SHARE_KEY = 'iRAS_reportExport';
+const FORM_KEY = 'iRAS_reportForm';
+
+const STATE = {
+  data: null,        // iRAS design data (from buildPIDExport)
+  form: null,        // user-entered project metadata
+  context: null      // the full render context (data + form combined)
+};
+
+// Chapter definitions (Nordic business-case structure).
+// Note: the original NDRC-style "Energy & Water Conservation" and
+// "National-Economic / Social-Benefit Evaluation" chapters have been dropped
+// for the international edition; the remaining chapters are renumbered 1..14.
+// The `id` values (ch01..ch16) are kept stable so template lookup is unaffected;
+// only `num` and `title` change. ESG is covered as a section within the
+// Environmental Impact & Permitting chapter.
+const CHAPTERS = [
+  { id: 'ch01', num: 1,  title: 'Executive Summary',                  autoRate: 0.85, ready: true  },
+  { id: 'ch02', num: 2,  title: 'Background & Rationale',             autoRate: 0.50, ready: true  },
+  { id: 'ch03', num: 3,  title: 'Market & Demand',                    autoRate: 0.60, ready: true  },
+  { id: 'ch04', num: 4,  title: 'Site & Conditions',                  autoRate: 0.30, ready: true  },
+  { id: 'ch05', num: 5,  title: 'Technical Concept',                  autoRate: 0.95, ready: true  },
+  { id: 'ch06', num: 6,  title: 'Equipment & Process Design',         autoRate: 1.00, ready: true  },
+  { id: 'ch07', num: 7,  title: 'Civil Works & Utilities',            autoRate: 0.50, ready: true  },
+  { id: 'ch09', num: 8,  title: 'Environmental Impact & Permitting',  autoRate: 0.60, ready: true  },
+  { id: 'ch10', num: 9,  title: 'Health, Safety & Fire (HSE)',        autoRate: 0.40, ready: true  },
+  { id: 'ch11', num: 10, title: 'Implementation & Organization',      autoRate: 0.65, ready: true  },
+  { id: 'ch12', num: 11, title: 'Capital & Financing',               autoRate: 0.95, ready: true  },
+  { id: 'ch13', num: 12, title: 'Financial Analysis',                 autoRate: 1.00, ready: true  },
+  { id: 'ch15', num: 13, title: 'Risk & Sensitivity',                 autoRate: 0.70, ready: true  },
+  { id: 'ch16', num: 14, title: 'Conclusion & Recommendation',        autoRate: 0.80, ready: true  }
+];
+
+// Form field definitions (used to generate the form)
+const FORM_FIELDS = [
+  { group: 'identity', title: '📋 Project identity', collapsed: false, fields: [
+    { key: 'projectName',     label: 'Project name', required: true, placeholder: 'e.g. Atlantic Salmon Land-Based RAS Demonstration Project', wide: true },
+    { key: 'projectCode',     label: 'Project code', placeholder: 'e.g. RAS-2026-001' },
+    { key: 'ownerName',       label: 'Owner / company name', required: true, placeholder: 'e.g. Example Aquaculture AS', wide: true },
+    { key: 'ownerCreditCode', label: 'Company registration no.', placeholder: 'e.g. org. number / VAT ID' },
+    { key: 'locProvince',     label: 'Site — region / county', required: true, placeholder: 'e.g. Vestland' },
+    { key: 'locCity',         label: 'Site — municipality', required: true, placeholder: 'e.g. Bergen' },
+    { key: 'locDistrict',     label: 'Site — district', placeholder: 'e.g. industrial park' },
+    { key: 'locAddress',      label: 'Site — full address', placeholder: 'street / industrial estate', wide: true },
+    { key: 'projectNature',   label: 'Project type', type: 'select', options: ['New build', 'Expansion / upgrade', 'Relocation'], required: true },
+    { key: 'editorName',      label: 'Prepared by', required: true, placeholder: 'e.g. consulting / engineering firm' },
+    { key: 'editDate',        label: 'Report date', type: 'date', required: true }
+  ]},
+  { group: 'owner', title: '👤 Owner information', collapsed: true, fields: [
+    { key: 'ownerLegalRep',         label: 'Legal representative', placeholder: 'name of the company officer' },
+    { key: 'ownerContact',          label: 'Contact person', placeholder: 'project contact' },
+    { key: 'ownerPhone',            label: 'Phone', placeholder: '+xx xxx xx xxx' },
+    { key: 'ownerEstablishedDate',  label: 'Company established', type: 'date' },
+    { key: 'ownerCapital',          label: 'Registered capital (EUR)', type: 'number', placeholder: 'e.g. 5000' },
+    { key: 'ownerBusiness',         label: 'Business summary', type: 'textarea', placeholder: 'Briefly describe the owner\'s core business, market position and capabilities (may serve as an appendix)', wide: true }
+  ]},
+  { group: 'land', title: '🏞️ Land & planning', collapsed: true, fields: [
+    { key: 'landArea',         label: 'Site area (m²)', type: 'number', placeholder: 'e.g. 33000' },
+    { key: 'landNature',       label: 'Land use class', type: 'select', options: ['Developed land', 'Agricultural land', 'Industrial land', 'Other'] },
+    { key: 'landAcquisition',  label: 'Land tenure', type: 'select', options: ['Purchase', 'Lease', 'Allocated', 'Transfer', 'Owned'] },
+    { key: 'upperPlanName',    label: 'Governing zoning plan', placeholder: 'e.g. municipal zoning plan', wide: true }
+  ]},
+  { group: 'editor', title: '✍️ Preparation details', collapsed: true, fields: [
+    { key: 'editorQualification', label: 'Preparer qualification', placeholder: 'e.g. engineering consultancy grade' },
+    { key: 'editorBasis',         label: 'Reference documents', type: 'textarea', placeholder: 'List one per line, e.g.:\n1. Owner mandate letter\n2. Project approval\n3. Local industry plan', wide: true }
+  ]}
+];
+
+// =============================================================================
+//   Data loading
+// =============================================================================
+
+function tryLoadData() {
+  try {
+    const stashed = localStorage.getItem(SHARE_KEY) || sessionStorage.getItem(SHARE_KEY);
+    if (stashed) {
+      STATE.data = JSON.parse(stashed);
+      // clear once consumed to avoid stale data
+      try { localStorage.removeItem(SHARE_KEY); } catch(e) {}
+      try { sessionStorage.removeItem(SHARE_KEY); } catch(e) {}
+      return true;
+    }
+  } catch(e) { console.warn('data load failed:', e); }
+  return false;
+}
+
+function loadFormFromStorage() {
+  try {
+    const saved = localStorage.getItem(FORM_KEY);
+    if (saved) STATE.form = JSON.parse(saved);
+  } catch(e) {}
+  if (!STATE.form) STATE.form = {};
+}
+
+function saveFormToStorage() {
+  try { localStorage.setItem(FORM_KEY, JSON.stringify(STATE.form || {})); } catch(e) {}
+}
+
+// =============================================================================
+//   UI rendering
+// =============================================================================
+
+function bootstrap() {
+  loadFormFromStorage();
+
+  if (!STATE.data) {
+    document.getElementById('mainContent').innerHTML =
+      '<div class="empty"><div class="big">⚠️</div>' +
+      '<div>Could not load design data</div>' +
+      '<div style="margin-top: 8px; font-size: 11px; color: #64748b;">Complete a design on the iRAS main page, then click <strong>📄 Generate Feasibility Report</strong></div>' +
+      // v1.5 Bug 37: add a JSON file-load entry point
+      '<div style="margin-top: 18px; font-size: 13px; color: #94a3b8;">Or drag the <code>iRAS_report-data_*.json</code> downloaded from the main page into this area, or click the button below to choose a file</div>' +
+      '<div style="margin-top: 12px;">' +
+      '  <label style="display: inline-block; padding: 8px 16px; background: #0ea5e9; color: white; border-radius: 6px; cursor: pointer;">' +
+      '    📂 Select JSON file' +
+      '    <input type="file" id="inpLoadJson" accept=".json,application/json" style="display: none;">' +
+      '  </label>' +
+      '</div>' +
+      '</div>';
+    // bind the JSON loader
+    setTimeout(() => {
+      const fi = document.getElementById('inpLoadJson');
+      if (fi) {
+        fi.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            try {
+              const parsed = JSON.parse(ev.target.result);
+              // Bug 46: schema validation
+              if (!parsed.pidSchema && !(parsed.results && parsed.results.summary && parsed.results.summary.finance)) {
+                alert('Unrecognized JSON format. Please confirm this is the "report data" backup downloaded from the main page, not the raw "saved design" JSON.');
+                return;
+              }
+              STATE.data = parsed;
+              bootstrap();
+            } catch (err) { alert('JSON parse failed: ' + err.message); }
+          };
+          reader.readAsText(file);
+        });
+      }
+    }, 0);
+    return;  // no data: stop, do not render the body
+  }
+
+  // meta-info row
+  document.getElementById('metaLine').textContent =
+    `${STATE.data.speciesName || STATE.data.species} · ${STATE.data.yieldTons} t/yr · ` +
+    `Saved ${new Date(STATE.data.savedAt).toLocaleString('en-US')}`;
+
+  // render the main content
+  renderMain();
+}
+
+function renderMain() {
+  const main = document.getElementById('mainContent');
+  let html = '';
+
+  // design summary
+  html += renderSummaryBox();
+
+  // chapter-list preview
+  html += renderChapterList();
+
+  // metadata form
+  html += renderForm();
+
+  // action area
+  html += renderActionBar();
+
+  main.innerHTML = html;
+
+  // bind events
+  bindFormEvents();
+  bindGroupToggle();
+  bindActionButtons();
+}
+
+function renderSummaryBox() {
+  const d = STATE.data;
+  const fin = d.results.summary.finance;
+  return `<div class="summary-box">
+    <div class="row"><span class="label">📊 Design summary</span></div>
+    <div class="row">Species: <strong>${d.speciesName || d.species}</strong> · output <strong>${d.yieldTons} t/yr</strong> · ${d.stages.length} stages</div>
+    <div class="row">CAPEX (fixed assets): <strong>${fmt.wan(fin.totalCapexProject)}EUR</strong> · annual OPEX <strong>${fmt.wan(fin.annualOpex)}EUR</strong> · annual depreciation <strong>${fmt.wan(fin.annualDep)}EUR</strong></div>
+    <div class="row">All-in cost: <strong>${fin.costPerKg.toFixed(2)} EUR/kg</strong> (of which depreciation ${fin.depPerKg.toFixed(2)} EUR/kg)</div>
+  </div>`;
+}
+
+function renderChapterList() {
+  let html = '<div class="chapter-list"><div style="font-size:13px; color:#a5b4fc; font-weight:600; margin-bottom:8px;">📖 Report chapters (Nordic business-case structure)</div>';
+  CHAPTERS.forEach(ch => {
+    const cls = ch.ready ? 'ready' : 'placeholder';
+    const status = ch.ready ? '✓ auto-generated' : '⏳ placeholder';
+    html += `<div class="chapter-item ${cls}">
+      <span class="name">Chapter ${ch.num}. ${ch.title}</span>
+      <span class="auto-rate">${status} · automation ${(ch.autoRate*100).toFixed(0)}%</span>
+    </div>`;
+  });
+  html += `<div style="font-size:11px; color:#64748b; margin-top:8px; padding-top:8px; border-top:1px dashed #475569;">
+    All 14 chapters are generated from your design data and rendered into the .docx output.
+  </div></div>`;
+  return html;
+}
+
+function renderForm() {
+  let html = '<h2 style="margin-top: 24px;">📋 Project metadata</h2>';
+  html += '<div style="font-size:11px; color:#94a3b8; margin-bottom:12px;">Fill in the project details. Fields marked <span style="color:#ef4444;">*</span> are required. This form is saved locally and restored next time.</div>';
+  FORM_FIELDS.forEach(group => {
+    const collapsed = group.collapsed ? 'collapsed' : '';
+    html += `<div class="form-group ${collapsed}" data-group="${group.group}">
+      <div class="form-group-header">
+        <span class="form-group-title">${group.title}</span>
+        <span><span class="form-group-status" data-group-status="${group.group}"></span><span class="form-group-toggle"></span></span>
+      </div>
+      <div class="form-group-body">`;
+    group.fields.forEach(f => {
+      const wide = f.wide ? 'field-wide' : '';
+      const required = f.required ? '<span class="required">*</span>' : '';
+      const hint = f.hint ? `<span class="hint">${f.hint}</span>` : '';
+      const value = STATE.form[f.key] !== undefined ? String(STATE.form[f.key]).replace(/"/g,'&quot;') : '';
+      let input;
+      if (f.type === 'select') {
+        const opts = (f.options || []).map(o => `<option value="${o}" ${o === value ? 'selected' : ''}>${o}</option>`).join('');
+        input = `<select id="f_${f.key}" data-key="${f.key}"><option value="">-- select --</option>${opts}</select>`;
+      } else if (f.type === 'textarea') {
+        input = `<textarea id="f_${f.key}" data-key="${f.key}" placeholder="${f.placeholder || ''}">${value}</textarea>`;
+      } else {
+        const type = f.type || 'text';
+        input = `<input id="f_${f.key}" data-key="${f.key}" type="${type}" value="${value}" placeholder="${f.placeholder || ''}">`;
+      }
+      html += `<div class="field ${wide}">
+        <label for="f_${f.key}">${f.label}${required}${hint}</label>
+        ${input}
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  return html;
+}
+
+function renderActionBar() {
+  return `<div class="action-bar">
+    <button class="btn-primary" id="btnGenerate">📄 Generate Feasibility Report (.docx)</button>
+    <div class="hint">The report is generated as a structured .docx document that you can use directly or paste into your own Word template.</div>
+  </div>`;
+}
+
+// =============================================================================
+//   Form events
+// =============================================================================
+
+function bindFormEvents() {
+  document.querySelectorAll('[data-key]').forEach(el => {
+    el.addEventListener('input', (ev) => {
+      const k = ev.target.dataset.key;
+      let v = ev.target.value;
+      if (ev.target.type === 'number') v = parseFloat(v) || null;
+      STATE.form[k] = v;
+      saveFormToStorage();
+      updateGroupStatus();
+    });
+  });
+  updateGroupStatus();
+}
+
+function updateGroupStatus() {
+  FORM_FIELDS.forEach(group => {
+    const total = group.fields.length;
+    const filled = group.fields.filter(f => {
+      const v = STATE.form[f.key];
+      return v !== undefined && v !== null && v !== '';
+    }).length;
+    const el = document.querySelector(`[data-group-status="${group.group}"]`);
+    if (el) {
+      el.textContent = `${filled}/${total}`;
+      el.className = 'form-group-status' + (filled === total ? ' complete' : '');
+    }
+  });
+}
+
+function bindGroupToggle() {
+  document.querySelectorAll('.form-group-header').forEach(h => {
+    h.addEventListener('click', () => {
+      h.parentElement.classList.toggle('collapsed');
+    });
+  });
+}
+
+function bindActionButtons() {
+  document.getElementById('btnGenerate').addEventListener('click', generateReport);
+}
+
+// =============================================================================
+//   Status bar
+// =============================================================================
+
+function setStatus(msg, kind) {
+  const bar = document.getElementById('statusBar');
+  bar.textContent = msg;
+  bar.className = 'status-bar visible' + (kind ? ' ' + kind : '');
+}
+function clearStatus() {
+  document.getElementById('statusBar').className = 'status-bar';
+}
+
+// =============================================================================
+//   Number formatting
+// =============================================================================
+
+const fmt = {
+  wan:  v => isFinite(v) ? Math.round(v).toLocaleString('en-US') : '—',
+  num:  (v, d) => isFinite(v) ? v.toLocaleString('zh-CN', { maximumFractionDigits: d || 0 }) : '—'
+};
+
+// =============================================================================
+//   SVG chart generation
+// =============================================================================
+
+// Escape XML special characters
+function xmlEscape(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+
+// Process-flow schematic (simplified P&ID, 800×500 view)
+function buildProcessFlowSvg(ctx) {
+  const wf = ctx.workflow || {};
+  const f = ctx.farm || {};
+  const W = 1200, H = 500;
+  const boxW = 140, boxH = 60, gap = 30;
+
+  // main-process nodes
+  const main = [
+    { tag: 'T-101', name: 'Fish tank', fill: '#dbeafe' },
+    { tag: 'F-201', name: 'Drum filter', fill: '#fef3c7' },
+    { tag: 'B-301', name: 'Biofilter', fill: '#d1fae5' },
+    { tag: 'D-401', name: 'UV', fill: '#e0e7ff' },
+    { tag: 'C-501', name: 'CO₂ stripper', fill: '#f3e8ff' },
+    { tag: 'A-601', name: 'O₂ cone', fill: '#fce7f3' }
+  ];
+
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="Helvetica, Arial, sans-serif">
+<defs>
+  <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M2 1 L8 5 L2 9" fill="none" stroke="#475569" stroke-width="1.5"/>
+  </marker>
+</defs>
+<rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/>
+<text x="${W/2}" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">${xmlEscape((f.speciesName || '') + ' ' + (f.yieldTons || 0) + ' t/yr process flow schematic')}</text>
+<text x="${W/2}" y="52" text-anchor="middle" font-size="13" fill="#64748b">Design stage: ${xmlEscape(wf.designStageName || 'Market size')} | peak flow ${(f.peakFlowM3H || 0).toFixed(0)} m³/h | system volume ${(f.totalSystemVolume || 0).toFixed(0)} m³</text>`;
+
+  // main-process boxes + connectors (centered)
+  const mainY = 130;
+  const totalMainW = main.length * boxW + (main.length - 1) * gap;
+  const mainX0 = (W - totalMainW) / 2;
+  main.forEach((node, i) => {
+    const x = mainX0 + i * (boxW + gap);
+    svg += `
+<rect x="${x}" y="${mainY}" width="${boxW}" height="${boxH}" rx="4" fill="${node.fill}" stroke="#334155" stroke-width="1.5"/>
+<text x="${x + boxW/2}" y="${mainY + 25}" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e293b">${xmlEscape(node.tag)}</text>
+<text x="${x + boxW/2}" y="${mainY + 45}" text-anchor="middle" font-size="13" fill="#334155">${xmlEscape(node.name)}</text>`;
+    // connector (except the last)
+    if (i < main.length - 1) {
+      svg += `<line x1="${x + boxW}" y1="${mainY + boxH/2}" x2="${x + boxW + gap}" y2="${mainY + boxH/2}" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>`;
+    }
+  });
+
+  // recirculation return to the fish tank
+  const lastBox = mainX0 + (main.length - 1) * (boxW + gap) + boxW;
+  const firstBox = mainX0;
+  svg += `
+<line x1="${lastBox}" y1="${mainY + boxH + 5}" x2="${lastBox}" y2="${mainY + boxH + 30}" stroke="#475569" stroke-width="2"/>
+<line x1="${lastBox}" y1="${mainY + boxH + 30}" x2="${firstBox - 15}" y2="${mainY + boxH + 30}" stroke="#475569" stroke-width="2"/>
+<line x1="${firstBox - 15}" y1="${mainY + boxH + 30}" x2="${firstBox - 15}" y2="${mainY + boxH/2}" stroke="#475569" stroke-width="2"/>
+<line x1="${firstBox - 15}" y1="${mainY + boxH/2}" x2="${firstBox}" y2="${mainY + boxH/2}" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+<text x="${(lastBox + firstBox)/2}" y="${mainY + boxH + 50}" text-anchor="middle" font-size="11" fill="#64748b">Main loop ${(f.peakFlowM3H || 0).toFixed(0)} m³/h</text>`;
+
+  // bypass units (enabled)
+  const branches = [];
+  if (wf.skimmer && wf.skimmer.enabled) branches.push({ tag: 'S-701', name: 'Skimmer', pct: (wf.skimmer.flowPct||0).toFixed(0) + '%' });
+  if (wf.denitri && wf.denitri.enabled) branches.push({ tag: 'R-801', name: 'Denitrification', pct: (wf.denitri.flowPct||0).toFixed(0) + '%' });
+  if (wf.aop     && wf.aop.enabled)     branches.push({ tag: 'X-901', name: 'AOP',      pct: (wf.aop.flowPct||0).toFixed(0) + '%' });
+
+  const branchY = mainY + boxH + 90;
+  if (branches.length > 0) {
+    svg += `<text x="${W/2}" y="${branchY - 10}" text-anchor="middle" font-size="13" fill="#64748b" font-weight="bold">Bypass units (side-stream treatment)</text>`;
+    const bTotalW = branches.length * boxW + (branches.length - 1) * gap;
+    const bX0 = (W - bTotalW) / 2;
+    branches.forEach((b, i) => {
+      const x = bX0 + i * (boxW + gap);
+      svg += `
+<rect x="${x}" y="${branchY}" width="${boxW}" height="${boxH}" rx="4" fill="#fce7f3" stroke="#be185d" stroke-width="1.5" stroke-dasharray="4 2"/>
+<text x="${x + boxW/2}" y="${branchY + 22}" text-anchor="middle" font-size="13" font-weight="bold" fill="#831843">${xmlEscape(b.tag)}</text>
+<text x="${x + boxW/2}" y="${branchY + 40}" text-anchor="middle" font-size="13" fill="#831843">${xmlEscape(b.name)}</text>
+<text x="${x + boxW/2}" y="${branchY + 55}" text-anchor="middle" font-size="11" fill="#831843">bypass ${xmlEscape(b.pct)}</text>`;
+    });
+  }
+
+  // key-parameter table (bottom-right)
+  const tblY = H - 120;
+  const tblX = 30;
+  svg += `
+<rect x="${tblX}" y="${tblY}" width="350" height="105" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+<text x="${tblX + 10}" y="${tblY + 18}" font-size="12" font-weight="bold" fill="#1e293b">Key process parameters</text>
+<text x="${tblX + 10}" y="${tblY + 38}" font-size="11" fill="#475569">RDF: ${(wf.rdf && wf.rdf.tssEff || 0).toFixed(0)}% TSS, 60 μm screen</text>
+<text x="${tblX + 10}" y="${tblY + 54}" font-size="11" fill="#475569">BF: ${(wf.bf && wf.bf.volume || 0).toFixed(0)} m³ media, ${(wf.bf && wf.bf.tanEff || 0).toFixed(0)}% TAN removal</text>
+<text x="${tblX + 10}" y="${tblY + 70}" font-size="11" fill="#475569">UV: ${(wf.uv && wf.uv.dose || 0).toFixed(0)} mJ/cm², ${(wf.uv && wf.uv.powerKw || 0).toFixed(1)} kW</text>
+<text x="${tblX + 10}" y="${tblY + 86}" font-size="11" fill="#475569">Oxygenation: ${wf.aerator && wf.aerator.enabled ? 'LOX + cone' : 'air aeration'}, peak ${(wf.aerator && wf.aerator.peakSupplyKgH || 0).toFixed(1)} kg O₂/h</text>`;
+
+  svg += `\n</svg>`;
+  return svg;
+}
+
+// Sensitivity tornado chart (from finance.tables.sensitivity)
+function buildTornadoSvg(ctx) {
+  const sens = (ctx.finance && ctx.finance.tables && ctx.finance.tables.sensitivity) || [];
+  const baseIRR = (ctx.finance && ctx.finance.indicators && ctx.finance.indicators.irrTotal) || 0;
+  const W = 800, H = 60 + sens.length * 50 + 60;
+  const margin = { left: 130, right: 60, top: 70, bottom: 40 };
+  const chartW = W - margin.left - margin.right;
+  const barH = 28;
+  const rowH = 50;
+
+  // x-axis range
+  let minIRR = baseIRR, maxIRR = baseIRR;
+  sens.forEach(f => {
+    minIRR = Math.min(minIRR, f.irrLow, f.irrHigh);
+    maxIRR = Math.max(maxIRR, f.irrLow, f.irrHigh);
+  });
+  const range = maxIRR - minIRR || 0.01;
+  minIRR -= range * 0.1; maxIRR += range * 0.1;
+  const xScale = irr => margin.left + ((irr - minIRR) / (maxIRR - minIRR)) * chartW;
+
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="Helvetica, Arial, sans-serif">
+<rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/>
+<text x="${W/2}" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1e293b">Sensitivity analysis — total-investment IRR tornado chart</text>
+<text x="${W/2}" y="50" text-anchor="middle" font-size="13" fill="#64748b">Base IRR ${(baseIRR*100).toFixed(2)}% (dashed), each factor ±20% swing</text>`;
+
+  // baseline
+  const x0 = xScale(baseIRR);
+  svg += `<line x1="${x0}" y1="${margin.top - 10}" x2="${x0}" y2="${H - margin.bottom + 5}" stroke="#374151" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  svg += `<text x="${x0}" y="${H - margin.bottom + 22}" text-anchor="middle" font-size="11" fill="#374151">base ${(baseIRR*100).toFixed(1)}%</text>`;
+
+  // x-axis ticks
+  for (let i = 0; i <= 5; i++) {
+    const v = minIRR + (maxIRR - minIRR) * i / 5;
+    const x = xScale(v);
+    svg += `<line x1="${x}" y1="${H - margin.bottom}" x2="${x}" y2="${H - margin.bottom + 4}" stroke="#94a3b8"/>`;
+    svg += `<text x="${x}" y="${H - margin.bottom + 18}" text-anchor="middle" font-size="10" fill="#64748b">${(v*100).toFixed(1)}%</text>`;
+  }
+  // x-axis line
+  svg += `<line x1="${margin.left}" y1="${H - margin.bottom}" x2="${margin.left + chartW}" y2="${H - margin.bottom}" stroke="#94a3b8"/>`;
+
+  // factor bars
+  sens.forEach((f, i) => {
+    const y = margin.top + i * rowH + (rowH - barH) / 2;
+    const xLow = xScale(f.irrLow);
+    const xHigh = xScale(f.irrHigh);
+    const xLeft = Math.min(xLow, xHigh);
+    const xRight = Math.max(xLow, xHigh);
+
+    svg += `<rect x="${xLeft}" y="${y}" width="${xRight - xLeft}" height="${barH}" fill="#6366f1" opacity="0.85" stroke="#312e81" stroke-width="1"/>`;
+    svg += `<text x="${margin.left - 10}" y="${y + barH/2 + 4}" text-anchor="end" font-size="12" fill="#1e293b" font-weight="bold">${xmlEscape(f.label)}</text>`;
+    // endpoint values
+    svg += `<text x="${xLeft - 4}" y="${y + barH/2 + 4}" text-anchor="end" font-size="10" fill="#475569">${(f.irrLow*100).toFixed(1)}%</text>`;
+    svg += `<text x="${xRight + 4}" y="${y + barH/2 + 4}" text-anchor="start" font-size="10" fill="#475569">${(f.irrHigh*100).toFixed(1)}%</text>`;
+    // swing value centered in the bar
+    svg += `<text x="${(xLeft+xRight)/2}" y="${y + barH/2 + 4}" text-anchor="middle" font-size="11" fill="#fff" font-weight="bold">swing ${(f.irrSwing*100).toFixed(1)}%</text>`;
+  });
+
+  svg += `\n</svg>`;
+  return svg;
+}
+
+// Cumulative cash-flow chart (total investment + equity, two lines)
+function buildCashflowSvg(ctx) {
+  const cf = (ctx.finance && ctx.finance.tables && ctx.finance.tables.cashflowTotal) || [];
+  if (cf.length === 0) return '';
+  const W = 800, H = 420;
+  const margin = { left: 80, right: 60, top: 70, bottom: 60 };
+  const chartW = W - margin.left - margin.right;
+  const chartH = H - margin.top - margin.bottom;
+
+  // data range (using cumTotal and cumEquity)
+  let yMin = 0, yMax = 0;
+  cf.forEach(p => {
+    if (p.cumTotal != null) { yMin = Math.min(yMin, p.cumTotal); yMax = Math.max(yMax, p.cumTotal); }
+    if (p.cumEquity != null) { yMin = Math.min(yMin, p.cumEquity); yMax = Math.max(yMax, p.cumEquity); }
+  });
+  const yRange = yMax - yMin || 1;
+  yMin -= yRange * 0.1; yMax += yRange * 0.1;
+  const xMax = cf[cf.length - 1].year;
+
+  const xScale = t => margin.left + (t / xMax) * chartW;
+  const yScale = v => margin.top + chartH - ((v - yMin) / (yMax - yMin)) * chartH;
+
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="Helvetica, Arial, sans-serif">
+<rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/>
+<text x="${W/2}" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1e293b">Cumulative net cash flow</text>
+<text x="${W/2}" y="50" text-anchor="middle" font-size="13" fill="#64748b">${ctx.farm.speciesName} ${ctx.farm.yieldTons} t/yr, project life ${cf.length - 1} yr</text>`;
+
+  // x-axis
+  for (let t = 0; t <= xMax; t += Math.max(1, Math.floor(xMax/8))) {
+    const x = xScale(t);
+    svg += `<line x1="${x}" y1="${margin.top}" x2="${x}" y2="${margin.top + chartH}" stroke="#e2e8f0"/>`;
+    svg += `<text x="${x}" y="${margin.top + chartH + 18}" text-anchor="middle" font-size="10" fill="#64748b">Y${t}</text>`;
+  }
+  // y-axis (5 divisions)
+  for (let i = 0; i <= 5; i++) {
+    const v = yMin + (yMax - yMin) * i / 5;
+    const y = yScale(v);
+    svg += `<line x1="${margin.left}" y1="${y}" x2="${margin.left + chartW}" y2="${y}" stroke="#e2e8f0"/>`;
+    svg += `<text x="${margin.left - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#64748b">${Math.round(v).toLocaleString('en-US')}</text>`;
+  }
+  svg += `<text x="${margin.left - 60}" y="${margin.top + chartH/2}" text-anchor="middle" font-size="11" fill="#64748b" transform="rotate(-90 ${margin.left - 60} ${margin.top + chartH/2})">Cumulative net cash flow (EUR)</text>`;
+
+  // zero line
+  if (yMin < 0 && yMax > 0) {
+    const y0 = yScale(0);
+    svg += `<line x1="${margin.left}" y1="${y0}" x2="${margin.left + chartW}" y2="${y0}" stroke="#374151" stroke-width="1.5"/>`;
+  }
+
+  // total-investment curve
+  const totalPath = cf.map((p, i) => {
+    const x = xScale(p.year);
+    const y = yScale(p.cumTotal || 0);
+    return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(1);
+  }).join(' ');
+  svg += `<path d="${totalPath}" fill="none" stroke="#dc2626" stroke-width="2.5"/>`;
+
+  // equity curve
+  const equityPath = cf.map((p, i) => {
+    const x = xScale(p.year);
+    const y = yScale(p.cumEquity || 0);
+    return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(1);
+  }).join(' ');
+  svg += `<path d="${equityPath}" fill="none" stroke="#059669" stroke-width="2.5" stroke-dasharray="6 3"/>`;
+
+  // data points
+  cf.forEach(p => {
+    if (p.year % 2 === 0 || p.year === xMax) {
+      svg += `<circle cx="${xScale(p.year)}" cy="${yScale(p.cumTotal || 0)}" r="3" fill="#dc2626"/>`;
+      svg += `<circle cx="${xScale(p.year)}" cy="${yScale(p.cumEquity || 0)}" r="3" fill="#059669"/>`;
+    }
+  });
+
+  // legend
+  const legendX = margin.left + 20;
+  const legendY = margin.top + 15;
+  svg += `<line x1="${legendX}" y1="${legendY}" x2="${legendX + 28}" y2="${legendY}" stroke="#dc2626" stroke-width="2.5"/>`;
+  svg += `<text x="${legendX + 35}" y="${legendY + 4}" font-size="12" fill="#1e293b">Total investment</text>`;
+  svg += `<line x1="${legendX + 90}" y1="${legendY}" x2="${legendX + 118}" y2="${legendY}" stroke="#059669" stroke-width="2.5" stroke-dasharray="6 3"/>`;
+  svg += `<text x="${legendX + 125}" y="${legendY + 4}" font-size="12" fill="#1e293b">Equity</text>`;
+
+  svg += `\n</svg>`;
+  return svg;
+}
+
+// =============================================================================
+//   SVG → PNG → Uint8Array (browser-side)
+// =============================================================================
+
+async function svgToPngBytes(svgString, width, height) {
+  return new Promise((resolve, reject) => {
+    try {
+      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const dpr = 2; // high-resolution rendering
+        const canvas = document.createElement('canvas');
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(b => {
+          if (!b) return reject(new Error('canvas.toBlob failed'));
+          b.arrayBuffer().then(ab => resolve(new Uint8Array(ab)));
+        }, 'image/png');
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('SVG load failed'));
+      };
+      img.src = url;
+    } catch(e) { reject(e); }
+  });
+}
+
+// =============================================================================
+//   Context assembly — combine iRAS data + form data into the object the templates need
+// =============================================================================
+
+function buildContext() {
+  const d = STATE.data;
+  const f = STATE.form || {};
+  const fin = d.results.summary.finance;
+
+  // ------- project namespace -------
+  const project = {
+    name:                 f.projectName || '(project name not set)',
+    code:                 f.projectCode || '',
+    owner:                f.ownerName || '(owner not set)',
+    ownerCreditCode:      f.ownerCreditCode || '',
+    location: {
+      province: f.locProvince || '',
+      city:     f.locCity || '',
+      district: f.locDistrict || '',
+      address:  f.locAddress || '',
+      full:     [f.locProvince, f.locCity, f.locDistrict, f.locAddress].filter(x => x).join(' ')
+    },
+    nature:               f.projectNature || 'New build',
+    editor:               f.editorName || '(preparer not set)',
+    editDate:             f.editDate || new Date().toISOString().slice(0,10),
+    ownerLegalRep:        f.ownerLegalRep || '',
+    ownerContact:         f.ownerContact || '',
+    ownerPhone:           f.ownerPhone || '',
+    ownerEstablishedDate: f.ownerEstablishedDate || '',
+    ownerCapital:         f.ownerCapital || 0,
+    ownerBusiness:        f.ownerBusiness || '',
+    landArea:             f.landArea || 0,
+    landNature:           f.landNature || '',
+    landAcquisition:      f.landAcquisition || '',
+    upperPlanName:        f.upperPlanName || '',
+    editorQualification:  f.editorQualification || '',
+    editorBasis:          f.editorBasis || ''
+  };
+
+  // ------- farm namespace -------
+  const farm = {
+    species:        d.species,
+    speciesName:    d.speciesName,
+    yieldTons:      d.yieldTons,
+    stages:         (d.stages || []).map((s, i) => {
+      const ps = (d.results.perStage || [])[i] || {};
+      const psFlow = ps.flow || {};
+      const psLoad = ps.load || {};
+      const psFarm = ps.farm || {};
+      // back out single-tank diameter: D = sqrt(4V / (π × H × tank count))
+      const poolCount = (s.subSystemCount || 1) * (s.poolsPerSet || 1);
+      const poolDepth = s.poolDepth_m || s.recDepth_m || 1.5;
+      const totalVol  = psFarm.volume || 0;
+      const D = (totalVol > 0 && poolDepth > 0 && poolCount > 0) ?
+                Math.sqrt(4 * totalVol / poolCount / Math.PI / poolDepth) : 0;
+      return {
+        name:           s.name,
+        weightStart:    s.weightStart,
+        weightEnd:      s.weightEnd,
+        months:         s.months,
+        density:        s.density,
+        tempOpt:        s.tempOpt,
+        salinity:       s.salinity || 0,
+        subSystemCount: s.subSystemCount || 1,
+        poolsPerSet:    s.poolsPerSet || 1,
+        poolCount:      poolCount,
+        poolDepth_m:    poolDepth,
+        poolDiameter:   Math.round(D * 10) / 10,
+        biomass:        psFarm.biomass || 0,
+        volume:         psFarm.volume || 0,
+        volumeTotal:    psFlow.volumeTotal || psFarm.volume || 0,
+        flowM3h:        psFlow.flowMain || 0,
+        turnover:       psFlow.turnover || 0,
+        feedDailyMax:   psLoad.feedMax || 0,
+        feedDailyAvg:   psLoad.feedAvg || 0,
+        tanDaily:       psLoad.tanDaily || 0,
+        tssDaily:       psLoad.tssDaily || 0,
+        domDaily:       psLoad.domDaily || 0,
+        co2Daily:       psLoad.co2Daily || 0,
+        o2DailyTotal:   psLoad.o2DailyTotal || 0,
+        FCR:            s.FCR || 0,    // v1.5 Bug 30 fix: the field is FCR (uppercase), not fcr
+        protein:        s.protein || 0,
+        feedRate:       s.feedRate || 0,
+        mortality:      s.mortality || 0
+      };
+    }),
+    designStage:        d.results.summary.designStage || '',
+    peakFlowM3H:        d.results.summary.peakFlowM3H || 0,
+    totalSystemVolume:  d.results.summary.totalSystemVolume || 0,
+    totalLOXKgD:        d.results.summary.totalLOXKgD || 0,
+    // v1.6: LOX tank config (site-level, shared facility-wide); fall back if old data lacks siteEquipment
+    oxygenTank: (function(){
+      const s = d.results.summary;
+      if (s && s.siteEquipment && s.siteEquipment.oxygenTank) return s.siteEquipment.oxygenTank;
+      // fallback: old designs lack the siteEquipment field, default to 3t × 2 tanks
+      return { size_t: 3, count: 2, storage_t: 6, reserveDays: 0, unitPrice: 100000, totalCapex: 200000 };
+    })()
+  };
+
+  // accumulate facility totals
+  farm.totalBiomass    = farm.stages.reduce((s, x) => s + (x.biomass || 0), 0);
+  farm.totalVolumeTank = farm.stages.reduce((s, x) => s + (x.volume || 0), 0);
+  farm.totalFeedDaily  = farm.stages.reduce((s, x) => s + (x.feedDailyMax || 0), 0);
+  farm.totalMonths     = farm.stages.reduce((s, x) => s + (x.months || 0), 0);
+  farm.totalSubSystems = farm.stages.reduce((s, x) => s + (x.subSystemCount || 0), 0);
+  farm.totalPools      = farm.stages.reduce((s, x) => s + (x.poolCount || 0), 0);
+  // v1.7: design-stage (max-capacity) system discharge — uses the real V_total × exchangeDaily instead of a hard-coded 7.5%
+  //   rationale: each stage has a different exchange rate (market size 4%, fry 8–10%); the report uses the design-stage basis, consistent with CAPEX
+  //   compat: when old P&ID data lacks a discharge field, fall back to a 7.5% estimate
+  {
+    const _designPs = (d.results.perStage || [])[d.results.summary.designStageIdx || (d.results.perStage || []).length - 1] || {};
+    const _disch = _designPs.discharge;
+    if (_disch && _disch.V_m3_d != null) {
+      farm.dischargeM3D = _disch.V_m3_d;
+      farm.dischargeTSS_mg_L = _disch.TSS_mg_L || 0;
+      farm.dischargeTAN_mg_L = _disch.TAN_mg_L || 0;
+      farm.dischargeNO3_mg_L = _disch.NO3_mg_L || 0;
+    } else {
+      // fallback: estimate old data at 7.5%/d (consistent with the historical basis)
+      farm.dischargeM3D = farm.totalSystemVolume * 0.075;
+      farm.dischargeTSS_mg_L = 0;
+      farm.dischargeTAN_mg_L = 0;
+      farm.dischargeNO3_mg_L = 0;
+    }
+    farm.dischargeM3Y = farm.dischargeM3D * 365;
+  }
+  // v1.5.1: facility weighted FCR (weighted by daily feed, reflecting average feed efficiency)
+  //   stage FCR varies widely (fry 0.8–1.0, market size 1.2–1.4); feed-weighting avoids bias from small stages
+  const _fcrWeightedSum = farm.stages.reduce((acc, x) => acc + (x.FCR || 0) * (x.feedDailyMax || 0), 0);
+  farm.weightedFCR = farm.totalFeedDaily > 0 ? _fcrWeightedSum / farm.totalFeedDaily : 0;
+
+  // v1.5: site-area estimate (passed in directly from buildPIDExport)
+  farm.land = (d.results.summary && d.results.summary.land) || null;
+
+  // ------- workflow namespace -------
+  // process design — uses the design-stage (usually market size) parameters as representative
+  const designIdx = d.results.summary.designStageIdx || (d.results.perStage || []).length - 1;
+  const designStage = (d.results.perStage || [])[designIdx] || {};
+  const designEq = designStage.equipment || {};
+  const sample = (d.stages || [])[designIdx] || {};
+  const sproc = sample.proc || {};
+  const workflow = {
+    designStageName: designStage.stageName || '',
+    // mainline (in-series) units
+    rdf: designEq.rdf || {},
+    bf:  designEq.bf || {},
+    uv:  designEq.uv || {},
+    co2: designEq.co2 || {},
+    aerator: designEq.o2cone || {},
+    // v1.7: tank aeration blower K-101 (enabled only in air mode; enabled=false in o2 mode)
+    tankAirBlower: designEq.tankAirBlower || {},
+    // bypass units
+    skimmer: designEq.skimmer || {},
+    aop:     designEq.aop || {},
+    denitri: designEq.denitri || {},
+    sump:    designEq.sump || {},
+    // feeding parameters (user-entered, shared across stages)
+    peakFactor: sproc.peakFactor || 1.5,
+    // per-stage process data (for the detailed tables)
+    perStage: (d.results.perStage || []).map(ps => ({
+      stageName: ps.stageName,
+      flow: ps.flow || {},
+      load: ps.load || {},
+      bfVolume: (ps.equipment && ps.equipment.bf && ps.equipment.bf.volume) || 0,
+      uvPowerKw: (ps.equipment && ps.equipment.uv && ps.equipment.uv.powerKw) || 0,
+      totalPumpKw: (ps.pumps && ps.pumps.totalKw) || 0,
+      o2DailyKgD: (ps.load && ps.load.o2DailyTotal) || 0,
+      co2DailyKgD: (ps.load && ps.load.co2Daily) || 0
+    })),
+    // facility key-equipment summary (for Chapter 6, Equipment & Process Design)
+    equipmentSummary: buildEquipmentSummary(d)
+  };
+
+  // ------- capex namespace -------
+  // v1.5 audit round 3: after the Bug 2 fix, the equity/loan split is no longer totalInvestment × ownPct
+  //   the loan covers fixed assets only; working capital is 100% self-funded. Split here too so the report template is correct.
+  const _wc = (fin.annualOpex || 0) * 0.15;
+  const _fa = fin.totalCapexProject || 0;
+  const _ownPct = 0.3;  // kept consistent with finParams.ownPct; overridden by finParams below if needed
+  const capex = {
+    equipDirect:      fin.totalCapexEquip || 0,
+    civilEtc:         (fin.totalCapexProject || 0) - (fin.totalCapexEquip || 0),
+    fixedAsset:       _fa,
+    workingCapital:   _wc,
+    totalInvestment:  _fa + _wc,
+    // v1.5 audit round 3: expose finance-core fields so the template uses these instead of totalInvestment × ownPct
+    ownEquityFixed:   _fa * _ownPct,             // equity portion of fixed assets
+    loan:             _fa * (1 - _ownPct),       // loan (covers fixed assets only)
+    ownEquity:        _fa * _ownPct + _wc,        // total equity (incl. working capital)
+    depYearsEquip:    d.depYearsEquip || 8,
+    depYearsCivil:    d.depYearsCivil || 20,
+    depAnnual:        fin.annualDep || 0
+  };
+
+  // ------- opex namespace -------
+  const opex = {
+    totalAnnual:    fin.annualCost || 0,
+    totalExclDep:   fin.annualOpex || 0,
+    costPerKg:      fin.costPerKg || 0,
+    depPerKg:       fin.depPerKg || 0,
+    opexPerKg:      fin.opexPerKg || 0
+  };
+
+  // ------- finance namespace -------
+  // computed from default parameters + data (a later version may let the user adjust finance parameters in report.html)
+  // v1.5 simplification: use default finance parameters (matching the finance.html defaults)
+  const finParams = {
+    price:       guessDefaultPrice(d.species),
+    years:       15,
+    ramp1:       0.3,
+    ramp2:       0.7,
+    ramp3:       1.0,
+    buildYears:  1,
+    workingCap:  0.15,
+    ownPct:      0.3,
+    loanRate:    0.05,
+    loanMethod:  'equal_payment',
+    loanYears:   8,
+    discount:    0.08,
+    taxRate:     0.25,
+    salesTax:    0,
+    repairRate:  0.02,
+    adminRate:   0.03,
+    laborCost:   estimateLaborCost(d.yieldTons)
+  };
+  const finCalc = calculateFinance(d, finParams);
+
+  const finance = {
+    params:     finParams,
+    indicators: finCalc.indicators,
+    tables:     finCalc.tables
+  };
+
+  // ------- meta namespace -------
+  const meta = {
+    generatedAt:     new Date().toISOString(),
+    irasVersion:     d.irasVersion || '1.5',
+    templateVersion: 'v1.5-alpha-1',
+    reportNumber:    `iRAS-${d.species}-${d.yieldTons}t-${new Date().toISOString().slice(0,10).replace(/-/g,'')}`
+  };
+
+  return { project, workflow, farm, capex, opex, finance, meta };
+}
+
+function guessDefaultPrice(species) {
+  const map = {
+    salmon: 60, turbot: 80, grouper: 130, perch: 50,
+    mandarin: 90, tilapia: 22, eel: 110, shrimp: 55
+  };
+  return map[species] || 50;
+}
+function estimateLaborCost(yieldTons) {
+  // EUR/yr: 50,000 EUR/person/yr, staffed by scale (consistent with finance.html)
+  if (yieldTons < 100) return 250000;     // 5 staff
+  if (yieldTons < 300) return 500000;     // 10 staff
+  if (yieldTons < 1000) return 1000000;   // 20 staff
+  if (yieldTons < 3000) return 2000000;   // 40 staff
+  return 3000000;                          // 60+ staff
+}
+
+// Facility equipment summary (used by Chapter 6, Equipment & Process Design)
+// Returns an array: [{ category, tag, name, spec, qty, perStage: [{stage, qty, spec}] }]
+function buildEquipmentSummary(d) {
+  const stages = d.results.perStage || [];
+  if (stages.length === 0) return [];
+
+  // Aggregation rule: one row per equipment class, qty = per-stage subSystemCount × whether that stage uses it
+  const list = [];
+  const stageNames = stages.map(s => s.stageName);
+
+  // helper: aggregate the same equipment across stages into one row
+  function aggregate(category, getter, defaultName, specFmt) {
+    const perStage = stages.map((ps, i) => {
+      const item = getter(ps);
+      const subSys = (d.stages[i] && d.stages[i].subSystemCount) || 1;
+      const enabled = item && item.enabled !== false;
+      return {
+        stage: ps.stageName,
+        qty: enabled ? subSys : 0,
+        spec: enabled ? specFmt(item, ps) : '—',
+        item: enabled ? item : null
+      };
+    });
+    const totalQty = perStage.reduce((s, x) => s + x.qty, 0);
+    if (totalQty > 0) {
+      list.push({ category, tag: perStage.find(x => x.item)?.item?.tag || '', name: defaultName, perStage, totalQty });
+    }
+  }
+
+  aggregate('Fish tank', ps => ({ enabled: true, tag: 'T-101' }), 'Fish tank (incl. N+1)',
+    (it, ps) => `${ps.farm.volume.toFixed(0)} m³ × ${ps.farm.density} kg/m³`);
+
+  aggregate('Drum filter', ps => ({ ...ps.equipment.rdf, enabled: true }), 'Drum filter (RDF)',
+    (it, ps) => `${(it.flow || ps.flow.flowMain).toFixed(0)} m³/h, 60 μm screen, TSS ${(it.tssEff || 0).toFixed(0)}%`);
+
+  aggregate('Biofilter', ps => ({ ...ps.equipment.bf, enabled: true }), 'Biofilter (MBBR)',
+    (it, ps) => `${(it.volume || 0).toFixed(0)} m³ media, K1/K3, specific surface 500 m²/m³`);
+
+  aggregate('UV reactor', ps => ({ ...ps.equipment.uv, enabled: true }), 'UV reactor',
+    (it, ps) => `${(it.flow || ps.flow.flowMain).toFixed(0)} m³/h, ${it.dose || 30} mJ/cm², medium-pressure lamp`);
+
+  aggregate('CO₂ stripper', ps => ps.equipment.co2 || {}, 'CO₂ stripper',
+    (it, ps) => `counter-current, G:L=${it.gToL || 3}, single-pass removal ${(it.eff || 65).toFixed(0)}%`);
+
+  aggregate('O₂ cone', ps => ps.equipment.o2cone || {}, 'Low-head oxygenator (LHO) + LOX station',
+    (it, ps) => `O₂ supply ${(it.peakSupplyKgH || 0).toFixed(1)} kg/h, ${(it.satTarget || 140).toFixed(0)}% saturation`);
+
+  aggregate('Protein skimmer', ps => ps.equipment.skimmer || {}, 'Protein skimmer',
+    (it, ps) => `${(it.volume || 0).toFixed(1)} m³, bypass ${(it.flowPct || 0).toFixed(0)}%, ${it.mode === 'ozone' ? 'ozone+foam' : 'air foam'}`);
+
+  aggregate('Denitrification reactor', ps => ps.equipment.denitri || {}, 'Denitrification reactor',
+    (it, ps) => `${(it.volume || 0).toFixed(0)} m³, NO₃ removal ${(it.no3RemovedKgD || 0).toFixed(1)} kg/d`);
+
+  aggregate('AOP reactor', ps => ps.equipment.aop || {}, 'Advanced-oxidation (AOP) reactor',
+    (it, ps) => `${it.type || '—'}, bypass ${(it.flowPct || 0).toFixed(0)}%, geosmin ${(it.geosminEff || 0).toFixed(0)}%`);
+
+  aggregate('Ozone generator', ps => {
+    const og = ps.equipment.ozoneGen || {};
+    return { ...og, enabled: og.totalKgD > 0 };
+  }, 'Ozone generator',
+    (it, ps) => `${(it.totalKgD || 0).toFixed(2)} kg/d, ${(it.powerKw || 0).toFixed(1)} kW`);
+
+  aggregate('Biofilter blower', ps => ({ enabled: true, ...ps.equipment.bfBlower, tag: 'K-302' }), 'Biofilter Roots blower',
+    (it, ps) => {
+      const sp = it.spec || {};
+      return `air flow ${(sp.flowM3h || 0).toFixed(0)} m³/h, ${(sp.powerKw || 0).toFixed(1)} kW`;
+    });
+
+  aggregate('Main pump', ps => ({ enabled: true, ...ps.pumps.main }), 'Main recirculation pump (with VFD)',
+    (it, ps) => `${(it.flow || 0).toFixed(0)} m³/h, ${(it.kw || 0).toFixed(1)} kW, head ${it.headM || 12} m`);
+
+  aggregate('Sump', ps => ps.equipment.sump || {}, 'Sump / buffer tank',
+    (it, ps) => `${(it.volume || 0).toFixed(0)} m³, HRT ${(it.hrt_min || 0).toFixed(1)} min`);
+
+  return list;
+}
+
+
+// =============================================================================
+//   Financial calculation (v1.5: fully delegated to finance-core.js, Bug 6 fix)
+//   Exposes calculateFinance(data, p); generates tables and indicators internally
+// =============================================================================
+function calculateFinance(data, p) {
+  if (!window.iRASFinance) {
+    console.error('finance-core.js not loaded; financial tables cannot be generated');
+    return { indicators: {}, tables: {} };
+  }
+  const fin = data.results.summary.finance;
+  if (!fin) return { indicators: {}, tables: {} };
+
+  const core = window.iRASFinance.calculate(data, p);
+  if (!core) return { indicators: {}, tables: {} };
+
+  // adapt to the legacy tables output structure
+  const yearly = core.yearly;
+  const Y = p.years;
+  const yieldKg = data.yieldTons * 1000;
+  const sat = yearly[Math.min(3, Y)] || yearly[yearly.length - 1];
+  const total = sat.opCostTotal + sat.dep + sat.interest;
+  const pct = v => total > 0 ? (v / total * 100).toFixed(1) : '—';
+
+  return {
+    indicators: core.indicators,
+    tables: {
+      revenue: yearly.filter(y => y.year > 0).map(y => ({
+        year: y.year, ramp: y.ramp,
+        tons: yieldKg * y.ramp / 1000,
+        revenue: y.revenue, salesTax: y.salesTax, netRevenue: y.netRevenue
+      })),
+      totalCost: {
+        operatingCost: sat.operatingCost, operatingPct: pct(sat.operatingCost),
+        repairCost:    sat.repairCost,    repairPct:    pct(sat.repairCost),
+        adminCost:     sat.adminCost,     adminPct:     pct(sat.adminCost),
+        laborCost:     sat.laborCost,     laborPct:     pct(sat.laborCost),
+        dep:           sat.dep,           depPct:       pct(sat.dep),
+        interest:      sat.interest,      interestPct:  pct(sat.interest),
+        total,
+        roi: total > 0 ? (sat.profitNet / (fin.totalCapexProject || 1) * 100) : 0
+      },
+      profitLoss: {
+        y1: yearly[1] || {}, y2: yearly[2] || {}, y3: yearly[3] || {}, yN: yearly[Y] || {}
+      },
+      cashflowTotal: yearly,
+      cashflowEquity: yearly,
+      sensitivity: core.sensitivity ? core.sensitivity.factors : []
+    }
+  };
+}
+
+
+// =============================================================================
+//   nunjucks template rendering
+// =============================================================================
+
+let nunjucksEnv = null;
+
+function setupNunjucks() {
+  if (nunjucksEnv) return nunjucksEnv;
+  nunjucksEnv = new nunjucks.Environment(null, { autoescape: false });
+  // custom filters
+  nunjucksEnv.addFilter('wan', v => isFinite(v) ? Math.round(v).toLocaleString('en-US') : '—');
+  nunjucksEnv.addFilter('eur', v => isFinite(v) ? Math.round(v).toLocaleString('en-US') : '—');
+  nunjucksEnv.addFilter('pct', v => isFinite(v) ? (v * 100).toFixed(2) + '%' : '—');
+  nunjucksEnv.addFilter('thousand', v => isFinite(v) ? v.toLocaleString('zh-CN') : '—');
+  nunjucksEnv.addFilter('round', (v, d) => isFinite(v) ? Number(v).toFixed(d != null ? d : 0) : '—');
+  return nunjucksEnv;
+}
+
+function getTemplate(id) {
+  const el = document.getElementById('tpl-' + id);
+  return el ? el.textContent : '';
+}
+
+function renderChapter(chapterId, ctx) {
+  const tpl = getTemplate(chapterId);
+  if (!tpl) return '@@H1@@(chapter template missing: ' + chapterId + ')\n';
+  try {
+    return nunjucksEnv.renderString(tpl, ctx);
+  } catch(e) {
+    console.error('chapter render failed ' + chapterId + ':', e);
+    return '@@H1@@(chapter render failed: ' + chapterId + ')\n@@P@@Error: ' + e.message + '\n';
+  }
+}
+
+// =============================================================================
+//   Generate the feasibility report (main entry)
+// =============================================================================
+
+async function generateReport() {
+  const btn = document.getElementById('btnGenerate');
+  btn.disabled = true;
+  setStatus('① Assembling the data context…');
+
+  try {
+    // 1. build context
+    setupNunjucks();
+    STATE.context = buildContext();
+
+    // 2. render all chapters
+    setStatus('② Rendering chapter templates…');
+    const chapters = [];
+    for (const ch of CHAPTERS) {
+      const text = renderChapter(ch.id, STATE.context);
+      chapters.push({ ...ch, text });
+    }
+
+    // 3. load docx.js (lazy)
+    setStatus('③ Loading the docx library…');
+    await loadDocxLibrary();
+
+    // 4. generate docx (with pre-rendered images)
+    setStatus('④ Rendering charts + assembling the docx…');
+    const blob = await buildDocxBlob(chapters, STATE.context);
+
+    // 5. download
+    setStatus('⑤ Downloading the file…');
+    const fname = `iRAS_feasibility-report_${STATE.data.species}_${STATE.data.yieldTons}t_${new Date().toISOString().slice(0,10)}.docx`;
+    triggerDownload(blob, fname);
+
+    setStatus(`✅ Report generated: ${fname}`, 'success');
+  } catch(e) {
+    console.error('report generation failed:', e);
+    setStatus('❌ Generation failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// lazy-load docx.js
+let _docxLib = null;
+async function loadDocxLibrary() {
+  if (_docxLib) return _docxLib;
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js';
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('docx.js failed to load (network issue or CDN unreachable)'));
+    document.head.appendChild(s);
+  });
+  if (typeof docx === 'undefined') throw new Error('the docx global was not injected');
+  _docxLib = docx;
+  return _docxLib;
+}
+
+// Parse the rendered text into a docx children array
+function parseTextToDocxChildren(text, dx, images) {
+  const { Paragraph, HeadingLevel, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, ImageRun } = dx;
+  images = images || {};
+
+  // split text containing <strong>...</strong> into TextRun arrays (bold + normal fragments)
+  function inlineRuns(s, baseOpts) {
+    baseOpts = baseOpts || { size: 21, font: 'Times New Roman' };
+    const runs = [];
+    const re = /<strong>(.*?)<\/strong>/g;
+    let last = 0, m;
+    while ((m = re.exec(s)) !== null) {
+      if (m.index > last) {
+        runs.push(new TextRun({ ...baseOpts, text: s.slice(last, m.index) }));
+      }
+      runs.push(new TextRun({ ...baseOpts, text: m[1], bold: true }));
+      last = m.index + m[0].length;
+    }
+    if (last < s.length) {
+      runs.push(new TextRun({ ...baseOpts, text: s.slice(last) }));
+    }
+    return runs.length > 0 ? runs : [new TextRun({ ...baseOpts, text: s })];
+  }
+  const lines = text.split('\n');
+  const children = [];
+  let i = 0;
+  while (i < lines.length) {
+    let line = lines[i];
+    if (!line.trim()) { i++; continue; }
+
+    // table
+    if (line.includes('@@TABLE@@')) {
+      const rows = [];
+      i++;
+      while (i < lines.length && !lines[i].includes('@@END_TABLE@@')) {
+        const row = lines[i].trim();
+        if (row && !row.startsWith('@@SUBTOTAL@@')) {
+          rows.push({ cells: row.split('|'), subtotal: false });
+        } else if (row.startsWith('@@SUBTOTAL@@')) {
+          rows.push({ cells: row.replace('@@SUBTOTAL@@','').split('|'), subtotal: true });
+        }
+        i++;
+      }
+      i++; // skip END_TABLE
+      if (rows.length > 0) {
+        const tableRows = rows.map((r, idx) => new TableRow({
+          children: r.cells.map(c => new TableCell({
+            children: [new Paragraph({
+              children: inlineRuns(c.trim(), { size: 18, font: 'Times New Roman', bold: idx === 0 || r.subtotal }),
+              alignment: idx === 0 ? AlignmentType.CENTER : AlignmentType.LEFT
+            })],
+            shading: idx === 0 ? { fill: 'E0E7FF' } : (r.subtotal ? { fill: 'F1F5F9' } : undefined)
+          }))
+        }));
+        children.push(new Table({
+          rows: tableRows,
+          width: { size: 100, type: WidthType.PERCENTAGE }
+        }));
+        children.push(new Paragraph({ children: [new TextRun(' ')] })); // blank line after the table
+      }
+      continue;
+    }
+
+    // list
+    if (line.includes('@@LIST@@')) {
+      i++;
+      while (i < lines.length && !lines[i].includes('@@END_LIST@@')) {
+        const t = lines[i].trim();
+        if (t && t.startsWith('-')) {
+          children.push(new Paragraph({
+            children: inlineRuns(t.replace(/^-\s*/, ''), { size: 21, font: 'Times New Roman' }),
+            bullet: { level: 0 }
+          }));
+        }
+        i++;
+      }
+      i++;
+      continue;
+    }
+
+    // image @@IMG@@id=xxx|caption=xxx|w=800|h=400@@
+    const imgMatch = line.match(/@@IMG@@([^@]*)@@/);
+    if (imgMatch) {
+      const params = {};
+      imgMatch[1].split('|').forEach(kv => {
+        const [k, v] = kv.split('=');
+        if (k && v != null) params[k.trim()] = v.trim();
+      });
+      const id = params.id;
+      const caption = params.caption || '';
+      const dispW = parseInt(params.w) || 600;
+      const dispH = parseInt(params.h) || 300;
+      const png = images[id];
+      if (png && png.length > 0 && ImageRun) {
+        try {
+          children.push(new Paragraph({
+            children: [new ImageRun({
+              data: png,
+              transformation: { width: dispW, height: dispH },
+              type: 'png'
+            })],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 200, after: 100 }
+          }));
+          if (caption) {
+            children.push(new Paragraph({
+              children: [new TextRun({ text: caption, size: 18, italics: true, color: '6B7280', font: 'Times New Roman' })],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 200 }
+            }));
+          }
+        } catch(e) {
+          // fall back to a text note if rendering fails
+          children.push(new Paragraph({
+            children: [new TextRun({ text: '[image render failed: ' + id + ']', size: 21, color: 'DC2626' })],
+            alignment: AlignmentType.CENTER
+          }));
+        }
+      } else {
+        // fall back to a text placeholder if the image is unavailable
+        children.push(new Paragraph({
+          children: [new TextRun({ text: '[' + (caption || 'figure: ' + id) + ' — not generated]', size: 21, italics: true, color: '94A3B8' })],
+          alignment: AlignmentType.CENTER
+        }));
+      }
+      i++; continue;
+    }
+
+    // heading H1
+    const h1Match = line.match(/@@H1@@(.*)/);
+    if (h1Match) {
+      children.push(new Paragraph({
+        children: [new TextRun({ text: h1Match[1].trim(), bold: true, size: 32, font: 'Arial' })],
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 400, after: 200 }
+      }));
+      i++; continue;
+    }
+    // H2
+    const h2Match = line.match(/@@H2@@(.*)/);
+    if (h2Match) {
+      children.push(new Paragraph({
+        children: [new TextRun({ text: h2Match[1].trim(), bold: true, size: 26, font: 'Arial' })],
+        heading: HeadingLevel.HEADING_2,
+        spacing: { before: 300, after: 150 }
+      }));
+      i++; continue;
+    }
+    // H3
+    const h3Match = line.match(/@@H3@@(.*)/);
+    if (h3Match) {
+      children.push(new Paragraph({
+        children: [new TextRun({ text: h3Match[1].trim(), bold: true, size: 22, font: 'Arial' })],
+        heading: HeadingLevel.HEADING_3,
+        spacing: { before: 250, after: 120 }
+      }));
+      i++; continue;
+    }
+    // paragraph P (explicit or implicit)
+    let paraText = line;
+    const pMatch = line.match(/@@P@@(.*)/);
+    if (pMatch) paraText = pMatch[1];
+    // default body text
+    children.push(new Paragraph({
+      children: inlineRuns(paraText.trim(), { size: 21, font: 'Times New Roman' }),
+      spacing: { line: 360, after: 100 },
+      indent: { firstLine: 420 }  // first-line indent
+    }));
+    i++;
+  }
+  return children;
+}
+
+// Pre-render all SVG charts to PNG (async, browser-side)
+// Returns PNG Uint8Arrays for { processFlow, tornado, cashflow }
+async function preRenderImages(ctx) {
+  const images = {};
+  // 1. process-flow schematic
+  try {
+    const svg1 = buildProcessFlowSvg(ctx);
+    images.processFlow = await svgToPngBytes(svg1, 1200, 500);
+  } catch(e) {
+    console.warn('processFlow render failed:', e); images.processFlow = null;
+  }
+  // 2. Tornado
+  try {
+    const sens = (ctx.finance && ctx.finance.tables && ctx.finance.tables.sensitivity) || [];
+    if (sens.length > 0) {
+      const svg2 = buildTornadoSvg(ctx);
+      const tornadoH = 60 + sens.length * 50 + 60;
+      images.tornado = await svgToPngBytes(svg2, 800, tornadoH);
+    }
+  } catch(e) {
+    console.warn('tornado render failed:', e); images.tornado = null;
+  }
+  // 3. cumulative cash flow
+  try {
+    const cf = (ctx.finance && ctx.finance.tables && ctx.finance.tables.cashflowTotal) || [];
+    if (cf.length > 0) {
+      const svg3 = buildCashflowSvg(ctx);
+      images.cashflow = await svgToPngBytes(svg3, 800, 420);
+    }
+  } catch(e) {
+    console.warn('cashflow render failed:', e); images.cashflow = null;
+  }
+  return images;
+}
+
+// Assemble the docx Blob
+async function buildDocxBlob(chapters, ctx) {
+  const dx = await loadDocxLibrary();
+  const { Document, Packer, Paragraph, TextRun, AlignmentType, PageBreak } = dx;
+
+  // pre-render all images to PNG
+  const images = await preRenderImages(ctx);
+
+  const allChildren = [];
+
+  // cover page
+  allChildren.push(new Paragraph({
+    children: [new TextRun({ text: ctx.project.name, bold: true, size: 56, font: 'Arial' })],
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 4000, after: 800 }
+  }));
+  allChildren.push(new Paragraph({
+    children: [new TextRun({ text: 'Feasibility Study', bold: true, size: 40 })],
+    alignment: AlignmentType.CENTER,
+    spacing: { after: 400 }
+  }));
+  allChildren.push(new Paragraph({
+    children: [new TextRun({ text: ctx.project.owner, size: 28, font: 'Times New Roman' })],
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 800, after: 200 }
+  }));
+  allChildren.push(new Paragraph({
+    children: [new TextRun({ text: ctx.project.editor + ' · ' + ctx.project.editDate, size: 24, font: 'Times New Roman' })],
+    alignment: AlignmentType.CENTER,
+    spacing: { after: 200 }
+  }));
+  allChildren.push(new Paragraph({
+    children: [new TextRun({ text: 'Generated automatically by iRAS v' + ctx.meta.irasVersion, size: 18, italics: true, color: '6B7280' })],
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 4000 },
+    pageBreakBefore: false
+  }));
+  allChildren.push(new Paragraph({ children: [new PageBreak()] }));
+
+  // chapters
+  chapters.forEach((ch, idx) => {
+    const childrenOfChapter = parseTextToDocxChildren(ch.text, dx, images);
+    childrenOfChapter.forEach(c => allChildren.push(c));
+    if (idx < chapters.length - 1) {
+      allChildren.push(new Paragraph({ children: [new PageBreak()] }));
+    }
+  });
+
+  const doc = new Document({
+    creator: 'iRAS v' + ctx.meta.irasVersion,
+    title: ctx.project.name + ' - Feasibility Study',
+    description: 'Feasibility study generated automatically by iRAS',
+    styles: {
+      default: {
+        document: {
+          run: { font: 'Times New Roman', size: 21 }
+        }
+      }
+    },
+    sections: [{
+      properties: {
+        page: {
+          margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 }  // 1 inch = 1440 twip
+        }
+      },
+      children: allChildren
+    }]
+  });
+
+  return await Packer.toBlob(doc);
+}
+
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// =============================================================================
+//   Event binding
+// =============================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (tryLoadData()) {
+    bootstrap();
+  } else {
+    // no data: bootstrap shows the empty state
+    loadFormFromStorage();
+    bootstrap();
+  }
+
+  // v1.5 Bug 37: global drag-and-drop JSON loading
+  document.body.addEventListener('dragover', (e) => { e.preventDefault(); });
+  document.body.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        if (!parsed.pidSchema && !(parsed.results && parsed.results.summary && parsed.results.summary.finance)) {
+          alert('Unrecognized JSON format. Please confirm this is the "report data" backup downloaded from the main page, not the raw "saved design" JSON.');
+          return;
+        }
+        STATE.data = parsed;
+        bootstrap();
+      } catch (err) { alert('JSON parse failed: ' + err.message); }
+    };
+    reader.readAsText(file);
+  });
+
+  // top-bar buttons
+  document.getElementById('btnReloadData').addEventListener('click', () => {
+    if (tryLoadData()) {
+      bootstrap();
+      setStatus('Data reloaded', 'success');
+    } else {
+      setStatus('No design data found; click 📄 Generate Feasibility Report again on the main page', 'error');
+    }
+  });
+
+  document.getElementById('btnClearForm').addEventListener('click', () => {
+    if (confirm('Clear all form fields?')) {
+      STATE.form = {};
+      saveFormToStorage();
+      bootstrap();  // re-render
+    }
+  });
+
+  // postMessage listener (main page clicks again → notify to refresh)
+  window.addEventListener('message', (ev) => {
+    if (ev && ev.data && ev.data.type === 'iRAS_REPORT_RELOAD') {
+      tryLoadData();
+      bootstrap();
+    }
+  });
+});
+</script>
+</body>
+</html>
