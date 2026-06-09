@@ -4584,6 +4584,27 @@ const O2_REC_BY_SPECIES = {
 /* ============================================================================
    Input helpers
    ============================================================================ */
+// ---------------------------------------------------------------------------
+// Stage role (language-independent). Earlier code keyed the O2-saturation
+// stage adjustment off Chinese name substrings (苗种/白仔/成鱼); after the
+// English i18n build that is fragile (a renamed or English-named stage would
+// silently lose the adjustment). stageRole resolves a stable role from an
+// explicit s.role first, then from either-language name substrings.
+// stageO2Adj reproduces the original numeric behaviour: fry +5, market -5, else 0.
+// ---------------------------------------------------------------------------
+function stageRole(s){
+  if (s && s.role) return s.role;
+  const n = (s && s.name) || '';
+  const e = (s && s.name_en) || '';
+  if (/苗种|白仔/.test(n) || /\bfry\b|fingerling|glass eel/i.test(e)) return 'fry';
+  if (/成鱼/.test(n) || /market/i.test(e)) return 'market';
+  return 'growout';
+}
+function stageO2Adj(s){
+  const r = stageRole(s);
+  return r === 'fry' ? 5 : (r === 'market' ? -5 : 0);
+}
+
 function loadStagesFromDB(key) {
   const sp = SPECIES_DB[key];
   // Use the global O2_REC_BY_SPECIES (same table as when switching oxygenation mode)
@@ -4593,13 +4614,13 @@ function loadStagesFromDB(key) {
     // Priority: explicit stage field > species baseline + stage adjustment
     // Stage adjustment: fry +5% (physiologically fragile), grow-out -5% (relatively tolerant)
     // kept within ±10% so it never crosses species categories
-    let stageAdj = 0;
-    if (s.name && (s.name.includes('苗种') || s.name.includes('白仔'))) stageAdj = 5;
-    else if (s.name && s.name.includes('成鱼')) stageAdj = -5;
+    const stageAdj = stageO2Adj(s);
     const recSat = recSatBase + stageAdj;
     const o2Sat = s.o2SatTarget || recSat;
     return {
       ...s,
+      // language-independent stage role, so downstream logic never depends on the (Chinese) name string
+      role: stageRole(s),
       // Copy species-level o2BaseFactor / o2Q10 to each stage,
       // calcStageLoad computes by formula when a stage has no explicit o2FishFactor
       o2BaseFactor: s.o2BaseFactor != null ? s.o2BaseFactor : sp.o2BaseFactor,
@@ -6388,9 +6409,7 @@ function rebuildStages() {
             // Restore the same species-recommended value as loadStagesFromDB (using the global constant)
             const st = stagesState[idx];
             const baseRec = O2_REC_BY_SPECIES[currentSpecies] || 125;
-            let stageAdj = 0;
-            if (st.name && (st.name.includes('苗种') || st.name.includes('白仔'))) stageAdj = 5;
-            else if (st.name && st.name.includes('成鱼')) stageAdj = -5;
+            const stageAdj = stageO2Adj(st);
             satEl.value = baseRec + stageAdj;
           }
         }
@@ -7569,7 +7588,7 @@ function restoreState(state) {
       stagesState.forEach((s, i) => {
         if (s.recDepth_m == null) {
           // Match by stage name first, otherwise align by index
-          const tpl = sp.stages.find(x => x.name === s.name) || sp.stages[i];
+          const tpl = sp.stages.find(x => x.name === s.name) || sp.stages.find(x => x.name_en && x.name_en === s.name_en) || sp.stages[i];
           if (tpl && tpl.recDepth_m != null) s.recDepth_m = tpl.recDepth_m;
         }
       });

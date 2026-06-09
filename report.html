@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <!--
-  iRAS · Feasibility Report Generator (v1.7)
+  iRAS · Feasibility Report Generator (v1.8)
   Generates a feasibility report as a .docx document
 
   Data source: localStorage['iRAS_reportExport'] (passed from the "📄 Generate Feasibility Report" button on the main page)
   Output: a structured .docx feasibility document
 
-  Copyright (C) 2026 Hainan Dengdeng Technology Consulting Co., Ltd.
-  Copyright (C) 2026 Sun Cheng <6881509@qq.com>
+  Copyright (C) 2026 Cheng Sun · Polarlys Innovation AS
 
   This program is free software: you can redistribute it and/or modify it
   under the terms of the GNU Affero General Public License (AGPL v3)
@@ -26,9 +25,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="author" content="Sun Cheng / Hainan Dengdeng Technology Consulting Co., Ltd.">
-<meta name="copyright" content="© 2026 Hainan Dengdeng Technology Consulting Co., Ltd.">
-<title>iRAS · Feasibility Report Generator v1.7</title>
+<meta name="author" content="Cheng Sun / Polarlys Innovation AS">
+<meta name="copyright" content="© 2026 Cheng Sun · Polarlys Innovation AS">
+<title>iRAS · Feasibility Report Generator v1.8</title>
 <script src="https://cdn.jsdelivr.net/npm/nunjucks@3.2.4/browser/nunjucks.min.js"></script>
 <!-- v1.5: shared financial calculation module (shared with finance.html, Bug 6 fix) -->
 <script src="finance-core.js"></script>
@@ -238,7 +237,7 @@
 
 @@H2@@12.1 Basis of the financial evaluation
 
-The financial evaluation follows standard project economic-evaluation methodology and current tax and fiscal rules to assess the financial feasibility of the project.
+The financial evaluation uses discounted cash-flow analysis under prevailing tax and accounting assumptions to assess the project’s financial viability.
 
 The evaluation uses discounted cash-flow analysis to compute financial indicators at both the total-investment and equity levels, including the internal rate of return (IRR), net present value (NPV), payback period and break-even point, together with a sensitivity analysis of the main uncertainties.
 
@@ -264,13 +263,13 @@ At the design capacity of {{ farm.yieldTons }} t/yr and a price of {{ finance.pa
 
 @@TABLE@@
 Year|Capacity ratio|Output (t)|Revenue (EUR)
-{% for y in finance.tables.revenue %}Year {{ y.year }}|{{ (y.ramp*100)|round(0) }}%|{{ y.tons|round(1) }}|{{ y.revenue|wan }}
+{% for y in finance.tables.revenue %}Year {{ y.year }}|{{ (y.ramp*100)|round(0) }}%|{{ y.tons|round(1) }}|{{ y.revenue|eur }}
 {% endfor %}@@END_TABLE@@
 
 {% if finance.params.salesTax > 0 %}
 Sales tax and surcharge are levied at {{ (finance.params.salesTax*100)|round(1) }}%.
 {% else %}
-As a primary agricultural product, the output is exempt from VAT under current tax law, so the sales tax and surcharge are zero.
+No sales tax or surcharge is applied in the base case (for B2B sales VAT is generally pass-through); the applicable VAT treatment should be confirmed for the project’s jurisdiction.
 {% endif %}
 
 @@H2@@12.4 Total cost estimate
@@ -279,13 +278,13 @@ The full-capacity total cost breaks down as follows:
 
 @@TABLE@@
 Item|Amount (EUR)|% of total cost
-Operating cost (feed / power / LOX / chemicals)|{{ finance.tables.totalCost.operatingCost|wan }}|{{ finance.tables.totalCost.operatingPct }}%
-Repairs ({{ (finance.params.repairRate*100)|round(1) }}% × equipment cost)|{{ finance.tables.totalCost.repairCost|wan }}|{{ finance.tables.totalCost.repairPct }}%
-Admin ({{ (finance.params.adminRate*100)|round(1) }}% × revenue)|{{ finance.tables.totalCost.adminCost|wan }}|{{ finance.tables.totalCost.adminPct }}%
-Labor|{{ finance.tables.totalCost.laborCost|wan }}|{{ finance.tables.totalCost.laborPct }}%
-Depreciation (equipment {{ capex.depYearsEquip }} yr + civil works {{ capex.depYearsCivil }} yr)|{{ finance.tables.totalCost.dep|wan }}|{{ finance.tables.totalCost.depPct }}%
-Finance cost (loan interest)|{{ finance.tables.totalCost.interest|wan }}|{{ finance.tables.totalCost.interestPct }}%
-@@SUBTOTAL@@Total cost|{{ finance.tables.totalCost.total|wan }}|100.0%
+Operating cost (feed / power / LOX / chemicals)|{{ finance.tables.totalCost.operatingCost|eur }}|{{ finance.tables.totalCost.operatingPct }}%
+Repairs ({{ (finance.params.repairRate*100)|round(1) }}% × equipment cost)|{{ finance.tables.totalCost.repairCost|eur }}|{{ finance.tables.totalCost.repairPct }}%
+Admin ({{ (finance.params.adminRate*100)|round(1) }}% × revenue)|{{ finance.tables.totalCost.adminCost|eur }}|{{ finance.tables.totalCost.adminPct }}%
+Labor|{{ finance.tables.totalCost.laborCost|eur }}|{{ finance.tables.totalCost.laborPct }}%
+Depreciation (equipment {{ capex.depYearsEquip }} yr + civil works {{ capex.depYearsCivil }} yr)|{{ finance.tables.totalCost.dep|eur }}|{{ finance.tables.totalCost.depPct }}%
+Finance cost (loan interest)|{{ finance.tables.totalCost.interest|eur }}|{{ finance.tables.totalCost.interestPct }}%
+@@SUBTOTAL@@Total cost|{{ finance.tables.totalCost.total|eur }}|100.0%
 @@END_TABLE@@
 
 @@H2@@12.5 Profit & loss analysis
@@ -294,13 +293,13 @@ The profit & loss analysis covers the {{ finance.params.years }}-year evaluation
 
 @@TABLE@@
 Item (EUR)|Year 1|Year 2|Full year (Year 3)|Final year (Year {{ finance.params.years }})
-Sales revenue|{{ finance.tables.profitLoss.y1.revenue|wan }}|{{ finance.tables.profitLoss.y2.revenue|wan }}|{{ finance.tables.profitLoss.y3.revenue|wan }}|{{ finance.tables.profitLoss.yN.revenue|wan }}
-Operating cost|{{ finance.tables.profitLoss.y1.opCost|wan }}|{{ finance.tables.profitLoss.y2.opCost|wan }}|{{ finance.tables.profitLoss.y3.opCost|wan }}|{{ finance.tables.profitLoss.yN.opCost|wan }}
-Depreciation|{{ finance.tables.profitLoss.y1.dep|wan }}|{{ finance.tables.profitLoss.y2.dep|wan }}|{{ finance.tables.profitLoss.y3.dep|wan }}|{{ finance.tables.profitLoss.yN.dep|wan }}
-Interest|{{ finance.tables.profitLoss.y1.interest|wan }}|{{ finance.tables.profitLoss.y2.interest|wan }}|{{ finance.tables.profitLoss.y3.interest|wan }}|{{ finance.tables.profitLoss.yN.interest|wan }}
-Pre-tax profit|{{ finance.tables.profitLoss.y1.profitBefore|wan }}|{{ finance.tables.profitLoss.y2.profitBefore|wan }}|{{ finance.tables.profitLoss.y3.profitBefore|wan }}|{{ finance.tables.profitLoss.yN.profitBefore|wan }}
-Income tax|{{ finance.tables.profitLoss.y1.tax|wan }}|{{ finance.tables.profitLoss.y2.tax|wan }}|{{ finance.tables.profitLoss.y3.tax|wan }}|{{ finance.tables.profitLoss.yN.tax|wan }}
-@@SUBTOTAL@@Net profit|{{ finance.tables.profitLoss.y1.profitNet|wan }}|{{ finance.tables.profitLoss.y2.profitNet|wan }}|{{ finance.tables.profitLoss.y3.profitNet|wan }}|{{ finance.tables.profitLoss.yN.profitNet|wan }}
+Sales revenue|{{ finance.tables.profitLoss.y1.revenue|eur }}|{{ finance.tables.profitLoss.y2.revenue|eur }}|{{ finance.tables.profitLoss.y3.revenue|eur }}|{{ finance.tables.profitLoss.yN.revenue|eur }}
+Operating cost|{{ finance.tables.profitLoss.y1.opCost|eur }}|{{ finance.tables.profitLoss.y2.opCost|eur }}|{{ finance.tables.profitLoss.y3.opCost|eur }}|{{ finance.tables.profitLoss.yN.opCost|eur }}
+Depreciation|{{ finance.tables.profitLoss.y1.dep|eur }}|{{ finance.tables.profitLoss.y2.dep|eur }}|{{ finance.tables.profitLoss.y3.dep|eur }}|{{ finance.tables.profitLoss.yN.dep|eur }}
+Interest|{{ finance.tables.profitLoss.y1.interest|eur }}|{{ finance.tables.profitLoss.y2.interest|eur }}|{{ finance.tables.profitLoss.y3.interest|eur }}|{{ finance.tables.profitLoss.yN.interest|eur }}
+Pre-tax profit|{{ finance.tables.profitLoss.y1.profitBefore|eur }}|{{ finance.tables.profitLoss.y2.profitBefore|eur }}|{{ finance.tables.profitLoss.y3.profitBefore|eur }}|{{ finance.tables.profitLoss.yN.profitBefore|eur }}
+Income tax|{{ finance.tables.profitLoss.y1.tax|eur }}|{{ finance.tables.profitLoss.y2.tax|eur }}|{{ finance.tables.profitLoss.y3.tax|eur }}|{{ finance.tables.profitLoss.yN.tax|eur }}
+@@SUBTOTAL@@Net profit|{{ finance.tables.profitLoss.y1.profitNet|eur }}|{{ finance.tables.profitLoss.y2.profitNet|eur }}|{{ finance.tables.profitLoss.y3.profitNet|eur }}|{{ finance.tables.profitLoss.yN.profitNet|eur }}
 @@END_TABLE@@
 
 @@H2@@12.6 Cash-flow analysis
@@ -310,7 +309,7 @@ Income tax|{{ finance.tables.profitLoss.y1.tax|wan }}|{{ finance.tables.profitLo
 The total-investment cash flow evaluates the return on the project itself, before financing. The results are:
 
 @@P@@Total-investment IRR (after tax) = {{ (finance.indicators.irrTotal*100)|round(2) }}%
-@@P@@Total-investment NPV @ {{ (finance.params.discount*100)|round(1) }}% = {{ finance.indicators.npvTotal|wan }} EUR
+@@P@@Total-investment NPV @ {{ (finance.params.discount*100)|round(1) }}% = {{ finance.indicators.npvTotal|eur }} EUR
 
 {% if finance.indicators.irrTotal > finance.params.discount %}
 The total-investment IRR exceeds the discount rate of {{ (finance.params.discount*100)|round(1) }}% and the NPV is positive, indicating the project is financially feasible on an investment basis.
@@ -325,7 +324,7 @@ The total-investment IRR is below the discount rate of {{ (finance.params.discou
 The equity cash flow evaluates the project from the shareholders' perspective, accounting for loan leverage. The results are:
 
 @@P@@Equity IRR = {{ (finance.indicators.irrEquity*100)|round(2) }}%
-@@P@@Equity NPV @ {{ (finance.params.discount*100)|round(1) }}% = {{ finance.indicators.npvEquity|wan }} EUR
+@@P@@Equity NPV @ {{ (finance.params.discount*100)|round(1) }}% = {{ finance.indicators.npvEquity|eur }} EUR
 
 {% if finance.params.ownPct < 1.0 %}
 The equity IRR is {{ ((finance.indicators.irrEquity - finance.indicators.irrTotal)*100)|round(2) }} percentage points higher than the total-investment IRR, reflecting the amplifying effect of loan leverage.{% if finance.indicators.irrEquity > finance.params.discount %} Shareholder returns are healthy.{% endif %}
@@ -350,7 +349,7 @@ Return on total investment (full year)|{{ finance.tables.totalCost.roi|round(2) 
 Indicator|Value|Benchmark|Result
 Total-investment after-tax IRR|{{ (finance.indicators.irrTotal*100)|round(2) }}%|≥ {{ (finance.params.discount*100)|round(1) }}%|{{ 'Met' if finance.indicators.irrTotal >= finance.params.discount else 'Not met' }}
 Equity IRR|{{ (finance.indicators.irrEquity*100)|round(2) }}%|—|—
-Total-investment NPV|{{ finance.indicators.npvTotal|wan }} EUR|≥ 0|{{ 'Met' if finance.indicators.npvTotal >= 0 else 'Not met' }}
+Total-investment NPV|{{ finance.indicators.npvTotal|eur }} EUR|≥ 0|{{ 'Met' if finance.indicators.npvTotal >= 0 else 'Not met' }}
 Total-investment dynamic payback|{{ finance.indicators.paybackTotalDisc|round(2) }} yr|—|—
 @@END_TABLE@@
 
@@ -376,7 +375,7 @@ In summary, the project's main financial indicators are:
 Indicator|Value|Result
 Total-investment IRR (after tax)|{{ (finance.indicators.irrTotal*100)|round(2) }}%|{{ 'Feasible' if finance.indicators.irrTotal >= finance.params.discount else 'Not feasible' }}
 Equity IRR|{{ (finance.indicators.irrEquity*100)|round(2) }}%|—
-Total-investment NPV|{{ finance.indicators.npvTotal|wan }} EUR|{{ 'Feasible' if finance.indicators.npvTotal >= 0 else 'Not feasible' }}
+Total-investment NPV|{{ finance.indicators.npvTotal|eur }} EUR|{{ 'Feasible' if finance.indicators.npvTotal >= 0 else 'Not feasible' }}
 Static payback|{{ finance.indicators.paybackTotal|round(2) }} yr|{{ 'Met' if finance.indicators.paybackTotal <= 8 else 'Watch' }}
 Break-even point|{{ finance.indicators.bepPct|round(1) }}% of capacity|{{ 'Large margin' if finance.indicators.bepPct < 75 else 'Watch' }}
 @@END_TABLE@@
@@ -386,9 +385,9 @@ Break-even point|{{ finance.indicators.bepPct|round(1) }}% of capacity|{{ 'Large
 {% else %}
 @@P@@Conclusion: the project's financial indicators are weak and do not meet the required rate of return. The following should be optimized and the project re-evaluated:
 @@LIST@@
-{% if finance.params.price < 50 %}- Raise pricing or add higher-value product lines{% endif %}
-- Optimize equipment investment (current CAPEX {{ capex.fixedAsset|wan }} EUR)
-- Reduce operating cost (current annual OPEX {{ opex.totalExclDep|wan }} EUR)
+- Raise pricing or add higher-value product lines
+- Optimize equipment investment (current CAPEX {{ capex.fixedAsset|eur }} EUR)
+- Reduce operating cost (current annual OPEX {{ opex.totalExclDep|eur }} EUR)
 - Adjust scale (currently {{ farm.yieldTons }} t/yr)
 @@END_LIST@@
 {% endif %}
@@ -413,91 +412,61 @@ Factor|Low IRR|Base IRR|High IRR|IRR swing
 <!-- Chapter templates -->
 <script type="text/njk-template" id="tpl-ch01">@@H1@@Chapter 1. Executive Summary
 
-@@H2@@1.1 Project overview
+@@H2@@1.1 The investment proposition
+
+@@P@@{{ project.owner }} proposes to develop {{ project.name }} — a land-based recirculating aquaculture system (RAS) producing {{ farm.yieldTons }} t/yr of {{ farm.speciesName }} at {{ project.location.full or '(site to be confirmed)' }}. The total funding requirement is approximately {{ capex.totalInvestment|eur }} EUR ({{ capex.fixedAsset|eur }} EUR fixed assets and {{ capex.workingCapital|eur }} EUR working capital), of which {{ capex.ownEquity|eur }} EUR ({{ (capex.ownEquity / capex.totalInvestment * 100)|round(0) }}%) is to be funded by equity and {{ capex.loan|eur }} EUR ({{ (capex.loan / capex.totalInvestment * 100)|round(0) }}%) by senior debt.
+
+{% if finance.indicators.irrTotal >= finance.params.discount and finance.indicators.npvTotal >= 0 %}@@P@@At a farm-gate price of {{ finance.params.price }} EUR/kg and the cost base modelled in this study, the project delivers a project-level (pre-financing) IRR of <strong>{{ (finance.indicators.irrTotal*100)|round(1) }}%</strong> and a positive NPV of <strong>{{ finance.indicators.npvTotal|eur }} EUR</strong> at an {{ (finance.params.discount*100)|round(0) }}% discount rate, with discounted payback in about {{ finance.indicators.paybackTotalDisc|round(1) }} years. On the basis of this analysis the project is financially viable and we recommend proceeding to detailed design and financing.
+{% else %}@@P@@At a farm-gate price of {{ finance.params.price }} EUR/kg and the cost base modelled in this study, the project delivers a project-level (pre-financing) IRR of <strong>{{ (finance.indicators.irrTotal*100)|round(1) }}%</strong>{% if finance.indicators.npvTotal < 0 %} and a negative NPV of {{ finance.indicators.npvTotal|eur }} EUR{% endif %} at an {{ (finance.params.discount*100)|round(0) }}% discount rate. As modelled the returns fall short of the {{ (finance.params.discount*100)|round(0) }}% hurdle rate, and we recommend optimising the sale price, capital cost or scale before committing to financing.
+{% endif %}
+
+@@P@@<em>This is a concept-stage techno-economic study (investment accuracy ≈ ±40%). It is intended to support an investment decision and financing discussions; it does not replace the formal environmental, permitting, health-and-safety or fish-welfare assessments, which must be issued by accredited bodies.</em>
+
+@@H2@@1.2 Project at a glance
 
 @@TABLE@@
 Item|Detail
-Project name|{{ project.name }}
-{% if project.code %}Project code|{{ project.code }}
-{% endif %}Project type|{{ project.nature }}
-Site|{{ project.location.full or '(to be filled)' }}
-Owner|{{ project.owner }}
-{% if project.ownerCreditCode %}Company registration no.|{{ project.ownerCreditCode }}
-{% endif %}Capacity|{{ farm.yieldTons }} t/yr of {{ farm.speciesName }}
-Total investment|{{ capex.totalInvestment|wan }} EUR
-of which fixed-asset investment|{{ capex.fixedAsset|wan }} EUR
-Working capital|{{ capex.workingCapital|wan }} EUR
+Project|{{ project.name }}
+Promoter|{{ project.owner }}
+Location|{{ project.location.full or '(to be confirmed)' }}
+Product|{{ farm.speciesName }}
+Design capacity|{{ farm.yieldTons }} t/yr
+Production stages|{{ farm.stages|length }}
+Recirculation modules|{{ farm.totalSubSystems }}
+Total system volume|{{ farm.totalSystemVolume|round(0) }} m³
 Construction period|{{ finance.params.buildYears|round(1) }} yr
-Evaluation period|{{ finance.params.years }} yr (incl. construction)
-Prepared by|{{ project.editor }}
-{% if project.editorQualification %}Preparer qualification|{{ project.editorQualification }}
-{% endif %}Report date|{{ project.editDate }}
+Evaluation horizon|{{ finance.params.years }} yr (incl. construction)
+Total funding requirement|{{ capex.totalInvestment|eur }} EUR
+Prepared by|{{ project.editor }}, {{ project.editDate }}
 @@END_TABLE@@
 
-@@H2@@1.2 Basis of preparation
+@@H2@@1.3 Sources & uses of funds
 
-{% if project.editorBasis %}This feasibility study is based primarily on:
+@@TABLE@@
+Uses of funds|EUR|% of total
+Equipment & process systems|{{ capex.equipDirect|eur }}|{{ (capex.equipDirect / capex.totalInvestment * 100)|round(1) }}%
+Civil works, installation & electrical|{{ capex.civilEtc|eur }}|{{ (capex.civilEtc / capex.totalInvestment * 100)|round(1) }}%
+Working capital|{{ capex.workingCapital|eur }}|{{ (capex.workingCapital / capex.totalInvestment * 100)|round(1) }}%
+@@SUBTOTAL@@Total funding requirement|{{ capex.totalInvestment|eur }}|100.0%
+@@END_TABLE@@
 
-{{ project.editorBasis }}
+@@TABLE@@
+Sources of funds|EUR|% of total
+Equity (fixed assets {{ (finance.params.ownPct*100)|round(0) }}% + working capital 100%)|{{ capex.ownEquity|eur }}|{{ (capex.ownEquity / capex.totalInvestment * 100)|round(1) }}%
+Senior debt (bank loan, {{ (finance.params.loanRate*100)|round(1) }}% over {{ finance.params.loanYears }} yr)|{{ capex.loan|eur }}|{{ (capex.loan / capex.totalInvestment * 100)|round(1) }}%
+@@SUBTOTAL@@Total funding|{{ capex.totalInvestment|eur }}|100.0%
+@@END_TABLE@@
 
-In addition, the following references were consulted:{% else %}This feasibility study is based primarily on:
-{% endif %}
+@@P@@Grant funding (e.g. national innovation or green-transition schemes) is <strong>not</strong> assumed in the base case; any award would reduce the equity requirement and improve equity returns accordingly.
 
-@@LIST@@
-- Standard project economic-evaluation methodology and parameters
-- Recognized guidance on the required depth of feasibility studies
-- Recognized procedures for investment estimating and review
-- Relevant policies promoting modern fisheries, aquaculture and controlled-environment agriculture
-- Current equipment price information and fee standards
-- Engineering data and field cases from comparable RAS (recirculating aquaculture) projects
-@@END_LIST@@
-
-@@H2@@1.3 Guiding principles
-
-This report follows these principles:
-
-@@LIST@@
-- <strong>Sound engineering</strong>: the process design is based on a mature international RAS framework, with key parameters (mass balance, equipment selection, heat balance) calibrated against published literature and field data
-- <strong>State of the art</strong>: a hybrid series-mainline + parallel-bypass architecture with multiple parallel modules and N+1 redundancy balances advanced technology with reliability
-- <strong>Cost-effectiveness</strong>: the investment estimate considers sourcing, scale factors and regional factors to keep the budget realistic
-- <strong>Practicality</strong>: equipment selection considers supply-chain maturity and the schedule follows industry norms, so the project can be delivered smoothly
-- <strong>Compliance</strong>: the report is complete in structure and emphasizes the core content — technical concept, investment estimate, financial analysis and risk
-@@END_LIST@@
-
-@@H2@@1.4 Scope
-
-This study examines the feasibility of {{ project.name }}, covering:
-
-@@LIST@@
-- Background and rationale
-- Market analysis and scale
-- Site and conditions
-- Technical concept (process flow, unit design, key water-quality control)
-- Equipment design (equipment list, specifications, procurement strategy)
-- Civil works / site layout / utilities
-- Energy and water efficiency
-- Preliminary environmental impact
-- Occupational safety, health and fire protection
-- Implementation schedule and organization
-- Investment estimate and financing
-- Financial analysis (NPV / IRR / sensitivity)
-- Risk analysis and mitigation
-- Conclusion and recommendation
-
-@@END_LIST@@
-
-@@P@@This report does not replace formal environmental, safety or energy assessments, which must be issued independently by qualified bodies. The investment estimate has an accuracy of about ±40%; the detailed figure is governed by the construction contract.
-
-@@H2@@1.5 Key techno-economic indicators
-
-The project's key techno-economic indicators are summarized below:
+@@H2@@1.4 Key techno-economic and financial indicators
 
 @@TABLE@@
 Category|Indicator|Value
 @@SUBTOTAL@@Scale|—|—
 Scale|Species|{{ farm.speciesName }}
 Scale|Annual output|{{ farm.yieldTons }} t
-Scale|Number of stages|{{ farm.stages|length }}
+Scale|Production stages|{{ farm.stages|length }}
 Scale|Independent recirculation modules|{{ farm.totalSubSystems }}
 Scale|Total fish tanks|{{ farm.totalPools }}
 Scale|Total system volume|{{ farm.totalSystemVolume|round(0) }} m³
@@ -510,241 +479,164 @@ Consumption & loads|Weighted average FCR|{{ farm.weightedFCR|round(2) }} (feed-w
 Consumption & loads|Daily LOX use|{{ farm.totalLOXKgD|round(0) }} kg/d
 Consumption & loads|Design-stage peak flow|{{ farm.peakFlowM3H|round(0) }} m³/h
 @@SUBTOTAL@@Investment|—|—
-Investment|Fixed-asset investment|{{ capex.fixedAsset|wan }} EUR
-Investment|of which equipment|{{ capex.equipDirect|wan }} EUR
-Investment|of which civil / installation / electrical|{{ capex.civilEtc|wan }} EUR
-Investment|Working capital|{{ capex.workingCapital|wan }} EUR
-Investment|Total investment|{{ capex.totalInvestment|wan }} EUR
-Investment|Equity (fixed assets {{ (finance.params.ownPct*100)|round(0) }}% + working capital 100%)|{{ capex.ownEquity|eur }} EUR
-Investment|Bank loan (fixed assets {{ ((1-finance.params.ownPct)*100)|round(0) }}%)|{{ capex.loan|eur }} EUR
-@@SUBTOTAL@@Operations|—|—
-Operations|Annual revenue (full capacity)|{{ (farm.yieldTons * 1000 * finance.params.price)|eur }} EUR
-Operations|Annual total cost (full capacity)|{{ finance.tables.totalCost.total|wan }} EUR
-Operations|Annual net profit (full capacity)|{{ finance.tables.profitLoss.y3.profitNet|wan }} EUR
-Operations|All-in cost|{{ opex.costPerKg|round(2) }} EUR/kg
-@@SUBTOTAL@@Financial indicators|—|—
-Financial indicators|Total-investment IRR (after tax)|{{ (finance.indicators.irrTotal*100)|round(2) }}%
-Financial indicators|Equity IRR|{{ (finance.indicators.irrEquity*100)|round(2) }}%
-Financial indicators|Total-investment NPV @ {{ (finance.params.discount*100)|round(1) }}%|{{ finance.indicators.npvTotal|wan }} EUR
-Financial indicators|Static payback|{{ finance.indicators.paybackTotal|round(2) }} yr
-Financial indicators|Dynamic payback|{{ finance.indicators.paybackTotalDisc|round(2) }} yr
-Financial indicators|Break-even point|{{ finance.indicators.bepPct|round(1) }}% of capacity
+Investment|Fixed-asset investment|{{ capex.fixedAsset|eur }} EUR
+Investment|of which equipment|{{ capex.equipDirect|eur }} EUR
+Investment|of which civil / installation / electrical|{{ capex.civilEtc|eur }} EUR
+Investment|Working capital|{{ capex.workingCapital|eur }} EUR
+Investment|Total funding requirement|{{ capex.totalInvestment|eur }} EUR
+Investment|Equity|{{ capex.ownEquity|eur }} EUR
+Investment|Senior debt|{{ capex.loan|eur }} EUR
+@@SUBTOTAL@@Operations (full capacity)|—|—
+Operations (full capacity)|Annual revenue|{{ (farm.yieldTons * 1000 * finance.params.price)|eur }} EUR
+Operations (full capacity)|Annual total cost|{{ finance.tables.totalCost.total|eur }} EUR
+Operations (full capacity)|Annual net profit|{{ finance.tables.profitLoss.y3.profitNet|eur }} EUR
+Operations (full capacity)|All-in cost|{{ opex.costPerKg|round(2) }} EUR/kg
+@@SUBTOTAL@@Returns|—|—
+Returns|Project IRR (after tax)|{{ (finance.indicators.irrTotal*100)|round(2) }}%
+Returns|Equity IRR|{{ (finance.indicators.irrEquity*100)|round(2) }}%
+Returns|Project NPV @ {{ (finance.params.discount*100)|round(1) }}%|{{ finance.indicators.npvTotal|eur }} EUR
+Returns|Static payback|{{ finance.indicators.paybackTotal|round(2) }} yr
+Returns|Discounted payback|{{ finance.indicators.paybackTotalDisc|round(2) }} yr
+Returns|Break-even (% of capacity)|{{ finance.indicators.bepPct|round(1) }}%
 @@END_TABLE@@
 
-@@H2@@1.6 Main conclusions and recommendations
+@@H2@@1.5 Investment recommendation
 
-@@H3@@1.6.1 Technology
+@@P@@<strong>Technology.</strong> The project is built on a mature international RAS process — mainline "fish tank → drum filter → protein skimmer (bypass) → biofilter → UV → CO₂ stripping → oxygenation → fish tank", with denitrification and AOP bypasses — deployed as parallel modules with N+1 redundancy. Unit design parameters are calibrated against published literature and industry field data, so the technical risk is well understood.
 
-@@P@@The project uses a mature international RAS process. The mainline runs "fish tank → drum filter → protein skimmer (bypass) → biofilter → UV → CO₂ stripping → oxygenation → fish tank", with denitrification and AOP bypasses. Unit design parameters align with international field data, so the process is <strong>mature and reliable</strong>.
+{% if finance.indicators.irrTotal >= finance.params.discount and finance.indicators.npvTotal >= 0 %}@@P@@<strong>Economics.</strong> The financial case is sound: a project IRR of {{ (finance.indicators.irrTotal*100)|round(1) }}% (equity IRR {{ (finance.indicators.irrEquity*100)|round(1) }}%) above the {{ (finance.params.discount*100)|round(0) }}% hurdle, a positive NPV of {{ finance.indicators.npvTotal|eur }} EUR, discounted payback of about {{ finance.indicators.paybackTotalDisc|round(1) }} years, and a break-even at {{ finance.indicators.bepPct|round(1) }}% of capacity.
 
-@@H3@@1.6.2 Economics and finance
+@@P@@<strong>Recommendation.</strong> Taking technology, cost, returns and risk together, the project is technically mature and financially viable. <strong>We recommend proceeding to detailed design, permitting and financing.</strong> Sale price and capacity utilisation are the dominant value drivers (see the risk and sensitivity chapter) and should be the focus of the next-stage commercial and offtake work.
+{% else %}@@P@@<strong>Economics.</strong> As modelled, the project IRR of {{ (finance.indicators.irrTotal*100)|round(1) }}% {% if finance.indicators.npvTotal < 0 %}and negative NPV of {{ finance.indicators.npvTotal|eur }} EUR {% endif %}fall short of the {{ (finance.params.discount*100)|round(0) }}% hurdle, leaving an insufficient margin to support a financing decision as currently configured.
 
-{% if finance.indicators.irrTotal >= finance.params.discount and finance.indicators.npvTotal >= 0 %}
-@@P@@The financial indicators are sound. The total-investment IRR is <strong>{{ (finance.indicators.irrTotal*100)|round(2) }}%</strong>, above the discount rate of {{ (finance.params.discount*100)|round(1) }}%; the equity IRR is {{ (finance.indicators.irrEquity*100)|round(2) }}%; the NPV is positive at {{ finance.indicators.npvTotal|wan }} EUR; the static payback is {{ finance.indicators.paybackTotal|round(2) }} years and the dynamic payback {{ finance.indicators.paybackTotalDisc|round(2) }} years; the break-even point is {{ finance.indicators.bepPct|round(1) }}% of capacity. The project is <strong>financially feasible</strong>.
-{% else %}
-@@P@@The financial indicators are weak. The total-investment IRR is {{ (finance.indicators.irrTotal*100)|round(2) }}%, {% if finance.indicators.irrTotal < finance.params.discount %}below the discount rate of {{ (finance.params.discount*100)|round(1) }}%; {% endif %}{% if finance.indicators.npvTotal < 0 %}with a negative NPV of {{ finance.indicators.npvTotal|wan }} EUR; {% endif %}the project <strong>does not meet the required return</strong>. Price, investment scale or operating cost should be optimized and the project re-evaluated.
-{% endif %}
-
-@@H3@@1.6.3 Overall conclusion
-
-{% if finance.indicators.irrTotal >= finance.params.discount and finance.indicators.npvTotal >= 0 %}
-@@P@@Considering technology, equipment, investment, financial analysis and risk together, the project is technically mature, equipment-reliable, reasonably costed, financially feasible and manageable in risk. <strong>Investment in the project is recommended</strong>.
-{% else %}
-@@P@@On balance, the project is technically feasible, but the financial indicators are not yet strong enough to support an investment decision. <strong>The design should be optimized before proceeding</strong>, focusing on improving pricing, reducing investment scale and lowering operating cost.
+@@P@@<strong>Recommendation.</strong> The project is technically feasible but not yet financially robust. <strong>We recommend optimising the design before committing</strong> — prioritising achievable sale price (product, market and offtake), then capital cost and scale — and re-running the evaluation. The sensitivity analysis identifies where the leverage lies.
 {% endif %}
 
 @@P@@Detailed analysis follows in the subsequent chapters.
 </script>
-<script type="text/njk-template" id="tpl-ch02">@@H1@@Chapter 2. Background & Rationale
+<script type="text/njk-template" id="tpl-ch02">@@H1@@Chapter 2. Investment Rationale
 
-@@H2@@2.1 Industry context
+@@H2@@2.1 Sector context & structural drivers
 
-{% if farm.species == "salmon" %}
-@@P@@Atlantic salmon (Salmo salar) is a flagship premium seafood product, with global farmed output of about 2.8 million t/yr — roughly 50% from Norway, with Scotland, Chile, Canada and the Faroe Islands as the main traditional regions. Constrained sea-cage space, rising sea temperatures and sea-lice pressure have driven the industry toward <strong>land-based RAS</strong> since around 2015.
+{% if farm.species == "salmon" %}@@P@@Atlantic salmon is a globally traded premium protein, with sea-based supply constrained by limited licensed sites, sea-lice and rising water temperatures. These constraints have driven a structural shift toward <strong>land-based RAS</strong> since around 2015, enabling production located close to the consuming market rather than dependent on long import chains.
 
-@@P@@Notable international projects include Atlantic Sapphire's Bluehouse plant in Miami (planned 100,000 t/yr), Salmon Evolution in Norway and similar large industrial RAS salmon projects. AKVA Group and Billund Aquaculture are among the established RAS EPC contractors.
-
-@@P@@Demand for premium salmon is strong in many markets that currently rely heavily on imports. Local RAS salmon pilot projects have begun to appear, and demand for locally farmed high-quality salmon is robust, with prices around 60–90 EUR/kg.
-
-{% elif farm.species == "turbot" %}
-@@P@@Turbot (Scophthalmus maximus) is a premium marine species introduced from the UK and now a mainstay of cold-water marine aquaculture, with annual output of roughly 50,000–60,000 t.
-
-@@P@@Traditional flow-through farming is energy-intensive (pumping thermostatically controlled groundwater), with large water use and variable quality. Since around 2010 producers have moved toward <strong>RAS</strong> for water and land savings and stable output. Field studies report stocking densities of 50–70 kg/m² (floor area) and an all-in cost of about 46–50 EUR/kg.
-
-@@P@@Turbot demand is stable at 60–90 EUR/kg, with growing export demand in Japan and Korea.
-
-{% elif farm.species == "grouper" %}
-@@P@@Grouper is a premium warm-water marine species (including hybrid, giant and coral varieties), with annual output of roughly 150,000–200,000 t in its main producing regions.
-
-@@P@@Traditional sea cages suffer high losses from typhoons, pollution and disease. RAS allows precise control of temperature, salinity and dissolved oxygen, sharply reducing losses and improving product quality. Several RAS grouper projects are in operation, with an all-in cost of 60–100 EUR/kg against a sales price of 100–200 EUR/kg — a healthy margin.
-
-{% elif farm.species == "perch" %}
-@@P@@Largemouth bass (Micropterus salmoides) is a fast-growing freshwater carnivorous species, with annual output of about 700,000 t, now a major freshwater species in its producing regions.
-
-@@P@@Pond stocking density is limited by water quality and disease, so producers are moving toward <strong>controlled-environment / industrial</strong> bass farming, with RAS an important option. The sales price is stable at 30–50 EUR/kg and the industrial all-in cost is about 25–35 EUR/kg, leaving a reasonable margin.
-
-{% elif farm.species == "mandarin" %}
-@@P@@Mandarin fish (Siniperca chuatsi) is a traditional premium freshwater species with a high sales price (80–150 EUR/kg) aimed at high-end consumption. Traditional farming relies on live-bait feeding, which has limited its scale.
-
-@@P@@Breakthroughs in formulated feed, combined with RAS, have made industrial mandarin-fish farming a leading direction for premium freshwater species. Several RAS mandarin-fish projects are now in operation.
-
-{% elif farm.species == "tilapia" %}
-@@P@@Tilapia is the world's second-largest farmed fish, with global output of about 6 million t/yr, much of it exported to Europe, the Americas and Southeast Asia, alongside stable domestic consumption.
-
-@@P@@Traditional pond tilapia is very low cost (20–25 EUR/kg), but RAS still offers distinct advantages for water and land savings, disease control and export-grade quality control.
-
-{% elif farm.species == "eel" %}
-@@P@@Eel (Japanese or European eel) is a high-value migratory species whose juveniles are wild-caught, increasingly restricted under international conventions. Output is concentrated in a few regions and exported largely to Japan.
-
-@@P@@RAS allows precise control of temperature (26–28°C), water quality and powdered-feed dosing, and is a mature process for intensive eel farming, with an all-in cost of about 60–100 EUR/kg against a sales price of 100–200 EUR/kg.
-
-{% elif farm.species == "shrimp" %}
-@@P@@Whiteleg shrimp (Litopenaeus vannamei) is the leading farmed shrimp, with annual output of about 2 million t, farmed at scale across coastal regions.
-
-@@P@@Diseases such as white-feces syndrome and early-mortality syndrome have become serious, and traditional earthen ponds suffer high losses. Clear-water RAS (as opposed to turbid Biofloc systems) offers biosecurity, precise temperature control and stable water quality, making it a leading direction for premium shrimp.
-
-{% else %}
-@@P@@{{ farm.speciesName }} is an important aquaculture species. Against the problems of traditional farming — high water use, disease risk and variable product quality — recirculating aquaculture (RAS) is developing rapidly as a representative modern-fisheries technology.
+@@P@@The model is industrialised, not experimental: reference projects include Atlantic Sapphire (Bluehouse), Salmon Evolution and other large RAS salmon facilities, supported by an established EPC and equipment ecosystem (e.g. AKVA Group, Billund Aquaculture). This de-risks the technology basis for the project.
+{% elif farm.species == "turbot" %}@@P@@Turbot is a premium marine flatfish. Traditional flow-through farming is water- and energy-intensive (pumping temperature-controlled water), pushing the segment toward <strong>RAS</strong> for water savings, stable output and consistent quality.
+{% elif farm.species == "grouper" %}@@P@@Grouper is a high-value warm-water marine species. Open sea cages suffer losses from weather, pollution and disease; <strong>RAS</strong> gives precise control of temperature, salinity and oxygen, sharply reducing losses and improving consistency.
+{% elif farm.species == "perch" or farm.species == "bass" %}@@P@@Bass is a fast-growing, high-volume species. Pond density is limited by water quality and disease, driving a shift toward <strong>controlled-environment / RAS</strong> production for consistent, biosecure output.
+{% elif farm.species == "mandarin" %}@@P@@Mandarin fish is a premium freshwater species historically limited by live-bait feeding. Formulated feed combined with <strong>RAS</strong> now enables industrial production of a high-value freshwater product.
+{% elif farm.species == "tilapia" %}@@P@@Tilapia is a high-volume, cost-sensitive species. <strong>RAS</strong> offers advantages in water and land savings, disease control and export-grade quality control; economics depend on low-cost energy and scale.
+{% elif farm.species == "eel" %}@@P@@Eel is a high-value species whose juveniles are wild-caught and increasingly restricted. <strong>RAS</strong> is a mature process for intensive eel farming, with precise control of temperature, water quality and feeding.
+{% elif farm.species == "shrimp" %}@@P@@Whiteleg shrimp faces persistent disease pressure in open earthen ponds. Biosecure clear-water <strong>RAS</strong> offers pathogen exclusion, temperature control and stable water quality, supporting a premium fresh product.
+{% else %}@@P@@{{ farm.speciesName }} is an established aquaculture species. Against the limits of traditional farming — high water use, disease risk and variable quality — recirculating aquaculture (RAS) is developing rapidly as a modern, controllable production method.
 {% endif %}
 
-@@H2@@2.2 Local socio-economic context
+@@P@@The detailed market sizing, pricing and channel analysis is in Chapter 3; this chapter sets out why the project is an attractive investment.
 
-@@P@@{{ project.location.full or 'The project site' }}{% if project.upperPlanName %} falls within the <strong>{{ project.upperPlanName }}</strong>,{% endif %} and offers good location, an established industrial base and a supportive policy environment.
+@@H2@@2.2 Rationale for the project
 
-@@P@@(The owner or preparer should add a description of the local population, economy, industry, transport and municipal infrastructure.)
+@@H3@@2.2.1 Demand pull & security of supply
 
-@@H2@@2.3 Rationale for the project
-
-The rationale rests on the following points:
-
-@@H3@@2.3.1 Meeting strong demand for high-quality {{ farm.speciesName }}
-
-{% if farm.species == "salmon" %}
-@@P@@Salmon consumption in the target market exceeds 300,000 t/yr, while local output is under 10,000 t — over 95% is imported (mainly from Norway, Chile and the Faroe Islands). Supply-chain, currency and shipping-cost volatility make import prices unstable, and heavy import reliance is unfavorable for the local value chain and consumers.
-
-@@P@@At 1,000 t/yr of land-based RAS salmon, the project is a meaningful addition to local supply capacity, helping reduce import reliance, stabilize prices and improve food-supply security.
-
-{% elif farm.species == "turbot" %}
-@@P@@Turbot is an important mid-to-high-end marine species with steadily growing demand. The project's RAS process removes the traditional dependence on pumping thermostatically controlled groundwater, achieving high density, water savings and stable output as a model for industry upgrading.
-
-{% elif farm.species == "shrimp" %}
-@@P@@Whiteleg shrimp is the most-consumed shrimp, but traditional earthen ponds now suffer serious disease and quality variability. The project's clear-water RAS process delivers a fully traceable, antibiotic-free, consistent premium shrimp product to meet rising consumer expectations.
-
-{% else %}
-@@P@@At {{ farm.yieldTons }} t/yr of {{ farm.speciesName }}, the project provides a consistent, traceable premium product through industrial farming, meeting both domestic upgrading and export demand.
+{% if farm.species == "salmon" %}@@P@@Demand for fresh salmon in the target market is large and heavily import-dependent, with import prices exposed to supply-chain, currency and freight volatility. A {{ farm.yieldTons }} t/yr land-based facility located close to market adds local, weather-independent supply, shortens the cold chain and improves security of supply — a structural advantage over imported, longer-transit fish.
+{% else %}@@P@@Demand for fresh, high-quality {{ farm.speciesName }} is served substantially by imports or by variable-quality open-system production. A {{ farm.yieldTons }} t/yr land-based facility located close to market adds consistent, traceable, weather-independent local supply on a predictable schedule.
 {% endif %}
 
-@@H3@@2.3.2 Driving the upgrading of aquaculture
+@@H3@@2.2.2 Sustainability & resource efficiency
 
-@@P@@Industrial RAS is a major direction in world aquaculture, embodying the modern-fisheries ideals of saving water, land and energy while remaining controllable and environmentally sound. With {{ farm.totalSubSystems }} independent modules and N+1 redundancy, the project is a model for shifting regional aquaculture from extensive practice toward intensive, controlled-environment and sustainable operation.
+@@P@@Water reuse of 85–95% requires only about 0.5–1 m³ of make-up water per kg of fish — a fraction of flow-through farming — with central effluent treatment and near-zero diffuse pollution.{% if farm.totalSystemVolume > 0 %} With a total system volume of {{ farm.totalSystemVolume|round(0) }} m³ and a daily exchange of 5–10%, annual make-up water is on the order of {{ (farm.totalSystemVolume * 0.075 * 365)|round(0) }} m³, far below traditional farming at the same capacity.{% endif %} Combined with no escapes and (on a low-carbon grid) a competitive carbon footprint, this underpins the project's ESG positioning (Chapter 8).
 
-@@H3@@2.3.3 Conserving water and protecting the environment
+@@H3@@2.2.3 Economic contribution
 
-@@P@@Water reuse reaches 85–95%, requiring only 0.5–1 m³ of new water per kg of fish — just 5–10% of traditional flow-through farming. Wastewater is treated centrally and discharged to standard, with almost no diffuse pollution. {% if farm.totalSystemVolume > 0 %}With a total system volume of {{ farm.totalSystemVolume|round(0) }} m³ and a daily exchange rate of 5–10%, daily make-up water is about {{ (farm.totalSystemVolume * 0.075)|round(0) }} m³ and annual make-up about {{ (farm.totalSystemVolume * 0.075 * 365 / 10000)|round(1) }}×10⁴ m³, far below traditional farming at the same capacity.{% endif %}
+@@P@@In normal operation the project is expected to provide about {{ ((finance.params.laborCost / 50000)|round(0)) if finance.params.laborCost else 20 }} direct jobs (at an average loaded wage of 50,000 EUR/yr), and to support upstream and downstream activity — feed, equipment, logistics and sales — with an estimated 3–5× indirect employment.
 
-@@H3@@2.3.4 Creating quality jobs and supporting the value chain
+@@H2@@2.3 Site & promoter fit
 
-@@P@@Once in normal operation the project is expected to provide about {{ ((finance.params.laborCost / 50000)|round(0)) if finance.params.laborCost else 20 }} direct jobs (assuming an average annual wage of 50,000 EUR), while supporting upstream and downstream activity — feed, equipment, logistics and sales — and creating an estimated 3–5× indirect employment.
+@@P@@{{ project.location.full or 'The project site' }}{% if project.upperPlanName %} falls within the <strong>{{ project.upperPlanName }}</strong>, and{% endif %} is positioned for the project's logistics, utilities and market access. {% if project.ownerBusiness %}The promoter, {{ project.owner }}, brings relevant background: {{ project.ownerBusiness }}{% else %}(The promoter should add a short description of the site advantages — power, water source, market access — and of the promoter's relevant capabilities.){% endif %}
 
-@@H2@@2.4 Favorable conditions
-
-@@LIST@@
-- <strong>Good market</strong>: demand for {{ farm.speciesName }} is stable, prices are firm, and sales channels are established
-- <strong>Mature technology</strong>: RAS has many proven projects internationally, with abundant references for process design, equipment selection and operation
-- <strong>Available supply chain</strong>: the RAS equipment supply chain is well developed, keeping investment controllable
-- <strong>Policy support</strong>: national plans explicitly support modern controlled-environment agriculture, RAS and green low-carbon industry, with grants and tax incentives in many regions
-{% if project.upperPlanName %}- <strong>Planning fit</strong>: the project aligns with the industrial positioning of the <strong>{{ project.upperPlanName }}</strong>{% endif %}
-@@END_LIST@@
-
-@@H2@@2.5 Policy basis
+@@H2@@2.4 Key strengths
 
 @@LIST@@
-- National fisheries development plan
-- Guidance on accelerating green development of aquaculture
-- Modern controlled-environment agriculture development plan
-- Guidance on high-quality development of modern agricultural parks
-{% if project.upperPlanName %}- {{ project.upperPlanName }}{% endif %}
-- (Other local policy documents to be added by the owner)
+- <strong>Proven technology</strong>: RAS is an industrialised model with many reference projects, giving a solid basis for process design, equipment selection and operation
+- <strong>Market position</strong>: local, fresh, biosecure and traceable product with a structural advantage over imports
+- <strong>Mature supply chain</strong>: an established RAS equipment and EPC supply chain keeps capital cost controllable
+- <strong>Policy & ESG tailwind</strong>: land-based aquaculture is supported under EU/EEA sustainable-aquaculture and green-transition policy, with innovation / decarbonisation grant schemes available in many jurisdictions
+{% if project.upperPlanName %}- <strong>Planning fit</strong>: the project aligns with the positioning of the <strong>{{ project.upperPlanName }}</strong>{% endif %}
 @@END_LIST@@
 </script>
-<script type="text/njk-template" id="tpl-ch03">@@H1@@Chapter 3. Market & Demand
+<script type="text/njk-template" id="tpl-ch03">@@H1@@Chapter 3. Market & Commercial Strategy
 
-@@H2@@3.1 Market analysis
+@@H2@@3.1 Market context
 
-{% if farm.species == "salmon" %}
-@@P@@<strong>International market</strong>: global Atlantic salmon output is about 2.8 million t/yr, a market worth over USD 20 billion. Norway supplies roughly 50%, with Scotland, Chile, Canada and the Faroe Islands as the other main regions. Limited sea space, rising temperatures and sea lice have slowed supply growth, supporting a long-term upward price trend.
+{% if farm.species == "salmon" %}@@P@@<strong>Market.</strong> Atlantic salmon is a globally traded commodity of roughly 3 million t/yr, with Norway the dominant producer. Sea-based supply growth is constrained by limited licensed sites, sea-lice and temperature pressure, which underpins a firm long-term demand-supply balance and a structural opening for land-based production located close to consumption.
 
-@@P@@<strong>Target market</strong>: consumption in the target market is about 300,000 t/yr with over 95% import reliance (mainly Norway, the Faroe Islands, Chile and Canada). Major-city demand, premium restaurants, supermarkets and fresh-food e-commerce are the main channels, at 60–90 EUR/kg ex-works and 100–200 EUR/kg at retail.
-
-{% elif farm.species == "turbot" %}
-@@P@@<strong>Market</strong>: turbot output is about 50,000–60,000 t/yr, serving cold-region cities and export markets in Japan and Korea. Prices are stable at 60–90 EUR/kg, sold mainly through premium restaurants, supermarkets and live-fish distribution. Tight groundwater and high energy use in traditional farming are pushing the industry toward RAS.
-
-{% elif farm.species == "grouper" %}
-@@P@@<strong>Market</strong>: grouper output is about 150,000–200,000 t/yr, serving premium restaurants and live-fish distribution, at 80–200 EUR/kg depending on variety. Export demand in Hong Kong and Southeast Asia is steady.
-
-{% elif farm.species == "perch" %}
-@@P@@<strong>Market</strong>: largemouth bass output is about 700,000 t/yr. Prices are stable at 30–50 EUR/kg through supermarkets, live-fish e-commerce and restaurants. Given pond water-quality and disease limits, premium industrial product commands a 50–70 EUR/kg premium.
-
-{% elif farm.species == "shrimp" %}
-@@P@@<strong>Market</strong>: whiteleg shrimp output is about 2 million t/yr, sold through supermarkets, e-commerce, restaurants and export. Amid disease pressure such as white-feces syndrome, premium RAS shrimp commands a 30–50% premium at 50–80 EUR/kg.
-
-{% elif farm.species == "tilapia" %}
-@@P@@<strong>Market</strong>: tilapia is an export-oriented species with output of about 1.7 million t/yr, exported mainly to Europe, the Americas and Southeast Asia, with stable domestic consumption at 18–25 EUR/kg.
-
-{% elif farm.species == "eel" %}
-@@P@@<strong>Market</strong>: eel is a traditional export species to Japan and Korea with stable domestic demand, at 100–200 EUR/kg depending on quality, sold mainly through export processors, premium restaurants and live-fish e-commerce.
-
-{% else %}
-@@P@@{{ farm.speciesName }} is an important aquaculture species with stable demand, sold through supermarkets, restaurants, live-fish distribution and export.
+@@P@@<strong>Price level.</strong> Head-on-gutted spot (Norwegian indices, FCA Oslo) has in recent periods traded broadly in the EUR 6–10/kg range, with pronounced seasonal and cyclical swings; forward curves for the coming years sit in a similar band. This study assumes a farm-gate price of <strong>{{ finance.params.price }} EUR/kg</strong>, within that range. A land-based, locally produced, fresh (never-frozen) product can target the upper part of the fresh segment by displacing imported, longer-transit fish.
+{% elif farm.species == "turbot" %}@@P@@<strong>Market.</strong> Turbot is a premium flatfish sold mainly to high-end restaurants, supermarkets and live-fish channels in Europe and East Asia. Tight water resources and high energy use in traditional farming are pushing the segment toward RAS. This study assumes a farm-gate price of <strong>{{ finance.params.price }} EUR/kg</strong>.
+{% elif farm.species == "grouper" %}@@P@@<strong>Market.</strong> Grouper serves premium restaurant and live-fish channels, with steady high-value demand. This study assumes a farm-gate price of <strong>{{ finance.params.price }} EUR/kg</strong>.
+{% elif farm.species == "perch" or farm.species == "bass" %}@@P@@<strong>Market.</strong> Bass is a high-volume species sold through supermarkets, e-commerce and restaurants; a controlled-environment, consistent-quality product can command a premium over pond-raised fish. This study assumes a farm-gate price of <strong>{{ finance.params.price }} EUR/kg</strong>.
+{% elif farm.species == "shrimp" %}@@P@@<strong>Market.</strong> Whiteleg shrimp is a large global market under persistent disease pressure in open systems; biosecure RAS production of fresh, never-frozen shrimp commands a premium in local fresh channels. This study assumes a farm-gate price of <strong>{{ finance.params.price }} EUR/kg</strong>.
+{% elif farm.species == "tilapia" %}@@P@@<strong>Market.</strong> Tilapia is a high-volume, cost-sensitive species; RAS economics depend on low-cost energy and scale. This study assumes a farm-gate price of <strong>{{ finance.params.price }} EUR/kg</strong>.
+{% elif farm.species == "eel" %}@@P@@<strong>Market.</strong> Eel is a high-value species with established premium and export channels. This study assumes a farm-gate price of <strong>{{ finance.params.price }} EUR/kg</strong>.
+{% else %}@@P@@<strong>Market.</strong> {{ farm.speciesName }} is an established aquaculture species sold through supermarket, restaurant, live-fish and export channels. This study assumes a farm-gate price of <strong>{{ finance.params.price }} EUR/kg</strong>.
 {% endif %}
 
-@@H2@@3.2 Target-market analysis
+@@H2@@3.2 Positioning & value proposition
 
-@@P@@(This section — target customers, sales radius, channels and offtake intentions — should be completed by the owner or preparer based on the actual project.)
-
-@@P@@Based on the {{ farm.yieldTons }} t/yr output, a preliminary channel split is:
+@@P@@The project competes on the structural advantages of land-based RAS located close to the consuming market:
 
 @@LIST@@
-- Premium supermarkets and fresh e-commerce: typically 30–50% of sales, relatively stable pricing
-- Premium restaurants (hotel chains, Japanese restaurants, etc.): typically 20–40%, demanding on quality
-- Live-fish wholesale: typically 20–30%, slightly lower price but steady volume
-- Export or branded custom: typically 0–20%, higher unit price but more volatile orders
+- <strong>Freshness & shelf life</strong>: never-frozen product delivered within a short cold-chain window, versus imported fish with longer transit
+- <strong>Security of supply</strong>: year-round, weather-independent harvest on a predictable schedule, enabling firm customer commitments
+- <strong>Biosecurity & traceability</strong>: closed-system production with low/no antibiotic use and full traceability — increasingly required by retail and food-service buyers
+- <strong>Sustainability credentials</strong>: low water use, no escapes, controlled discharge and (on a low-carbon grid) a competitive carbon footprint — supporting access to premium and ESG-screened channels
 @@END_LIST@@
 
-@@P@@<strong>Recommendation</strong>: before execution, sign 3–5 year supply agreements with at least 2–3 core customers to lock in base volume and a price floor.
+@@H2@@3.3 Target channels & customers
 
-@@H2@@3.3 Price trends
+@@P@@Based on {{ farm.yieldTons }} t/yr of output, an indicative channel mix is:
 
-{% if farm.species == "salmon" %}
-@@P@@The international Atlantic salmon price (NASDAQ Salmon Index) has long ranged 5–10 USD/kg; landed import prices run 40–60 EUR/kg and retail 100–200 EUR/kg. The project's assumed ex-works price of {{ finance.params.price }} EUR/kg sits within a reasonable range.
+@@LIST@@
+- <strong>Retail & fresh e-commerce</strong> (premium supermarkets): typically 30–50% of volume, relatively stable pricing
+- <strong>Food service</strong> (hotel groups, restaurants): typically 20–40%, quality-demanding, higher unit price
+- <strong>Wholesale / distribution</strong>: typically 20–30%, steady volume at a modest discount
+- <strong>Processing / branded / export</strong>: typically 0–20%, higher value but more order volatility
+@@END_LIST@@
 
-{% else %}
-@@P@@{{ farm.speciesName }} prices have been relatively stable over the past five years; the project's assumed ex-works price of {{ finance.params.price }} EUR/kg is within a reasonable industry range.
-{% endif %}
+@@H2@@3.4 Offtake & contracting strategy
 
-@@P@@<strong>Price volatility is the project's largest risk factor.</strong> The sensitivity analysis shows a ±20% price change swings the IRR by about 11.1%, far more than any other factor. Long-term supply agreements, branding and export certification are recommended to lock in price before execution.
+@@P@@Revenue certainty is the single most important commercial de-risking step before financing. The strategy is to convert market potential into <strong>committed offtake</strong>:
 
-@@H2@@3.4 Sales channels and plan
+@@LIST@@
+- Secure <strong>2–3 anchor customers</strong> under multi-year (3–5 yr) supply agreements covering a base share of volume before final investment decision
+- Negotiate <strong>price floors or indexed pricing</strong> to dampen spot volatility on the contracted base
+- Retain a spot/flex tranche to capture upside in tight markets
+- Build a recognised brand and, where it opens channels, pursue eco-label / certification (ASC, GLOBALG.A.P.)
+@@END_LIST@@
 
-@@P@@(This section — specific channels, offtake intentions and branding — should be completed by the owner, covering key customers, contract values, payment terms, brand strategy and marketing spend.)
+@@P@@<strong>Bankability note.</strong> Lenders and equity investors will weight signed or indicative offtake heavily; advancing letters of intent with anchor customers in parallel with detailed design materially strengthens the financing case.
 
-@@H2@@3.5 Project scale
+@@H2@@3.5 Price assumption & realisation
 
-@@H3@@3.5.1 Basis for the scale
+@@P@@The financial analysis uses a farm-gate price of <strong>{{ finance.params.price }} EUR/kg</strong>. This is the model's base case; achievable realisation depends on product form, channel mix and contract structure (Section 3.4).
+
+@@P@@<strong>Price is consistently the single largest driver of project returns</strong> — more influential than capital cost, yield or operating cost (see the sensitivity analysis in Chapter 13). This is precisely why the offtake and contracting strategy above is the priority commercial workstream: locking in a price floor on a base volume converts the project's biggest risk into a managed one.
+
+@@H2@@3.6 Production scale & basis
+
+@@H3@@3.6.1 Basis for the scale
 
 @@P@@The design scale is <strong>{{ farm.yieldTons }} t/yr of {{ farm.speciesName }}</strong>, set on the following basis:
 
 @@LIST@@
-- <strong>Market demand</strong>: per the analysis above, the scale matches target-market capacity and expected sales can absorb the output
-- <strong>Reasonable investment</strong>: total investment of {{ capex.totalInvestment|wan }} EUR is within the owner's capacity
-- <strong>Operability</strong>: {{ farm.totalSubSystems }} independent modules capture scale benefits while remaining manageable
-- <strong>Economies of scale</strong>: RAS shows strong scale effects, and this scale falls in the typical economic range for the industry (500–3,000 t)
-- <strong>Site fit</strong>: the required building area, site area and utility connections are within the site's capacity
+- <strong>Market absorption</strong>: the scale is consistent with the target channel mix and committed/expected offtake
+- <strong>Investment fit</strong>: total funding requirement of {{ capex.totalInvestment|eur }} EUR is within the promoter's funding plan
+- <strong>Operability</strong>: {{ farm.totalSubSystems }} independent modules capture scale benefits while keeping the operation manageable and fault-isolated
+- <strong>Economies of scale</strong>: RAS shows strong scale effects; this scale sits in the typical economic range for the sector (500–3,000 t)
+- <strong>Site fit</strong>: building area, site area and utility connections are within the site's capacity
 @@END_LIST@@
 
-@@H3@@3.5.2 Stage configuration
+@@H3@@3.6.2 Stage configuration
 
-The farm runs {{ farm.stages|length }} staggered grow-out stages for continuous harvest:
+@@P@@The farm runs {{ farm.stages|length }} staggered grow-out stages for continuous harvest:
 
 @@TABLE@@
 Stage|Fish size|Duration|Standing biomass (t)|Temp (°C)|Density (kg/m³)|FCR|Modules|Tanks
@@ -753,20 +645,20 @@ Stage|Fish size|Duration|Standing biomass (t)|Temp (°C)|Density (kg/m³)|FCR|Mo
 
 @@P@@Total steady-state standing biomass is about {{ farm.totalBiomass|round(1) }} t over a full cycle of about {{ farm.totalMonths }} months. Staggered stocking means a portion of fish is harvested each month in steady state, yielding {{ farm.yieldTons }} t/yr.
 
-@@H2@@3.6 Product plan
+@@H2@@3.7 Product plan
 
-@@P@@The main product is <strong>live / fresh {{ farm.speciesName }}</strong> at a market size of about {{ farm.stages[farm.stages|length-1].weightEnd|round(0) }} g (per actual harvest weight).
+@@P@@The main product is <strong>fresh {{ farm.speciesName }}</strong> at a market size of about {{ farm.stages[farm.stages|length-1].weightEnd|round(0) }} g (per actual harvest weight).
 
 @@P@@Product forms, adjusted to demand, mainly include:
 
 @@LIST@@
-- Live fish: delivered by live-haul truck to supermarkets, restaurants and distributors
-- Fresh-chilled fish: slaughtered and delivered via cold chain
-- Fillets / portions: processed and vacuum-packed for retail and e-commerce
+- Live fish: delivered by live-haul to supermarkets, restaurants and distributors
+- Fresh-chilled: stunned and slaughtered, delivered via cold chain
+- Fillets / portions: processed and packed for retail and e-commerce
 - Juveniles or intermediate-size fish: sold externally as market conditions allow
 @@END_LIST@@
 
-@@P@@Products are produced to applicable food-safety and seafood-quality standards. Organic, eco-label or geographical-indication certification is recommended to enhance brand premium.
+@@P@@Products are produced to applicable food-safety and seafood-quality standards. Eco-label or certification (ASC / GLOBALG.A.P.) is recommended where it strengthens channel access and price premium.
 </script>
 <script type="text/njk-template" id="tpl-ch04">@@H1@@Chapter 4. Site & Conditions
 
@@ -794,7 +686,7 @@ Stage|Fish size|Duration|Standing biomass (t)|Temp (°C)|Density (kg/m³)|FCR|Mo
 Item|Area|Note
 Main culture hall|{{ farm.land.mainHallArea|round(0) }} m²|V_total / avg depth × 1.6 (incl. aisles, platforms, cable/pipe runs)
 Water-treatment room|{{ farm.land.utilityArea|round(0) }} m²|main hall × 0.4 (pumps, blowers, UV, CO₂ stripping, electrical/control)
-Ancillary facilities|{{ farm.land.auxArea|round(0) }} m²|LOX station + switchroom + backup power + office + dorm + warehouse + gatehouse
+Ancillary facilities|{{ farm.land.auxArea|round(0) }} m²|LOX station + switchroom + backup power + office + warehouse + gatehouse
 @@SUBTOTAL@@Total building area|{{ farm.land.totalBuildingArea|round(0) }} m²|sum of building footprints
 Total site area|{{ farm.land.totalLandArea|round(0) }} m²|at a plot ratio of {{ farm.land.FAR|round(2) }} (incl. roads, landscaping, fire lanes)
 Site area per tonne|{{ farm.land.landPerTon|round(1) }} m²/t|far less than traditional flow-through farming (50–200 m²/t)
@@ -809,7 +701,7 @@ Site area per tonne|{{ farm.land.landPerTon|round(1) }} m²/t|far less than trad
 @@TABLE@@
 Criterion|RAS requirement|Note
 Water source|ample volume, stable quality, temperature near culture temperature|reduces treatment and temperature-control cost
-Power|sufficient grid capacity, dual feeders|full-capacity load about {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000)|round(0) }} kW (estimated)
+Power|sufficient grid capacity, dual feeders|full-capacity load about {{ ((opex.totalExclDep * 0.20) / energyPrice / 8000)|round(0) }} kW (estimated)
 Drainage|an outlet for, or reuse of, treated wastewater|to applicable discharge standards
 Transport|good access suited to live-fish delivery|a major market within 1–2 h drive is preferred
 Climate|temperate or subtropical preferred, few extremes|reduces HVAC and insulation energy
@@ -859,11 +751,11 @@ Relative humidity|—|read from the iRAS global thermal configuration
 @@P@@Project water demand:
 
 @@TABLE@@
-Use|Daily (m³/d)|Annual (×10⁴ m³/yr)|Note
-Culture make-up|{{ (farm.totalSystemVolume * 0.075)|round(0) }}|{{ (farm.totalSystemVolume * 0.075 * 365 / 10000)|round(2) }}|at 7.5%/d exchange of total volume (incl. evaporation)
-Hall washdown|approx. 5–10|approx. 0.2–0.4|—
-Office/domestic|approx. 5–10|approx. 0.2–0.4|estimated from staffing
-@@SUBTOTAL@@Total new water|approx. {{ (farm.totalSystemVolume * 0.075 + 15)|round(0) }}|approx. {{ ((farm.totalSystemVolume * 0.075 + 15) * 365 / 10000)|round(2) }}|—
+Use|Daily (m³/d)|Annual (m³/yr)|Note
+Culture make-up|{{ (farm.totalSystemVolume * 0.075)|round(0) }}|{{ (farm.totalSystemVolume * 0.075 * 365)|round(0) }}|at 7.5%/d exchange of total volume (incl. evaporation)
+Hall washdown|approx. 5–10|approx. 2,000–4,000|—
+Office/domestic|approx. 5–10|approx. 2,000–4,000|estimated from staffing
+@@SUBTOTAL@@Total new water|approx. {{ (farm.totalSystemVolume * 0.075 + 15)|round(0) }}|approx. {{ ((farm.totalSystemVolume * 0.075 + 15) * 365)|round(0) }}|—
 @@END_TABLE@@
 
 @@P@@<strong>Water-source recommendations</strong>:
@@ -894,10 +786,10 @@ Office/domestic|approx. 5–10|approx. 0.2–0.4|estimated from staffing
 
 @@TABLE@@
 Item|Value|Note
-Full-capacity annual energy|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 10000)|round(0) }}×10⁴ kWh|estimated from iRAS
-Full-capacity average power|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000)|round(0) }} kW|at 8,000 operating hours/yr
-Peak power|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 1.3)|round(0) }} kW|average × 1.3
-Transformer capacity|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 1.5)|round(0) }} kVA|peak × 1.2 with margin
+Full-capacity annual energy|approx. {{ ((opex.totalExclDep * 0.20) / energyPrice / 1000)|round(0) }} MWh|estimated from iRAS
+Full-capacity average power|approx. {{ ((opex.totalExclDep * 0.20) / energyPrice / 8000)|round(0) }} kW|at 8,000 operating hours/yr
+Peak power|approx. {{ ((opex.totalExclDep * 0.20) / energyPrice / 8000 * 1.3)|round(0) }} kW|average × 1.3
+Transformer capacity|approx. {{ ((opex.totalExclDep * 0.20) / energyPrice / 8000 * 1.5)|round(0) }} kVA|peak × 1.2 with margin
 @@END_TABLE@@
 
 @@P@@<strong>Power requirements</strong>:
@@ -934,7 +826,7 @@ Transformer capacity|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 1.5)|
 Utility|Project demand|Connection
 Water|approx. {{ (farm.totalSystemVolume * 0.075 + 15)|round(0) }} m³/d|municipal mains / own well
 Drainage|approx. {{ (farm.totalSystemVolume * 0.075 + 15)|round(0) }} m³/d|treated, then to municipal sewer or receiving water
-Power|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 1.5)|round(0) }} kVA|10 kV dedicated line
+Power|approx. {{ ((opex.totalExclDep * 0.20) / energyPrice / 8000 * 1.5)|round(0) }} kVA|10 kV dedicated line
 Liquid oxygen|approx. {{ farm.totalLOXKgD|round(0) }} kg/d|purchased LOX, on-site {{ farm.oxygenTank.size_t }} t × {{ farm.oxygenTank.count }} tanks + vaporizer
 Gas (optional)|—|depending on the HVAC method, e.g. a gas heat pump
 Communications|fiber|municipal or telecom operator
@@ -948,7 +840,7 @@ Communications|fiber|municipal or telecom operator
 
 {% if farm.species == "salmon" %}
 @@P@@Atlantic salmon is a cold-water migratory species requiring water tightly held at 12–15°C. In many regions ambient temperatures sit well above this band — coastal summer water can reach 25–30°C — so salmon cannot be farmed directly. Precise temperature control via RAS is the <strong>only viable process</strong> for land-based salmon production.
-@@P@@Through integrated physical filtration, biofiltration, disinfection, oxygenation, degassing and temperature control, RAS achieves 85–95% water reuse and creates a stable, controllable environment in a closed loop. The design draws on mature international references such as Atlantic Sapphire (Miami RAS salmon plant, design 100,000 t/yr) and Loch Duart in Scotland.
+@@P@@Through integrated physical filtration, biofiltration, disinfection, oxygenation, degassing and temperature control, RAS achieves 85–95% water reuse and creates a stable, controllable environment in a closed loop. The design draws on mature international references such as Atlantic Sapphire (Bluehouse, USA, design 100,000 t/yr) and Salmon Evolution (Norway).
 {% elif farm.species == "turbot" %}
 @@P@@Turbot (Scophthalmus maximus) is a cool-water benthic marine fish requiring 14–18°C and 25–32‰ salinity, with high demands on clarity and dissolved oxygen. In cold regions winter water is too cold and summer too warm; traditional flow-through farming is energy-intensive with variable quality. RAS sharply improves growth and survival through precise temperature control and water purification, with field densities of 50–70 kg/m² (floor area), and is now the mainstream process for industrial turbot.
 {% elif farm.species == "grouper" %}
@@ -1216,7 +1108,7 @@ Stage|Drum filter|Biofilter|UV|Main pump|O₂ cone
 
 @@H2@@6.5 Equipment investment breakdown
 
-Direct equipment purchase totals {{ capex.equipDirect|wan }} EUR ({{ ((capex.equipDirect/capex.fixedAsset)*100)|round(1) }}% of fixed-asset investment); the detailed estimate is in Chapter 11.
+Direct equipment purchase totals {{ capex.equipDirect|eur }} EUR ({{ ((capex.equipDirect/capex.fixedAsset)*100)|round(1) }}% of fixed-asset investment); the detailed estimate is in Chapter 11.
 
 @@P@@Approximate split by category (estimated):
 @@LIST@@
@@ -1237,7 +1129,7 @@ Direct equipment purchase totals {{ capex.equipDirect|wan }} EUR ({{ ((capex.equ
 @@P@@Basic principles and recommendations for a RAS site layout:
 
 @@LIST@@
-- <strong>Clear zoning</strong>: separate the production area, office/living area and ancillary area (logistics, storage, equipment rooms)
+- <strong>Clear zoning</strong>: separate the production area, office/welfare area and ancillary area (logistics, storage, equipment rooms)
 - <strong>Orientation</strong>: the main culture hall is best aligned north–south to limit solar gain on water temperature and aid ventilation
 - <strong>Clean/dirty separation</strong>: intake, recirculation, drainage and make-up pipes should not cross
 - <strong>Material flow</strong>: a one-way flow from juvenile intake → grow-out stages → market-size dispatch, to limit disease spread
@@ -1258,7 +1150,7 @@ LOX station|approx. 100–200 m²|—|reinforced concrete|3 t vertical vacuum ta
 Switchroom|approx. 100 m²|3.5 m|frame|HV/LV switchgear, transformer
 Emergency generator room|approx. 80–150 m²|4.5 m|frame|backup generator + fuel tank
 Office building|approx. 200–500 m²|3.5 m × 2 floors|frame|offices, meeting rooms, laboratory
-Dormitory|approx. 200–400 m²|3.5 m × 2–3 floors|frame|staff housing + canteen
+Staff welfare building|approx. 150–300 m²|3.5 m × 1–2 floors|frame|changing rooms, lockers, canteen / break room
 Warehouse & ancillary|approx. 200–300 m²|6.0 m|steel|feed store, chemical store, spare-parts store
 Gatehouse & biosecurity station|approx. 30–50 m²|3.0 m|concrete|entry/exit disinfection, people/vehicle control
 @@END_TABLE@@
@@ -1303,12 +1195,12 @@ Gatehouse & biosecurity station|approx. 30–50 m²|3.0 m|concrete|entry/exit di
 
 @@TABLE@@
 Load category|Installed capacity|Note
-Pumps|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 0.40)|round(0) }} kW|main pump + bypass pumps (denitrification/UV/AOP/skimmer)
-Blowers|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 0.15)|round(0) }} kW|biofilter blower + CO₂ stripper blower
-UV / oxygenation / control|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 0.10)|round(0) }} kW|—
-Heat pump / cooling|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 0.20)|round(0) }} kW|depending on climate
-Lighting + office + other|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 0.15)|round(0) }} kW|—
-@@SUBTOTAL@@Total installed|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 1.5)|round(0) }} kVA|transformer sized at average power × 1.5
+Pumps|approx. {{ ((opex.totalExclDep * 0.20) / energyPrice / 8000 * 0.40)|round(0) }} kW|main pump + bypass pumps (denitrification/UV/AOP/skimmer)
+Blowers|approx. {{ ((opex.totalExclDep * 0.20) / energyPrice / 8000 * 0.15)|round(0) }} kW|biofilter blower + CO₂ stripper blower
+UV / oxygenation / control|approx. {{ ((opex.totalExclDep * 0.20) / energyPrice / 8000 * 0.10)|round(0) }} kW|—
+Heat pump / cooling|approx. {{ ((opex.totalExclDep * 0.20) / energyPrice / 8000 * 0.20)|round(0) }} kW|depending on climate
+Lighting + office + other|approx. {{ ((opex.totalExclDep * 0.20) / energyPrice / 8000 * 0.15)|round(0) }} kW|—
+@@SUBTOTAL@@Total installed|approx. {{ ((opex.totalExclDep * 0.20) / energyPrice / 8000 * 1.5)|round(0) }} kVA|transformer sized at average power × 1.5
 @@END_TABLE@@
 
 @@H3@@7.4.2 Power-supply plan
@@ -1352,172 +1244,204 @@ Lighting + office + other|approx. {{ ((opex.totalExclDep * 0.20) / 0.7 / 8000 * 
 - <strong>CCTV</strong>: full coverage of the hall, equipment rooms and entrances, retained 30 days
 @@END_LIST@@
 </script>
-<script type="text/njk-template" id="tpl-ch09">@@H1@@Chapter 8. Environmental Impact & Permitting
+<script type="text/njk-template" id="tpl-ch09">@@H1@@Chapter 8. Environmental, Permitting & ESG
 
-@@P@@<strong>Note</strong>: this chapter is a preliminary environmental analysis within the feasibility study and does not replace a formal Environmental Impact Assessment (EIA). Once the project is approved, a qualified body should carry out a dedicated EIA and issue an independent report; permitting requirements vary by jurisdiction.
+@@P@@<strong>Scope.</strong> This chapter sets out the environmental footprint, the permitting pathway and the ESG positioning of the project at concept stage. It does <strong>not</strong> replace the formal Environmental Impact Assessment (EIA) or the individual permits, which are issued by the competent authorities; the framework below identifies what must be obtained and on what basis.
 
-@@H2@@8.1 Baseline environment
+@@H2@@8.1 Permitting framework (EEA)
 
-@@P@@(The baseline environment — air, water, soil, noise and ecology — should be completed by the owner or preparer from local data.)
+@@P@@A land-based RAS facility in the EU/EEA typically requires the following consents, obtained in parallel with detailed design. Exact requirements and authorities vary by jurisdiction; the project should confirm the list with the competent authority early.
 
-@@H2@@8.2 Pollution-source identification
+@@TABLE@@
+Consent|Basis|Typical authority
+Aquaculture licence / concession|national aquaculture legislation (e.g. NO: Akvakulturloven)|fisheries / aquaculture directorate (regional)
+Discharge permit|national implementation of the EU Water Framework Directive 2000/60/EC|environment authority (state administrator / EPA)
+EIA screening / assessment|EIA Directive 2011/92/EU as amended by 2014/52/EU|competent planning / environment authority
+Water abstraction permit|national water resources regulation|water / environment authority
+Building & planning permit|municipal planning regime|municipality
+@@END_TABLE@@
 
-The main pollution sources are identified below:
+@@P@@<strong>EIA status.</strong> Intensive fish farming falls under Annex II of the EIA Directive, so the need for a full EIA is decided <strong>case by case through screening</strong> by the competent authority (considering scale, location and sensitivity of the receiving environment) rather than by a fixed size threshold. {% if farm.yieldTons > 2000 %}At {{ farm.yieldTons }} t/yr and {{ capex.totalInvestment|eur }} EUR of investment, the project is large enough that a full EIA should be assumed in planning and budget until screening confirms otherwise.{% else %}At {{ farm.yieldTons }} t/yr the screening outcome will depend on site sensitivity; the project should budget for a full EIA as a precaution and confirm during screening.{% endif %}
 
-@@H3@@8.2.1 Wastewater
+@@H2@@8.2 Environmental baseline
+
+@@P@@(The site baseline — receiving water body and its WFD status, air, soil, noise and protected-area/biodiversity context — to be completed by the promoter from local data and used as the reference for the EIA.)
+
+@@H2@@8.3 Environmental aspects & sources
+
+@@H3@@8.3.1 Process discharge (water)
 
 @@TABLE@@
 Stream|Source|Main pollutants|Daily volume
-System discharge (exchange overflow)|exchange/overflow crossing the system boundary|TAN, NO₃, TSS|approx. {{ farm.dischargeM3D|round(0) }} m³/d (dissolved: TAN {{ farm.dischargeTAN_mg_L|round(2) }} mg/L · NO₃-N {{ farm.dischargeNO3_mg_L|round(1) }} mg/L; solid TSS is captured by the RDF + skimmer into sludge treatment, not discharged to the water phase)
+System discharge (exchange overflow)|exchange/overflow crossing the system boundary|TAN, NO₃, TSS|approx. {{ farm.dischargeM3D|round(0) }} m³/d (dissolved: TAN {{ farm.dischargeTAN_mg_L|round(2) }} mg/L · NO₃-N {{ farm.dischargeNO3_mg_L|round(1) }} mg/L; solids are captured by the RDF + skimmer into sludge handling, not released to the water phase)
 {% if workflow.denitri.enabled %}Denitrification sludge|denitrification reactor|biological sludge|approx. 0.1–0.3 m³/d
 {% endif %}Hall washdown|floors, equipment exterior|low-concentration TSS|approx. 5–10 m³/d
 @@END_TABLE@@
 
-@@H3@@8.2.2 Solid waste
+@@H3@@8.3.2 Solid waste
 
 @@LIST@@
-- Waste feed and feces (filtered concentrate): about {{ (farm.totalFeedDaily * 0.30)|round(0) }} kg/d (estimated at 30% of feed becoming solids, high moisture)
+- Waste feed and faeces (filtered concentrate): about {{ (farm.totalFeedDaily * 0.30)|round(0) }} kg/d (estimated at 30% of feed becoming solids, high moisture)
 - Mortalities: at a normal 1–3% rate, estimated at 1% ≈ {{ (farm.yieldTons * 0.01 * 1000 / 365)|round(1) }} kg/d
 - Medication packaging and office/domestic waste: small quantities
 @@END_LIST@@
 
-@@H3@@8.2.3 Air emissions
+@@H3@@8.3.3 Air emissions
 
 @@LIST@@
-- CO₂ stripper off-gas: mainly CO₂ and water vapor, low concentration, discharged directly
+- CO₂ stripper off-gas: mainly CO₂ and water vapour, low concentration, discharged directly
 - Biofilter blower off-gas: a little ammonia, diluted by hall ventilation
-- Ozone-equipment off-gas{% if workflow.skimmer.mode == "ozone" or workflow.aop.enabled %}: residual ozone must be destroyed (ozone destructor), emission < 0.1 mg/m³{% endif %}
+- Ozone-equipment off-gas{% if workflow.skimmer.mode == "ozone" or workflow.aop.enabled %}: residual ozone destroyed by an ozone destructor, emission < 0.1 mg/m³{% endif %}
 @@END_LIST@@
 
-@@H3@@8.2.4 Noise
+@@H3@@8.3.4 Noise
 
 @@LIST@@
 - Main pump room: approx. 80–85 dB(A)
 - Blower room: approx. 80–90 dB(A)
-- Oxygen generator / LOX vaporizer: approx. 70–80 dB(A)
+- Oxygen generator / LOX vaporiser: approx. 70–80 dB(A)
 @@END_LIST@@
 
-@@H2@@8.3 Discharge standards
+@@H2@@8.4 Discharge basis & receiving water
 
-Discharges follow the standards below:
+@@P@@Discharge is governed by a site-specific <strong>discharge permit</strong> issued under the national implementation of the EU Water Framework Directive. Rather than fixed national numbers, the permit limits are set against the <strong>status objectives of the receiving water body</strong> (good ecological/chemical status) and the assimilative capacity at the discharge point. The figures below are indicative concept-stage targets for design, to be confirmed and superseded by the permit conditions.
 
 @@TABLE@@
-Pollutant class|Standard|Key limits
-Aquaculture discharge|applicable aquaculture-discharge standard or local rules|TSS ≤ 10 mg/L, COD ≤ 30 mg/L, NH₃-N ≤ 4 mg/L
-Industrial solid waste|applicable solid-waste storage/landfill standard|—
-Noise|applicable industrial boundary-noise standard|class-2 area: 60 dB(A) day, 50 dB(A) night
+Parameter|Indicative design target|Permit basis
+Total suspended solids (TSS)|low single-digit mg/L after solids capture|set per receiving-water status objective
+Dissolved nitrogen (TAN / NO₃-N)|as computed in 8.3.1|nutrient load vs. water-body sensitivity
+Noise at boundary|≈ 55 dB(A) day / 45 dB(A) night (residential-adjacent)|national industrial-noise limits
+Solid waste|recovered / off-site treatment|national waste regulation
 @@END_TABLE@@
 
-@@H2@@8.4 Environmental protection measures
+@@H2@@8.5 Mitigation & controls
 
-@@H3@@8.4.1 Wastewater treatment
+@@H3@@8.5.1 Water / discharge
 
 @@LIST@@
-- <strong>Treatment plant</strong>: settling + filtration + biological treatment (MBR or SBR), with effluent meeting the applicable discharge standard
-- <strong>Water reuse</strong>: treated water meeting standard is reused for hall washdown and landscaping, reducing discharge
-- <strong>Separated drainage</strong>: stormwater discharged directly, wastewater treated before discharge
-- <strong>Discharge monitoring</strong>: online analyzers for COD, ammonia, TSS and flow
+- <strong>Solids capture</strong>: drum filter + protein skimmer remove the solids load to sludge handling before any discharge
+- <strong>Effluent polishing</strong>: settling + biological treatment as required to meet permit conditions
+- <strong>Water reuse</strong>: treated water reused for hall washdown, reducing discharge volume
+- <strong>Separated drainage</strong>: stormwater kept separate from process effluent
+- <strong>Discharge monitoring</strong>: online instruments for flow, TSS and nitrogen, logged for the permit
 @@END_LIST@@
 
-@@H3@@8.4.2 Solid-waste handling
+@@H3@@8.5.2 Solid-waste handling
 
 @@LIST@@
-- <strong>Waste-feed/feces recovery</strong>: thickened and sent off-site as organic-fertilizer feedstock
-- <strong>Mortality disposal</strong>: a mortality-handling facility (burial, incineration or outsourcing) to prevent disease spread
-- <strong>Sludge dewatering</strong>: denitrification sludge is dewatered and outsourced
+- <strong>Sludge recovery</strong>: thickened solids routed to biogas / organic-fertiliser use rather than discharged
+- <strong>Mortality disposal</strong>: a compliant mortality-handling route (rendering, incineration or licensed off-take) to prevent disease spread
+- <strong>Sludge dewatering</strong>: denitrification sludge dewatered and sent to licensed treatment
 - <strong>Office/domestic waste</strong>: segregated and collected by the municipal service
 @@END_LIST@@
 
-@@H3@@8.4.3 Noise control
+@@H3@@8.5.3 Noise control
 
 @@LIST@@
-- Pump and blower rooms use acoustic walls and silencers to keep boundary noise within limits
-- Equipment bases have anti-vibration pads to reduce structure-borne noise
-- Noisy equipment is placed inside the building, away from the boundary
+- Pump and blower rooms use acoustic enclosures and silencers to keep boundary noise within limits
+- Equipment bases have anti-vibration mounts to reduce structure-borne noise
+- Noisy equipment is housed inside the building, away from the boundary
 @@END_LIST@@
 
-@@H3@@8.4.4 Air-emission control
+@@H3@@8.5.4 Air-emission control
 
 @@LIST@@
-- Ozone equipment has an ozone destructor, emission < 0.1 mg/m³
-- Biofilter blower off-gas is diluted by hall ventilation, keeping site ammonia within limits
-- The emergency generator has exhaust treatment (if used)
+- Ozone equipment fitted with an ozone destructor, emission < 0.1 mg/m³
+- Biofilter off-gas diluted by hall ventilation, keeping site ammonia within limits
+- The emergency generator, if used, has appropriate exhaust treatment
 @@END_LIST@@
 
-@@H2@@8.5 Preliminary impact assessment
+@@H2@@8.6 Preliminary impact assessment
 
-@@P@@Based on the sources and measures above, the overall environmental impact is:
+@@P@@On the basis of the sources and controls above, the concept-stage impact assessment is:
 
 @@LIST@@
-- <strong>Water</strong>: discharge volumes are small and treated to standard, with minimal impact on the receiving water
-- <strong>Air</strong>: emissions are mainly low-concentration CO₂ and water vapor, with no SO₂ or NOₓ
-- <strong>Noise</strong>: with controls in place, boundary noise meets the standard
-- <strong>Ecology</strong>: the closed system does not directly contact natural aquatic ecosystems; saving water and land, its impact on surrounding ecology is small
-- <strong>Solid waste</strong>: recovery and safe disposal prevent secondary pollution
+- <strong>Water</strong>: discharge volumes are small and treated to permit conditions, with limited impact on the receiving water body
+- <strong>Air</strong>: emissions are mainly low-concentration CO₂ and water vapour, with no SO₂ or NOₓ from the process
+- <strong>Noise</strong>: with controls in place, boundary noise meets national limits
+- <strong>Ecology / biodiversity</strong>: the closed system has no direct exchange with natural aquatic ecosystems, removing escape and disease-transfer pathways associated with open systems
+- <strong>Solid waste</strong>: recovery and licensed disposal prevent secondary pollution
 @@END_LIST@@
 
-{% if farm.yieldTons > 2000 %}
-@@P@@<strong>Note</strong>: given its size ({{ farm.yieldTons }} t/yr, total investment {{ capex.totalInvestment|wan }} EUR), the project may require a full EIA report (rather than a short form). The owner should confirm with the local environmental authority.
-{% else %}
-@@P@@<strong>Preliminary conclusion</strong>: the project is moderate in scale and, with sound environmental facilities and management, its impact is manageable. The next step is a formal EIA by a qualified body.
-{% endif %}
+@@P@@The next step is the formal EIA screening (and, if required, a full EIA) by the competent authority.
 
-@@H2@@8.6 ESG considerations
+@@H2@@8.7 ESG profile
 
-@@P@@Beyond regulatory compliance, the project's environmental, social and governance (ESG) profile is summarized below, drawing on the technical and operating parameters established earlier in this report. These points are intended as a basis for the owner's own ESG reporting and for discussions with lenders and customers.
+@@P@@Beyond regulatory compliance, the project's environmental, social and governance (ESG) profile is summarised below from the technical and operating parameters established earlier in this report. It is intended as a basis for the promoter's own ESG reporting and for discussions with lenders and customers.
 
-@@H3@@8.6.1 Environmental
+@@H3@@8.7.1 Environmental
 
 @@LIST@@
-- <strong>Water</strong>: 85–95% recirculation means about 0.5–1 m³ of new water per kg of fish — roughly 5–10% of flow-through farming — with treated discharge and near-zero diffuse pollution.
+- <strong>Water</strong>: high recirculation means a small make-up water demand per kg of fish — a fraction of flow-through farming — with treated discharge and near-zero diffuse pollution.
 - <strong>Land</strong>: high stocking density gives a site-area intensity far below earthen ponds, easing pressure on coastal and agricultural land.
-- <strong>Energy and carbon</strong>: RAS is more electricity-intensive than flow-through systems; sourcing low-carbon power, heat recovery (plate exchange ≥ 75%) and efficient pumps/blowers are the main levers for reducing the operational carbon footprint.
-- <strong>Resource recovery</strong>: captured solids are routed to organic-fertilizer use rather than discharged.
+- <strong>Energy and carbon</strong>: RAS is more electricity-intensive than flow-through systems; low-carbon power, heat recovery (plate exchange ≥ 75%) and efficient pumps/blowers are the main levers for the operational carbon footprint — particularly favourable on a Nordic low-carbon grid.
+- <strong>Resource recovery</strong>: captured solids are routed to biogas / organic-fertiliser use rather than discharged.
 @@END_LIST@@
 
-@@H3@@8.6.2 Social
+@@H3@@8.7.2 Social
 
 @@LIST@@
 - <strong>Food safety and biosecurity</strong>: the closed system excludes external pathogens, reduces or eliminates antibiotic use and yields a fully traceable product.
+- <strong>Fish welfare</strong>: controlled water quality and continuous monitoring support consistent welfare conditions (detailed in Chapter 9).
 - <strong>Local supply and jobs</strong>: the project adds local production capacity, reducing import reliance, and creates direct and indirect employment along the feed, equipment, logistics and sales chain.
-- <strong>Occupational health and safety</strong>: see Chapter 9 (HSE) for the safety, oxygen-handling and fire measures protecting the workforce.
 @@END_LIST@@
 
-@@H3@@8.6.3 Governance
+@@H3@@8.7.3 Governance
 
 @@LIST@@
 - <strong>Monitoring and transparency</strong>: 24×7 online water-quality and discharge monitoring, with logged data, supports verifiable environmental reporting.
-- <strong>Standards and permitting</strong>: operation to recognized discharge, solid-waste and noise standards, with a formal EIA to follow, provides an auditable compliance basis.
+- <strong>Permitting and standards</strong>: operation under the permits in 8.1 provides an auditable compliance basis.
 - <strong>Risk management</strong>: N+1 redundancy, backup power and the risk framework in Chapter 13 underpin operational resilience and responsible governance.
 @@END_LIST@@
+
+@@H2@@8.8 EU Taxonomy alignment (indicative)
+
+@@P@@For investors and lenders subject to the EU Taxonomy Regulation (2020/852), the project can be positioned against the alignment test on an indicative basis. Aquaculture-specific technical screening criteria are still developing, so this is a <strong>concept-stage positioning, not a certified alignment</strong>; it should be reassessed against the criteria in force at financing.
+
+@@LIST@@
+- <strong>Substantial contribution</strong>: land-based RAS can contribute to several environmental objectives — sustainable use and protection of water resources (high recirculation, controlled discharge), transition to a circular economy (solids and nutrient recovery), and, on a low-carbon grid, climate-change mitigation (low-emission protein production).
+- <strong>Do No Significant Harm (DNSH)</strong>: the closed system and controlled discharge support DNSH against the other objectives — pollution prevention, biodiversity (no escapes / disease transfer) and climate adaptation — subject to the discharge permit and EIA outcome.
+- <strong>Minimum safeguards</strong>: the promoter should confirm alignment with the OECD Guidelines for Multinational Enterprises and the UN Guiding Principles on Business and Human Rights (labour, health & safety, governance) as part of taxonomy reporting.
+@@END_LIST@@
+
+@@P@@A formal taxonomy assessment, with the supporting EIA and permit conditions, is recommended as part of the financing process where taxonomy reporting applies.
 </script>
-<script type="text/njk-template" id="tpl-ch10">@@H1@@Chapter 9. Health, Safety & Fire (HSE)
+<script type="text/njk-template" id="tpl-ch10">@@H1@@Chapter 9. HSE, Biosecurity & Fish Welfare
 
-@@H2@@9.1 Hazard identification
+@@P@@<strong>Scope.</strong> This chapter covers occupational health & safety, fire protection, biosecurity and fish welfare at concept stage. It does not replace the formal safety, occupational-health or welfare assessments, which are commissioned from qualified bodies and confirmed with the competent authorities.
 
-The main hazards are identified below:
+@@H2@@9.1 Regulatory framework (EEA)
 
-@@H3@@9.1.1 Chemical hazards
+@@LIST@@
+- <strong>Working environment</strong>: national working-environment legislation (e.g. NO: Arbeidsmiljøloven) and the EU framework directive on safety and health at work (89/391/EEC)
+- <strong>Pressure & gases</strong>: pressure-equipment and industrial-gas rules; LOX installation per recognised industry guidance (e.g. EIGA). Stored oxygen ({{ (farm.oxygenTank.size_t * farm.oxygenTank.count)|round(1) }} t) is well below the EU Seveso III (2012/18/EU) lower-tier threshold for oxidising gases, so Seveso is not expected to apply — to be confirmed against the final inventory
+- <strong>Chemicals</strong>: classification, labelling and storage under the CLP Regulation (1272/2008)
+- <strong>Animal welfare</strong>: national animal-welfare legislation (e.g. NO: Dyrevelferdsloven) and EU Directive 98/58/EC, with sector oversight by the food-safety / veterinary authority (e.g. NO: Mattilsynet)
+@@END_LIST@@
+
+@@H2@@9.2 Hazard identification
+
+@@H3@@9.2.1 Chemical hazards
 
 @@TABLE@@
 Chemical|Hazard|Storage|Emergency measures
-Liquid oxygen|strong oxidizer, supports combustion, cryogenic|3 t vertical vacuum-insulated tank, ventilated outdoors|no fire, no oils, no organic contact
-{% if workflow.skimmer.mode == "ozone" or workflow.aop.enabled %}Ozone|strong oxidizer, toxic (8 ppm lethal)|generated on site, not stored; ozone monitor + destructor|evacuate and ventilate on leak
-{% endif %}{% if workflow.denitri.enabled %}Methanol|flammable, toxic|in explosion-proof drums, ventilated store|fire prevention, leak prevention, no ingestion
+Liquid oxygen|strong oxidiser, supports combustion, cryogenic|vacuum-insulated tank, ventilated outdoors|no fire, no oils, no organic contact
+{% if workflow.skimmer.mode == "ozone" or workflow.aop.enabled %}Ozone|strong oxidiser, toxic|generated on site, not stored; ozone monitor + destructor|evacuate and ventilate on leak
+{% endif %}{% if workflow.denitri.enabled %}Methanol|flammable, toxic|explosion-proof drums, ventilated store|fire prevention, leak prevention, no ingestion
 {% endif %}NaHCO₃|moderately corrosive (dust irritant)|dry store|wear mask and goggles
 Organic acids / disinfectants|corrosive, some toxic|corrosion-resistant store|wear protective gloves
 @@END_TABLE@@
 
-@@H3@@9.1.2 Electrical hazards
+@@H3@@9.2.2 Electrical hazards
 
 @@LIST@@
-- HV distribution: 10 kV incomer + transformer; electrical work requires certification
+- MV distribution + transformer; electrical work by certified personnel only
 - Pumps and blowers: earthing and earth-leakage protection
-- Wet environment: the culture hall is humid, so electrical equipment is rated ≥ IP54
-- Emergency lighting: in escape routes, the switchroom and the control room
+- Wet environment: humid culture hall, electrical equipment rated ≥ IP54
+- Emergency lighting in escape routes, the switchroom and control room
 @@END_LIST@@
 
-@@H3@@9.1.3 Mechanical hazards
+@@H3@@9.2.3 Mechanical hazards
 
 @@LIST@@
 - Drum filter: rotating parts, pinch-point guarding
@@ -1526,157 +1450,163 @@ Organic acids / disinfectants|corrosive, some toxic|corrosion-resistant store|we
 - Maintenance areas: safety signage, railings and warning lights
 @@END_LIST@@
 
-@@H3@@9.1.4 Biological hazards
+@@H3@@9.2.4 Biological hazards
 
 @@LIST@@
 - Fish pathogens: entry/exit disinfection to prevent cross-contamination
-- Mortality handling: wear gloves, avoid puncture injuries
-- Staff: health certificates and periodic check-ups to prevent disease spread
+- Mortality handling: gloves, avoid puncture injuries
+- Zoonosis precautions and periodic occupational-health checks
 @@END_LIST@@
 
-@@H2@@9.2 Occupational safety measures
+@@H2@@9.3 Occupational safety measures
 
-@@H3@@9.2.1 Safety management system
+@@H3@@9.3.1 Safety management system
 
 @@LIST@@
-- A safety committee chaired by the general manager
-- A safety officer (full-time if staff > 100, otherwise part-time)
-- Documented safety responsibilities, work-safety SOPs and emergency plans
-- Pre-shift safety briefings, monthly safety meetings, quarterly drills
-- Certification: electricians, pressure-vessel (LOX) and special-operation staff must be certified
+- A documented safety-management system with assigned responsibilities, work-safety procedures and emergency plans
+- A safety officer (full-time at larger scale, otherwise designated)
+- Pre-shift briefings, regular safety meetings and periodic drills
+- Certified work: electricians, pressure-vessel (LOX) and other special operations
 @@END_LIST@@
 
-@@H3@@9.2.2 Personal protective equipment
+@@H3@@9.3.2 Personal protective equipment
 
 @@LIST@@
-- Work clothing + non-slip shoes (all staff)
+- Work clothing + non-slip footwear (all staff)
 - Hard hats (equipment rooms, maintenance areas)
 - Goggles + corrosion-resistant gloves (chemical handling)
 - Dust masks (dusty work)
 - Life jackets + harnesses (work at height/over water)
 @@END_LIST@@
 
-@@H3@@9.2.3 Safety facilities
+@@H3@@9.3.3 Safety facilities
 
 @@LIST@@
-- Comprehensive warning signs and safety notices
+- Warning signs and safety notices throughout
 - Emergency-stop buttons by major equipment
 - Emergency eyewash and showers (chemical areas)
 - Life rings and guardrails (around tanks)
 - Safe passageways and evacuation signage
 @@END_LIST@@
 
-@@H2@@9.3 Health and hygiene
-
-@@H3@@9.3.1 Working-environment hygiene
+@@H2@@9.4 Occupational health & hygiene
 
 @@LIST@@
 - Hall ventilation at 6–10 air changes/h, ammonia kept < 5 ppm
 - Noise: < 85 dB(A) in work areas, < 60 dB(A) in offices
 - Lighting: ≥ 200 lux in work areas, ≥ 300 lux in offices, ≥ 500 lux in the lab
-- Temperature/humidity: offices 18–26°C/40–70% RH, lab 22°C/50% RH
+- Temperature/humidity controlled in offices and lab
+- First-aid provision and an AED on site; occupational-health surveillance per national rules
 @@END_LIST@@
 
-@@H3@@9.3.2 Food safety and hygiene
+@@H2@@9.5 Fire protection
+
+@@H3@@9.5.1 Basis of fire design
 
 @@LIST@@
-- Staff hold health certificates, have annual check-ups, and may not work with a communicable disease
-- Hand disinfection before work; change into work clothing and disinfect footwear when entering the hall
-- Disinfection baths at hall entries/exits
-- Pest control: insect curtains and rodent boards at entrances
-- Laboratory: GMP standard, with full sampling and analysis records
-@@END_LIST@@
-
-@@H3@@9.3.3 Staff welfare
-
-@@LIST@@
-- Canteen: meets food-safety law, with supplier documentation and food sampling
-- Dormitory: ventilation, daylight, hot water and washing facilities
-- Medical room: first-aid supplies and an AED
-- Health records kept for every employee
-@@END_LIST@@
-
-@@H2@@9.4 Fire-protection design
-
-@@H3@@9.4.1 Basis of fire design
-
-@@LIST@@
-- Applicable building fire-protection code
-- Applicable fire-extinguisher placement standard
-- Applicable automatic sprinkler standard
-- Applicable fire-alarm system standard
+- National building fire-protection regulations (transposing the relevant EU / EN standards)
+- Recognised industrial-gas guidance (e.g. EIGA) for the LOX installation
+- CLP Regulation for chemical labelling and storage segregation
 - Specific requirements of the local fire authority
 @@END_LIST@@
 
-@@H3@@9.4.2 Fire-hazard classification
+@@H3@@9.5.2 Fire-risk classification
 
 @@TABLE@@
-Building|Fire hazard|Fire-resistance grade
-Main culture hall|Class E (low)|Grade 2
-Water-treatment room|Class E (low)|Grade 2
-LOX station|Class A (strong oxidizer)|Grade 2
-Diesel generator room|Class D|Grade 2
-Office building|Civil|Grade 2
-Warehouse (chemicals)|Class C|Grade 2
+Area|Principal fire risk|Design basis
+Culture hall|low (wet, largely non-combustible)|national building fire regulations
+Water-treatment room|low|national building fire regulations
+LOX station|oxygen-enriched atmosphere (oxidiser)|industrial-gas guidance + separation distances
+Emergency generator room|diesel fuel|fire + fuel-storage regulations
+Chemical store|flammable / corrosive storage|CLP + national storage rules
+Office|civil occupancy|national building fire regulations
 @@END_TABLE@@
 
-@@H3@@9.4.3 Fire-fighting facilities
+@@H3@@9.5.3 Fire-fighting facilities
 
 @@LIST@@
-- <strong>Fire water</strong>: outdoor hydrants + an on-site fire tank (volume per the applicable code)
+- <strong>Fire water</strong>: outdoor hydrants + an on-site fire tank (volume per code)
 - <strong>Indoor hydrants</strong>: in the main buildings per code
 - <strong>Automatic sprinklers</strong>: in the switchroom, lab and office
-- <strong>Gaseous suppression</strong>: FM-200 or IG541 in the switchroom and PLC room
-- <strong>Extinguishers</strong>: provided per code (dry powder, CO₂, ABC, etc.)
+- <strong>Gaseous suppression</strong>: clean-agent (e.g. IG-541) in the switchroom and PLC room
+- <strong>Extinguishers</strong>: per code (dry powder, CO₂, ABC, etc.)
 - <strong>Fire alarm</strong>: a site-wide automatic system (smoke, heat, manual call points)
 - <strong>Emergency lighting + exit signage</strong>: on main routes and exits
 @@END_LIST@@
 
-@@H3@@9.4.4 Special fire requirements for the LOX station
+@@H3@@9.5.4 Special fire requirements for the LOX station
 
 @@LIST@@
-- No combustibles, oils or organics within 5 m of the LOX tank
-- A dedicated fire bund isolating the non-oxygen area
+- No combustibles, oils or organics within the separation distance around the LOX tank
+- A dedicated bund isolating the oxidiser zone
 - Signage: "no smoking or open flame", "keep free of oil and organics"
-- Platforms and valves treated to be oil-free and corrosion-resistant
-- The tank has relief valves, pressure gauge, thermometer and burst disc
+- Platforms and valves kept oil-free and corrosion-resistant
+- Tank fitted with relief valves, pressure gauge, thermometer and burst disc
 - Lightning protection: tank earthing and a lightning rod
 @@END_LIST@@
 
-@@H2@@9.5 Emergency plans
+@@H2@@9.6 Biosecurity
 
-@@H3@@9.5.1 Emergency organization
+@@P@@The closed RAS is, by design, a strong biosecurity barrier: there is no exchange with natural waters, so external pathogens and escapes are excluded. The operating measures below maintain that barrier.
+
+@@LIST@@
+- <strong>Zoning & access control</strong>: clean / dirty zoning, controlled entry, visitor logging and restricted access to the culture hall
+- <strong>Entry hygiene</strong>: change of clothing, footwear disinfection and hand hygiene at hall entries; disinfection baths at zone boundaries
+- <strong>Incoming biosecurity</strong>: certified juveniles from approved sources; quarantine of new stock
+- <strong>Make-up water</strong>: disinfection of intake water (UV / filtration) before entering the system
+- <strong>Mortality management</strong>: prompt removal, recording and compliant disposal to break disease cycles
+- <strong>Health surveillance</strong>: routine fish-health monitoring and a veterinary relationship for diagnosis and notifiable-disease reporting
+@@END_LIST@@
+
+@@H2@@9.7 Fish welfare
+
+@@P@@Fish welfare is a regulated requirement and an investor and market expectation. It is overseen under national animal-welfare legislation (e.g. NO: Dyrevelferdsloven) and EU Directive 98/58/EC, with the food-safety / veterinary authority (e.g. Mattilsynet) responsible for supervision. The project's design supports welfare through the following provisions.
+
+@@LIST@@
+- <strong>Controlled water quality</strong>: the core welfare guarantee of RAS — dissolved oxygen, CO₂, TAN and temperature are continuously held within the tolerance of {{ farm.speciesName }} by the process design in Chapters 5–6, rather than left to ambient conditions
+- <strong>Continuous monitoring & alarms</strong>: 24×7 online sensors with alarm set-points on the key welfare parameters, enabling intervention before thresholds are breached
+- <strong>Resilience by design</strong>: N+1 equipment redundancy and backup power (Chapter 13) maintain life-support during single failures, protecting welfare when it is most at risk
+- <strong>Stocking density management</strong>: density is set per production stage (see Chapter 5) within species-appropriate limits, and adjusted by grading through the cycle
+- <strong>Handling & grading</strong>: low-stress handling protocols, with anaesthesia/sedation where appropriate during grading and transfer
+- <strong>Humane slaughter</strong>: harvesting via recognised humane stunning before slaughter, consistent with welfare-at-killing requirements
+- <strong>Recording & audit</strong>: welfare-relevant parameters, mortality and interventions are logged, supporting welfare auditing and certification (e.g. ASC / GLOBALG.A.P. where pursued)
+@@END_LIST@@
+
+@@P@@A site-specific fish-welfare plan, agreed with the responsible veterinarian and the competent authority, should be prepared before stocking.
+
+@@H2@@9.8 Emergency plans
+
+@@H3@@9.8.1 Emergency organisation
 
 @@LIST@@
 - An emergency command group led by the general manager, with department heads as members
-- Response teams: firefighting, rescue, medical and security
+- Response teams: firefighting, rescue, medical and fish life-support
 - A 24×7 duty roster of safety officers and technicians
 @@END_LIST@@
 
-@@H3@@9.5.2 Key emergency procedures
+@@H3@@9.8.2 Key emergency procedures
 
 @@TABLE@@
 Incident|Key response
 Fire|evacuate → call emergency services → activate fire systems → cut power/gas → extinguish
 LOX leak|stop work → evacuate → ventilate → close valves → call for help (if major)
 {% if workflow.skimmer.mode == "ozone" or workflow.aop.enabled %}Ozone leak|don respirators → evacuate → ventilate → shut down ozone equipment → engage the destructor
-{% endif %}Power loss|start the diesel generator → check critical equipment → contact the utility
-Equipment failure (main pump/blower)|switch to standby → repair → alert (if biosecurity is affected)
-Water-quality excursion (DO crash, TAN spike)|increase LOX/exchange → alert → investigate
-Fire incident|handle per the fire emergency plan
+{% endif %}Power loss|start the diesel generator → check life-support → contact the utility
+Equipment failure (main pump/blower)|switch to standby → repair → alert (if life-support affected)
+Water-quality / welfare excursion (DO crash, TAN spike)|increase oxygenation/exchange → alert → investigate
 Personal injury|first aid → hospital → report
 @@END_TABLE@@
 
-@@H3@@9.5.3 Drills and training
+@@H3@@9.8.3 Drills and training
 
 @@LIST@@
-- Safety training: ≥ 24 h/yr for all staff (≥ 72 h for new hires)
-- Drills: ≥ 1 per quarter, covering fire, LOX leak, power loss and biosecurity
-- Certified work: electricians and special-operation staff certified, reviewed annually
-- Safety inspections: monthly, with prompt correction of any hazards
+- Safety and welfare training for all staff, with extended induction for new hires
+- Drills at least quarterly: fire, LOX leak, power loss, life-support failure and biosecurity breach
+- Certified work (electricians, special operations) reviewed periodically
+- Regular safety inspections with prompt correction of hazards
 @@END_LIST@@
 
-@@P@@<strong>Note</strong>: this chapter is a preliminary HSE design at the feasibility stage and does not replace a formal safety assessment or occupational-health assessment, which should be commissioned from qualified bodies once the project is approved.
+@@P@@<strong>Note</strong>: this chapter is a concept-stage HSE / biosecurity / welfare design and does not replace the formal safety, occupational-health and fish-welfare assessments commissioned from qualified bodies.
 </script>
 <script type="text/njk-template" id="tpl-ch11">@@H1@@Chapter 10. Implementation & Organization
 
@@ -1817,103 +1747,88 @@ Package|Scope|Method|Est. value (EUR)
 
 @@P@@The total tendered value is about {{ (capex.equipDirect + capex.civilEtc)|eur }} EUR, {{ ((capex.equipDirect + capex.civilEtc) / capex.totalInvestment * 100)|round(0) }}% of total investment.
 </script>
-<script type="text/njk-template" id="tpl-ch12">@@H1@@Chapter 11. Capital & Financing
+<script type="text/njk-template" id="tpl-ch12">@@H1@@Chapter 11. Capital, Funding & Financing Structure
 
-@@H2@@11.1 Basis of the investment estimate
+@@H2@@11.1 Total capital requirement
 
-The investment estimate is based on:
+@@P@@The total capital requirement is <strong>{{ capex.totalInvestment|eur }} EUR</strong> — <strong>{{ capex.fixedAsset|eur }} EUR</strong> of fixed-asset investment plus <strong>{{ capex.workingCapital|eur }} EUR</strong> of working capital. Fixed-asset cost is generated by the iRAS engine from the process design, drawing on historical RAS project costs, current vendor quotations (2026 price level) and scale factors. The estimate is concept-stage (accuracy ≈ ±40%) and will be firmed up by the construction contracts.
 
-@@LIST@@
-- Standard project economic-evaluation methodology and parameters
-- Recognized procedures for investment estimating and review
-- Current equipment price information and fee standards
-- cost data from comparable RAS projects
-- equipment-vendor quotations (2026 price level)
-@@END_LIST@@
-
-@@H2@@11.2 Investment estimate
-
-Total investment is estimated at <strong>{{ capex.totalInvestment|wan }} EUR</strong>, of which fixed-asset investment is <strong>{{ capex.fixedAsset|wan }} EUR</strong> and working capital <strong>{{ capex.workingCapital|wan }} EUR</strong>.
-
-@@H3@@11.2.1 Investment summary
+@@H3@@11.1.1 Capital cost breakdown
 
 @@TABLE@@
 Item|Amount (EUR)|% of total
-1. Equipment purchase|{{ capex.equipDirect|wan }}|{{ ((capex.equipDirect/capex.totalInvestment)*100)|round(1) }}%
-2. Civil/installation/electrical/control/design|{{ capex.civilEtc|wan }}|{{ ((capex.civilEtc/capex.totalInvestment)*100)|round(1) }}%
-@@SUBTOTAL@@3. Fixed-asset investment|{{ capex.fixedAsset|wan }}|{{ ((capex.fixedAsset/capex.totalInvestment)*100)|round(1) }}%
-4. Working capital ({{ (finance.params.workingCap*100)|round(0) }}% × annual OPEX)|{{ capex.workingCapital|wan }}|{{ ((capex.workingCapital/capex.totalInvestment)*100)|round(1) }}%
-@@SUBTOTAL@@5. Total investment|{{ capex.totalInvestment|wan }}|100.0%
+Equipment & process systems|{{ capex.equipDirect|eur }}|{{ ((capex.equipDirect/capex.totalInvestment)*100)|round(1) }}%
+Civil works, installation, electrical & controls, design|{{ capex.civilEtc|eur }}|{{ ((capex.civilEtc/capex.totalInvestment)*100)|round(1) }}%
+@@SUBTOTAL@@Fixed-asset investment|{{ capex.fixedAsset|eur }}|{{ ((capex.fixedAsset/capex.totalInvestment)*100)|round(1) }}%
+Working capital ({{ (finance.params.workingCap*100)|round(0) }}% × annual OPEX)|{{ capex.workingCapital|eur }}|{{ ((capex.workingCapital/capex.totalInvestment)*100)|round(1) }}%
+@@SUBTOTAL@@Total capital requirement|{{ capex.totalInvestment|eur }}|100.0%
 @@END_TABLE@@
 
-@@H3@@11.2.2 Notes on the estimate
+@@P@@The non-equipment cost of {{ capex.civilEtc|eur }} EUR is about {{ ((capex.civilEtc/capex.equipDirect)|round(2)) }}× the direct equipment cost and comprises piping & valves, electrical, automation/controls, installation & commissioning, civil buildings (hall, equipment rooms, offices) and design/supervision. Working capital ({{ (finance.params.workingCap*100)|round(0) }}% of full-capacity OPEX) funds the feed, juveniles, labour and energy float during ramp-up and is recovered in the final year (Year {{ finance.params.years }}).
 
-@@P@@The direct equipment cost of {{ capex.equipDirect|wan }} EUR is estimated automatically by iRAS from the process design, drawing on historical RAS project costs, mainstream vendor quotations and scale factors.
-
-@@P@@Civil/installation/electrical/control/design cost of {{ capex.civilEtc|wan }} EUR is about {{ ((capex.civilEtc/capex.equipDirect)|round(2)) }}× the direct equipment cost and covers:
-
-@@LIST@@
-- Pipes and valves (15–20% of direct equipment)
-- Electrical (switchgear, cabling, lighting; 10–15%)
-- Automation/control (PLC, SCADA, sensors; 5–10%)
-- Installation and commissioning (10–15%)
-- Civil buildings (hall, equipment rooms, offices; 30–40%)
-- Design, supervision and consulting (5–8%)
-@@END_LIST@@
-
-@@P@@Working capital is set at {{ (finance.params.workingCap*100)|round(0) }}% of full-capacity OPEX, covering early-operation turnover of feed, juveniles, labor and energy. It is recovered in the final year (Year {{ finance.params.years }}).
-
-@@P@@<strong>Estimate accuracy</strong>: this is a budget-stage estimate with about ±40% accuracy. The final figure is governed by the formal construction contracts.
-
-@@H2@@11.3 Financing
-
-The total investment of {{ capex.totalInvestment|wan }} EUR is to be financed as follows:
+@@H2@@11.2 Sources & uses of funds
 
 @@TABLE@@
-Source|Amount (EUR)|Share
-Equity (fixed assets + all working capital)|{{ capex.ownEquity|eur }}|{{ ((capex.ownEquity/capex.totalInvestment)*100)|round(1) }}%
-Bank loan (fixed assets {{ ((1-finance.params.ownPct)*100)|round(0) }}%)|{{ capex.loan|eur }}|{{ ((capex.loan/capex.totalInvestment)*100)|round(1) }}%
-@@SUBTOTAL@@Total|{{ capex.totalInvestment|wan }}|100%
+Uses|EUR|%
+Equipment & process systems|{{ capex.equipDirect|eur }}|{{ ((capex.equipDirect/capex.totalInvestment)*100)|round(1) }}%
+Civil, installation, electrical & design|{{ capex.civilEtc|eur }}|{{ ((capex.civilEtc/capex.totalInvestment)*100)|round(1) }}%
+Working capital|{{ capex.workingCapital|eur }}|{{ ((capex.workingCapital/capex.totalInvestment)*100)|round(1) }}%
+@@SUBTOTAL@@Total uses|{{ capex.totalInvestment|eur }}|100.0%
 @@END_TABLE@@
 
-@@P@@<strong>Equity</strong>: provided by the owner, used mainly for early-construction outlays to start the project.
+@@TABLE@@
+Sources|EUR|%
+Equity|{{ capex.ownEquity|eur }}|{{ ((capex.ownEquity/capex.totalInvestment)*100)|round(1) }}%
+Senior debt|{{ capex.loan|eur }}|{{ ((capex.loan/capex.totalInvestment)*100)|round(1) }}%
+@@SUBTOTAL@@Total sources|{{ capex.totalInvestment|eur }}|100.0%
+@@END_TABLE@@
 
-{% if finance.params.ownPct < 1.0 %}
-@@P@@<strong>Bank loan</strong>: a fixed-asset investment loan of about {{ capex.loan|eur }} EUR (covering {{ ((1-finance.params.ownPct)*100)|round(0) }}% of fixed assets; working capital of {{ capex.workingCapital|eur }} EUR is self-funded), at {{ (finance.params.loanRate*100)|round(1) }}% annual interest over {{ finance.params.loanYears }} years, repaid by {% if finance.params.loanMethod == 'equal_payment' %}equal installments (annuity){% else %}equal principal{% endif %} from the first operating year.
-{% else %}
-@@P@@The project is financed 100% from equity, with no bank loan and therefore no interest or repayment burden, minimizing financial risk.
-{% endif %}
+@@P@@Gearing is <strong>{{ ((capex.loan/capex.totalInvestment)*100)|round(0) }}%</strong> debt to <strong>{{ ((capex.ownEquity/capex.totalInvestment)*100)|round(0) }}%</strong> equity (debt-to-equity ≈ {{ (capex.loan/capex.ownEquity)|round(2) }}:1). Senior debt is sized against fixed assets only; working capital is fully equity-funded.
 
-@@H2@@11.4 Repayment schedule
+@@P@@<strong>Grant funding is not assumed in the base case.</strong> Land-based aquaculture commonly qualifies for national innovation and green-transition support (e.g. Innovation Norway, Enova, or EU funding instruments); any grant award would substitute for equity, lowering the equity requirement and raising the equity IRR. This is upside to the returns presented here, not a dependency.
 
-{% if finance.params.ownPct < 1.0 %}
-Under the loan terms above, the repayment schedule (interest and principal by year) is:
+@@H2@@11.3 Equity
+
+@@P@@Equity of {{ capex.ownEquity|eur }} EUR ({{ ((capex.ownEquity/capex.totalInvestment)*100)|round(1) }}% of total) is provided by the promoter and covers the equity share of fixed assets plus 100% of working capital. It is committed first, funding early construction and de-risking the debt draw-down.
+
+@@H2@@11.4 Senior debt & repayment
+
+{% if finance.params.ownPct < 1.0 %}@@P@@A fixed-asset investment loan of {{ capex.loan|eur }} EUR is assumed on the following indicative terms:
 
 @@TABLE@@
-Year|Interest (EUR)|Principal (EUR)|Total payment|Remaining principal
-{% for s in finance.tables.cashflowTotal %}{% if s.year >= 1 and s.year <= finance.params.loanYears and s.interest > 0 %}Year {{ s.year }}|{{ s.interest|wan }}|{{ s.loanPrincipalRepay|wan }}|{{ (s.interest + s.loanPrincipalRepay)|wan }}|—
+Term|Basis
+Facility|Senior secured term loan (fixed-asset financing)
+Amount|{{ capex.loan|eur }} EUR ({{ ((1-finance.params.ownPct)*100)|round(0) }}% of fixed assets)
+Interest rate|{{ (finance.params.loanRate*100)|round(1) }}% p.a. (indicative)
+Tenor|{{ finance.params.loanYears }} years
+Repayment|{% if finance.params.loanMethod == 'equal_payment' %}equal instalments (annuity){% else %}equal principal{% endif %}, from the first operating year
+Security|fixed assets of the project (typical for RAS term financing)
+@@END_TABLE@@
+
+@@P@@Indicative repayment profile (interest and principal by year):
+
+@@TABLE@@
+Year|Interest (EUR)|Principal (EUR)|Total debt service (EUR)
+{% for s in finance.tables.cashflowTotal %}{% if s.year >= 1 and s.year <= finance.params.loanYears and s.interest > 0 %}Year {{ s.year }}|{{ s.interest|eur }}|{{ s.loanPrincipalRepay|eur }}|{{ (s.interest + s.loanPrincipalRepay)|eur }}
 {% endif %}{% endfor %}@@END_TABLE@@
 
-@@P@@Total loan interest is about {{ (capex.loan * finance.params.loanRate * finance.params.loanYears / 2)|eur }} EUR (estimated), roughly {{ ((finance.params.loanRate * finance.params.loanYears / 2)*100)|round(0) }}% of the principal (varying slightly by repayment method).
-{% else %}
-@@P@@With no bank loan, no repayment schedule applies.
+@@P@@Lenders will size and price the facility against the project's debt-service coverage (DSCR) and the equity contribution. The cash-flow profile in Chapter 12 shows operating cash flow building through the ramp; debt service should be tested against lender covenants (typically DSCR ≥ 1.2–1.4) once indicative terms are confirmed. Total interest over the tenor is approximately {{ (capex.loan * finance.params.loanRate * finance.params.loanYears / 2)|eur }} EUR (annuity basis, indicative).
+{% else %}@@P@@The project is funded entirely by equity, with no senior debt and therefore no interest or repayment burden. This minimises financial risk but raises the equity requirement to the full {{ capex.totalInvestment|eur }} EUR; introducing senior debt would improve the equity IRR at the cost of debt-service obligations.
 {% endif %}
 
-@@H2@@11.5 Drawdown plan
+@@H2@@11.5 Drawdown & payment structure
 
-Investment is drawn down over the {{ finance.params.buildYears }}-year construction period:
+@@P@@Capital is drawn down over the {{ finance.params.buildYears }}-year construction period:
 
 @@TABLE@@
 Phase|Timing|Funds|Main use
-Early construction|3 months before start|~30%|design, supervision, equipment deposits, civil mobilization
-Mid construction|months 4–9|~50%|equipment delivery, installation/commissioning, civil structure
+Early construction|first quarter|~30%|design, supervision, equipment deposits, civil mobilisation
+Mid construction|months 4–9|~50%|equipment delivery, installation & commissioning, civil structure
 Late construction|months 10–12|~20%|integrated commissioning, biofilter seeding, trial run
-Operating year 1|first operating year|working capital {{ capex.workingCapital|wan }} EUR|juveniles, feed, labor and energy turnover
+Operating Year 1|first operating year|working capital {{ capex.workingCapital|eur }} EUR|juveniles, feed, labour and energy float
 @@END_TABLE@@
 
-@@P@@A <strong>staged-payment</strong> model is used: equipment contracts pay "30% advance + 50% on delivery + 15% on commissioning + 5% on warranty", reducing cash-flow pressure.
-
-@@P@@After commissioning, capacity reaches {{ (finance.params.ramp1*100)|round(0) }}% in Year 1, {{ (finance.params.ramp2*100)|round(0) }}% in Year 2 and {{ (finance.params.ramp3*100)|round(0) }}% from Year 3. The detailed financial analysis is in Chapter 12.
+@@P@@Equipment contracts follow a staged-payment structure (typically 30% advance / 50% on delivery / 15% on commissioning / 5% on warranty release), smoothing the cash-flow draw. After commissioning, capacity reaches {{ (finance.params.ramp1*100)|round(0) }}% in Year 1, {{ (finance.params.ramp2*100)|round(0) }}% in Year 2 and full capacity from Year 3. The resulting cash flows and returns are analysed in Chapter 12.
 </script>
 <script type="text/njk-template" id="tpl-ch15">@@H1@@Chapter 13. Risk & Sensitivity
 
@@ -1971,9 +1886,33 @@ Factor|Low IRR|Base IRR|High IRR|IRR swing
 {% set top1 = finance.tables.sensitivity[0] %}
 @@P@@<strong>Key finding</strong>: the project is most sensitive to {{ top1.label }} (IRR swing {{ (top1.irrSwing*100)|round(1) }}%){% if 'price' in top1.label or 'Sales' in top1.label %}, meaning securing sales is decisive for success{% elif 'CAPEX' in top1.label %}, meaning investment control during construction is decisive for execution{% endif %}.
 
-@@H2@@13.3 Mitigation measures
+@@H2@@13.3 Scenario stress test
 
-@@H3@@13.3.1 Market risk
+@@P@@Beyond the single-factor sensitivity above, three combined scenarios test the project against simultaneous movements in the key drivers. The downside deliberately stacks the correlated risks that matter most to lenders and investors — a lower sale price, a CAPEX overrun and a slower production ramp occurring together.
+
+@@TABLE@@
+Scenario|Assumptions|Project IRR|Equity IRR|NPV (EUR)|Disc. payback (yr)|Break-even
+{% for sc in finance.scenarios %}{{ sc.label }}|{% if sc.label == 'Base case' %}as modelled{% elif sc.label == 'Downside' %}price −15%, CAPEX +20%, slow ramp{% else %}price +10%, CAPEX −5%, fast ramp{% endif %}|{{ (sc.irrTotal*100)|round(1) }}%|{{ (sc.irrEquity*100)|round(1) }}%|{{ sc.npvTotal|eur }}|{{ sc.paybackTotalDisc|round(1) }}|{{ sc.bepPct|round(0) }}%
+{% endfor %}@@END_TABLE@@
+
+{% if finance.scenarios|length > 1 %}{% set dn = finance.scenarios[1] %}@@P@@<strong>Reading.</strong> {% if dn.irrTotal >= finance.params.discount %}Even in the combined downside, the project IRR of {{ (dn.irrTotal*100)|round(1) }}% holds at or above the {{ (finance.params.discount*100)|round(0) }}% hurdle — the base case carries a meaningful safety margin against a simultaneous price, cost and ramp shock.{% else %}In the combined downside the project IRR falls to {{ (dn.irrTotal*100)|round(1) }}%, below the {{ (finance.params.discount*100)|round(0) }}% hurdle{% if dn.npvTotal < 0 %} with a negative NPV{% endif %}. The base case does not absorb a simultaneous price, cost and ramp shock, so the offtake and cost-control measures in 13.5 are decisive rather than optional.{% endif %}{% endif %}
+
+@@H2@@13.4 Debt-service coverage
+
+{% if finance.hasLoan %}@@P@@The debt-service coverage ratio (DSCR = cash flow available for debt service ÷ annual debt service) measures the project's ability to meet its loan obligations. Lenders typically require a minimum DSCR of 1.2–1.4 sustained over the loan term.
+
+@@TABLE@@
+Scenario|Minimum DSCR (loan term)|At full capacity|Vs 1.2–1.4 covenant
+{% for sc in finance.scenarios %}{% if sc.label != 'Upside' %}{{ sc.label }}|{% if sc.minDSCR != null %}{{ sc.minDSCR|round(2) }}×{% else %}—{% endif %}|{% if sc.fullDSCR != null %}{{ sc.fullDSCR|round(2) }}×{% else %}—{% endif %}|{% if sc.minDSCR != null and sc.minDSCR >= 1.2 %}meets{% elif sc.minDSCR != null %}below — needs restructuring{% else %}—{% endif %}
+{% endif %}{% endfor %}@@END_TABLE@@
+
+{% set b = finance.scenarios[0] %}@@P@@{% if b.minDSCR != null and b.minDSCR >= 1.4 %}The base-case minimum DSCR of {{ b.minDSCR|round(2) }}× provides comfortable coverage. {% elif b.minDSCR != null and b.minDSCR >= 1.2 %}The base-case minimum DSCR of {{ b.minDSCR|round(2) }}× meets a typical covenant but with limited headroom. {% elif b.minDSCR != null %}The base-case minimum DSCR of {{ b.minDSCR|round(2) }}× is thin against a 1.2–1.4 covenant. {% endif %}The early ramp years are the binding period for coverage; a principal grace period or a repayment profile sculpted to the production ramp is recommended, and is the natural structuring response to the downside case above.
+{% else %}@@P@@The project is funded entirely by equity, so no debt-service coverage applies. Introducing senior debt would lift equity returns but require the cash flow to cover debt service (lenders typically seek a minimum DSCR of 1.2–1.4); the scenario returns above indicate the headroom available to support such a facility.
+{% endif %}
+
+@@H2@@13.5 Mitigation measures
+
+@@H3@@13.5.1 Market risk
 
 @@LIST@@
 - Sign 3–5 year supply agreements with core customers (supermarket chains, restaurant groups, exporters) before execution, locking in 60–70% of capacity
@@ -1982,7 +1921,7 @@ Factor|Low IRR|Base IRR|High IRR|IRR swing
 - Track domestic and international market trends and adjust the sales strategy as needed
 @@END_LIST@@
 
-@@H3@@13.3.2 Technical risk
+@@H3@@13.5.2 Technical risk
 
 @@LIST@@
 - Follow the biofilter start-up schedule strictly (4–8 weeks seeding + 12 weeks gradual loading), without rushing to full load
@@ -1993,7 +1932,7 @@ Factor|Low IRR|Base IRR|High IRR|IRR swing
 - Bring in 1–2 experienced RAS specialists and systematically train new staff
 @@END_LIST@@
 
-@@H3@@13.3.3 Financial risk
+@@H3@@13.5.3 Financial risk
 
 @@LIST@@
 - Include a 10–15% contingency in the estimate
@@ -2003,16 +1942,16 @@ Factor|Low IRR|Base IRR|High IRR|IRR swing
 - Keep ample working capital (6–12 months recommended); do not run on zero reserves
 @@END_LIST@@
 
-@@H3@@13.3.4 Policy risk
+@@H3@@13.5.4 Policy risk
 
 @@LIST@@
 - Leave room in the design for environmental upgrades (reserved space and pipe connections)
-- Produce to national food-safety standards and proactively obtain ISO 22000, HACCP and similar certification
+- Produce to applicable food-safety standards and obtain ISO 22000 / HACCP and similar certification
 - Keep land formalities fully compliant to avoid policy-change risk
-- Monitor industry policy and apply for national and local grants in good time
+- Monitor industry policy and apply for available innovation / green-transition grants in good time
 @@END_LIST@@
 
-@@H2@@13.4 Overall risk rating
+@@H2@@13.6 Overall risk rating
 
 @@TABLE@@
 Category|Rating|Main risk|Mitigation
@@ -2050,7 +1989,7 @@ Policy|<strong>Low</strong>|tighter environmental rules|reserved upgrade capacit
 Indicator|Value|Benchmark|Result
 Total-investment IRR (after tax)|{{ (finance.indicators.irrTotal*100)|round(2) }}%|≥ {{ (finance.params.discount*100)|round(1) }}%|{{ 'Met' if finance.indicators.irrTotal >= finance.params.discount else 'Not met' }}
 Equity IRR|{{ (finance.indicators.irrEquity*100)|round(2) }}%|—|—
-Total-investment NPV|{{ finance.indicators.npvTotal|wan }} EUR|≥ 0|{{ 'Met' if finance.indicators.npvTotal >= 0 else 'Not met' }}
+Total-investment NPV|{{ finance.indicators.npvTotal|eur }} EUR|≥ 0|{{ 'Met' if finance.indicators.npvTotal >= 0 else 'Not met' }}
 Static payback|{{ finance.indicators.paybackTotal|round(2) }} yr|≤ 8 yr|{{ 'Met' if finance.indicators.paybackTotal <= 8 else 'Watch' }}
 Break-even point|{{ finance.indicators.bepPct|round(1) }}% of capacity|≤ 75%|{{ 'Large margin' if finance.indicators.bepPct < 75 else 'Watch' }}
 @@END_TABLE@@
@@ -2063,9 +2002,9 @@ Break-even point|{{ finance.indicators.bepPct|round(1) }}% of capacity|≤ 75%|{
 
 @@H3@@14.1.3 Social and environmental feasibility
 
-@@P@@With a closed recirculating system achieving 85–95% water reuse, the project uses just 5–10% of the water of traditional flow-through farming, greatly reducing draw on natural resources. Wastewater is treated to standard before discharge, with almost no diffuse pollution, in line with green, high-quality development goals. In normal operation it creates direct jobs and supports upstream and downstream activity (feed, logistics, sales), contributing to the local economy and food-supply security.
+@@P@@With a closed recirculating system achieving 85–95% water reuse, the project uses just 5–10% of the water of traditional flow-through farming, greatly reducing draw on natural resources. Wastewater is treated to standard before discharge, with almost no diffuse pollution, consistent with sustainable-aquaculture objectives. In normal operation it creates direct jobs and supports upstream and downstream activity (feed, logistics, sales), contributing to the local economy and food-supply security.
 
-@@P@@<strong>Conclusion: feasible on social and environmental grounds</strong>, in line with modern-fisheries and green-agriculture directions.
+@@P@@<strong>Conclusion: feasible on social and environmental grounds</strong>, consistent with sustainable-aquaculture and food-security objectives.
 
 @@H2@@14.2 Key issues and recommendations
 
@@ -2128,7 +2067,7 @@ Break-even point|{{ finance.indicators.bepPct|round(1) }}% of capacity|≤ 75%|{
 @@P@@Based on the analysis above, the preparer ({{ project.editor }}) makes the following overall recommendation:
 
 {% if finance.indicators.irrTotal >= finance.params.discount and finance.indicators.npvTotal >= 0 %}
-@@P@@<strong>1. Recommended to proceed.</strong> The project is technically mature, equipment-reliable, reasonably costed, financially feasible and sound in social/environmental terms, in line with modern-fisheries directions; the approval process should be advanced promptly.
+@@P@@<strong>1. Recommended to proceed.</strong> The project is technically mature, equipment-reliable, reasonably costed, financially feasible and sound in social/environmental terms, consistent with sustainable-aquaculture objectives; the permitting and financing process should be advanced promptly.
 
 @@P@@<strong>2. Implement the key risk controls:</strong>
 
@@ -2155,9 +2094,9 @@ Break-even point|{{ finance.indicators.bepPct|round(1) }}% of capacity|≤ 75%|{
 
 @@LIST@@
 - Raising the price: through branding, quality and differentiation (current price {{ finance.params.price }} EUR/kg)
-- Reducing investment: simplify non-essential units and optimize equipment selection (current fixed-asset investment {{ capex.fixedAsset|wan }} EUR)
+- Reducing investment: simplify non-essential units and optimize equipment selection (current fixed-asset investment {{ capex.fixedAsset|eur }} EUR)
 - Improving ramp efficiency: reach full capacity faster to reduce capital tied up during construction
-- Seeking grants: modern-fisheries parks, agricultural-industrialization funds, etc.
+- Seeking grants: national innovation / green-transition schemes (e.g. Innovation Norway, Enova, EU funding instruments)
 - Optimizing the financing structure: a higher equity ratio / lower-rate loans
 @@END_LIST@@
 
@@ -2195,16 +2134,16 @@ const STATE = {
 // Environmental Impact & Permitting chapter.
 const CHAPTERS = [
   { id: 'ch01', num: 1,  title: 'Executive Summary',                  autoRate: 0.85, ready: true  },
-  { id: 'ch02', num: 2,  title: 'Background & Rationale',             autoRate: 0.50, ready: true  },
-  { id: 'ch03', num: 3,  title: 'Market & Demand',                    autoRate: 0.60, ready: true  },
+  { id: 'ch02', num: 2,  title: 'Investment Rationale',               autoRate: 0.50, ready: true  },
+  { id: 'ch03', num: 3,  title: 'Market & Commercial Strategy',       autoRate: 0.60, ready: true  },
   { id: 'ch04', num: 4,  title: 'Site & Conditions',                  autoRate: 0.30, ready: true  },
   { id: 'ch05', num: 5,  title: 'Technical Concept',                  autoRate: 0.95, ready: true  },
   { id: 'ch06', num: 6,  title: 'Equipment & Process Design',         autoRate: 1.00, ready: true  },
   { id: 'ch07', num: 7,  title: 'Civil Works & Utilities',            autoRate: 0.50, ready: true  },
-  { id: 'ch09', num: 8,  title: 'Environmental Impact & Permitting',  autoRate: 0.60, ready: true  },
-  { id: 'ch10', num: 9,  title: 'Health, Safety & Fire (HSE)',        autoRate: 0.40, ready: true  },
+  { id: 'ch09', num: 8,  title: 'Environmental, Permitting & ESG',     autoRate: 0.60, ready: true  },
+  { id: 'ch10', num: 9,  title: 'HSE, Biosecurity & Fish Welfare',     autoRate: 0.40, ready: true  },
   { id: 'ch11', num: 10, title: 'Implementation & Organization',      autoRate: 0.65, ready: true  },
-  { id: 'ch12', num: 11, title: 'Capital & Financing',               autoRate: 0.95, ready: true  },
+  { id: 'ch12', num: 11, title: 'Capital, Funding & Financing Structure', autoRate: 0.95, ready: true  },
   { id: 'ch13', num: 12, title: 'Financial Analysis',                 autoRate: 1.00, ready: true  },
   { id: 'ch15', num: 13, title: 'Risk & Sensitivity',                 autoRate: 0.70, ready: true  },
   { id: 'ch16', num: 14, title: 'Conclusion & Recommendation',        autoRate: 0.80, ready: true  }
@@ -3006,15 +2945,73 @@ function buildContext() {
     tables:     finCalc.tables
   };
 
+  // --- lightweight scenario stress test (deterministic; re-runs the model under combined cases) ---
+  //   downside combines the correlated risks lenders care about: lower price + CAPEX overrun + slow ramp.
+  //   CAPEX is read from data (not params) inside the core, so a CAPEX overrun needs a shallow data clone.
+  function _scenarioData(capexMult){
+    if (!capexMult || capexMult === 1) return d;
+    const f0 = d.results.summary.finance;
+    return Object.assign({}, d, { results: Object.assign({}, d.results, {
+      summary: Object.assign({}, d.results.summary, {
+        finance: Object.assign({}, f0, {
+          totalCapexProject: (f0.totalCapexProject || 0) * capexMult,
+          totalCapexEquip:   (f0.totalCapexEquip   || 0) * capexMult
+        }) }) }) });
+  }
+  function _dscr(fr){
+    const ys = (fr.tables && fr.tables.cashflowTotal) || [];
+    let mn = Infinity, full = null;
+    ys.forEach(y => {
+      const ds = (y.interest || 0) + (y.loanPrincipalRepay || 0);
+      if (ds > 0){
+        // CFADS = EBITDA - cash tax = (profitBefore + dep + interest) - tax
+        const cfads = (y.profitBefore || 0) + (y.dep || 0) + (y.interest || 0) - (y.tax || 0);
+        const v = cfads / ds;
+        if (v < mn) mn = v;
+        if ((y.ramp || 0) >= 0.99 && full === null) full = v;
+      }
+    });
+    return { min: isFinite(mn) ? mn : null, full: full };
+  }
+  function _scenario(label, o){
+    const sp = Object.assign({}, finParams, {
+      price: finParams.price * (o.priceMult || 1),
+      ramp1: Math.min(1, finParams.ramp1 * (o.ramp1Mult || 1)),
+      ramp2: Math.min(1, finParams.ramp2 * (o.ramp2Mult || 1)),
+      ramp3: Math.min(1, finParams.ramp3 * (o.ramp3Mult || 1))
+    });
+    const fr = calculateFinance(_scenarioData(o.capexMult || 1), sp);
+    const ind = fr.indicators || {};
+    const d2 = _dscr(fr);
+    return { label, priceMult: o.priceMult || 1, capexMult: o.capexMult || 1,
+      irrTotal: ind.irrTotal, irrEquity: ind.irrEquity, npvTotal: ind.npvTotal,
+      paybackTotalDisc: ind.paybackTotalDisc, bepPct: ind.bepPct,
+      minDSCR: d2.min, fullDSCR: d2.full };
+  }
+  try {
+    finance.scenarios = [
+      _scenario('Base case', { priceMult:1.00, capexMult:1.00 }),
+      _scenario('Downside',  { priceMult:0.85, capexMult:1.20, ramp1Mult:0.7, ramp2Mult:0.85, ramp3Mult:0.97 }),
+      _scenario('Upside',    { priceMult:1.10, capexMult:0.95, ramp1Mult:1.2, ramp2Mult:1.15 })
+    ];
+  } catch(e){ console.warn('[iRAS] scenario stress test failed:', e); finance.scenarios = []; }
+  finance.hasLoan = finParams.ownPct < 1.0;
+
   // ------- meta namespace -------
   const meta = {
     generatedAt:     new Date().toISOString(),
     irasVersion:     d.irasVersion || '1.5',
-    templateVersion: 'v1.5-alpha-1',
+    templateVersion: 'v1.8-eu-1',
     reportNumber:    `iRAS-${d.species}-${d.yieldTons}t-${new Date().toISOString().slice(0,10).replace(/-/g,'')}`
   };
 
-  return { project, workflow, farm, capex, opex, finance, meta };
+  // electricity price (EUR/kWh) for the report's energy back-calculation.
+  //   earlier code hard-coded /0.7 (the legacy RMB tariff from the pre-i18n build),
+  //   which made every kWh/kW/kVA figure ~7x too low under EUR pricing.
+  const energyPrice = (d.prices && Number.isFinite(d.prices.elec) && d.prices.elec > 0)
+    ? d.prices.elec : 0.10;
+
+  return { project, workflow, farm, capex, opex, finance, meta, energyPrice };
 }
 
 function guessDefaultPrice(species) {
