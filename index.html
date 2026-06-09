@@ -658,14 +658,15 @@
         <button type="button" id="btnOpenFinance" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40 shrink-0" title="Open the financial evaluation page in a new window (NPV/IRR/sensitivity + Excel export)">💰 Financial evaluation</button>
         <button type="button" id="btnOpenReport" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40 shrink-0" title="Open the feasibility-report generator in a new window (structured .docx report)">📄 Feasibility report</button>
         <button type="button" id="btnPrint" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40 shrink-0" title="Print / choose &quot;Save as PDF&quot; in the print dialog to export PDF">🖨️ Print</button>
+        <button type="button" id="btnManual" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40 shrink-0" title="Open the iRAS RAS Engineering Design Technical Manual (v1.8 PDF) in a new tab">📖 Technical manual</button>
         <button type="button" id="btnHelp" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40">? Help</button>
-        <button type="button" id="btnClearCache" class="no-print text-[10px] px-2 py-1 rounded border border-rose-700/60 text-rose-300 hover:bg-rose-900/30 shrink-0" title="Clear locally saved data (auto-save and cross-page cache) and reload with fresh defaults. Use this after upgrading to a new version if numbers look stale.">🗑️ Clear cache</button>
       </div>
     </div>
     <div class="pb-2 flex items-center gap-2 flex-wrap justify-end no-print">
       <nav id="stageNav" class="flex items-center gap-1 text-xs flex-wrap"></nav>
       <button type="button" id="btnAddStage" class="text-[10px] px-2 py-1 rounded border border-cyan-600 text-cyan-300 hover:bg-cyan-900/30">+ Add stage</button>
       <button type="button" id="btnResetSpeciesStages" class="text-[10px] px-2 py-1 rounded border border-rose-700/60 text-rose-400 hover:bg-rose-900/30 shrink-0">↺ Reset to species defaults</button>
+      <button type="button" id="btnClearCache" class="no-print text-[10px] px-2 py-1 rounded border border-rose-700/60 text-rose-300 hover:bg-rose-900/30 shrink-0" title="Clear locally saved data (auto-save and cross-page cache) and reload with fresh defaults. Use this after upgrading to a new version if numbers look stale.">🗑️ Clear cache</button>
     </div>
   </div>
 </header>
@@ -7925,6 +7926,9 @@ function hideHelp() {
   document.getElementById('btnAddStage').style.display = '';
   document.getElementById('btnHelp').textContent = tr('help');
 }
+document.getElementById('btnManual')?.addEventListener('click', () => {
+  window.open('iRAS_Technical_Manual_v1.8_EN.pdf', '_blank');
+});
 document.getElementById('btnHelp').addEventListener('click', () => {
   if (document.getElementById('helpPage').style.display === 'block') hideHelp();
   else showHelp();

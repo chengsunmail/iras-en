@@ -2362,7 +2362,7 @@ function renderSummaryBox() {
   return `<div class="summary-box">
     <div class="row"><span class="label">📊 Design summary</span></div>
     <div class="row">Species: <strong>${d.speciesName || d.species}</strong> · output <strong>${d.yieldTons} t/yr</strong> · ${d.stages.length} stages</div>
-    <div class="row">CAPEX (fixed assets): <strong>${fmt.wan(fin.totalCapexProject)}EUR</strong> · annual OPEX <strong>${fmt.wan(fin.annualOpex)}EUR</strong> · annual depreciation <strong>${fmt.wan(fin.annualDep)}EUR</strong></div>
+    <div class="row">CAPEX (fixed assets): <strong>${fmt.wan(fin.totalCapexProject)} EUR</strong> · annual OPEX <strong>${fmt.wan(fin.annualOpex)} EUR</strong> · annual depreciation <strong>${fmt.wan(fin.annualDep)} EUR</strong></div>
     <div class="row">All-in cost: <strong>${fin.costPerKg.toFixed(2)} EUR/kg</strong> (of which depreciation ${fin.depPerKg.toFixed(2)} EUR/kg)</div>
   </div>`;
 }
@@ -3018,11 +3018,12 @@ function buildContext() {
 }
 
 function guessDefaultPrice(species) {
+  // EUR/kg, ex-works (consistent with finance.html)
   const map = {
-    salmon: 60, turbot: 80, grouper: 130, perch: 50,
-    mandarin: 90, tilapia: 22, eel: 110, shrimp: 55
+    salmon: 8, turbot: 11, grouper: 18, bass: 7,
+    mandarin: 13, tilapia: 3, eel: 15, shrimp: 8
   };
-  return map[species] || 50;
+  return map[species] || 7;
 }
 function estimateLaborCost(yieldTons) {
   // EUR/yr: 50,000 EUR/person/yr, staffed by scale (consistent with finance.html)

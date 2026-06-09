@@ -27,7 +27,7 @@
   function buildLoanSchedule(L, r, n, method) {
     const sch = [];
     if (L <= 0 || n <= 0) return sch;
-    if (method === 'equal_payment') {
+    if (method === 'equal_payment' && r > 0) {
       // Equal-installment (equal payment)
       const a = r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
       const annual = L * a;
@@ -39,7 +39,7 @@
         sch.push({ year: t, interest, principal, balance: Math.max(0, bal) });
       }
     } else {
-      // Equal-principal
+      // Equal-principal (also the r === 0 fallback: equal payment with zero interest reduces to equal principal)
       const principalEach = L / n;
       let bal = L;
       for (let t = 1; t <= n; t++) {
