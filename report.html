@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  iRAS · Feasibility Report Generator (v1.8)
+  iRAS · Feasibility Report Generator (v1.9)
   Generates a feasibility report as a .docx document
 
   Data source: localStorage['iRAS_reportExport'] (passed from the "📄 Generate Feasibility Report" button on the main page)
@@ -27,7 +27,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="author" content="Cheng Sun / Polarlys Innovation AS">
 <meta name="copyright" content="© 2026 Cheng Sun · Polarlys Innovation AS">
-<title>iRAS · Feasibility Report Generator v1.8</title>
+<title>iRAS · Feasibility Report Generator v1.9</title>
 <script src="https://cdn.jsdelivr.net/npm/nunjucks@3.2.4/browser/nunjucks.min.js"></script>
 <!-- v1.5: shared financial calculation module (shared with finance.html, Bug 6 fix) -->
 <script src="finance-core.js"></script>
@@ -1045,12 +1045,24 @@ TAN (total ammonia N)|< 1.0 mg/L|MBBR biofilter nitrification
 NO₂-N (nitrite)|< 0.3 mg/L|mature, stable nitrifier community
 NO₃-N (nitrate)|< {% if workflow.denitri.enabled %}80{% else %}100{% endif %} mg/L|{% if workflow.denitri.enabled %}denitrification + exchange{% else %}5–10% daily exchange{% endif %}
 DO (dissolved oxygen)|> 6 mg/L (tank)|{% if workflow.aerator.enabled %}LOX + cone, 110–165% saturation{% else %}Roots blower + diffuser discs, ~95% saturation{% endif %}
-CO₂|< 15 mg/L|CO₂ stripper, G:L=3, 65% single-pass removal
+CO₂|< {% if farm.designWQ and farm.designWQ.CO2_threshold %}{{ farm.designWQ.CO2_threshold|round(0) }}{% else %}15{% endif %} mg/L (salmonids 15; other freshwater 20; marine 15)|CO₂ stripper, G:L=3, 65% single-pass removal
 TSS (suspended solids)|< 10 mg/L|RDF 60 μm + {% if workflow.skimmer.enabled %}skimmer{% endif %} + secondary capture in the biofilter
 DOM|< 30 mg/L|{% if workflow.skimmer.enabled %}skimmer (70% single-pass){% else %}mainly water exchange{% endif %}{% if workflow.aop.enabled %} + AOP deep oxidation{% endif %}
 pH|7.0–7.5|sodium-bicarbonate dosing for alkalinity
+Alkalinity|{% if farm.designWQ and farm.designWQ.alkTarget %}{{ farm.designWQ.alkTarget|round(0) }}{% else %}150{% endif %} mg/L CaCO₃ (freshwater 150 / seawater 200)|NaHCO₃ dosing; buffers pH and supports nitrification
 Geosmin/2-MIB|< 5 ng/L|{% if workflow.aop.enabled %}AOP 80–95% removal{% else %}mainly dilution by daily exchange{% endif %}
 @@END_TABLE@@
+
+@@P@@<strong>Modelled steady-state tank water quality (carbonate equilibrium).</strong> pH, dissolved CO₂, un-ionised ammonia (NH₃-N), calcite saturation (Ω) and buffer intensity (β) are solved per stage from total alkalinity and aqueous CO₂ using a carbonate-equilibrium model (Millero 2010 dissociation constants, salinity 0–50), validated against PyCO₂SYS to within 0.001 pH unit. pH is reported on the free/concentration scale; NH₃ speciation follows Clegg &amp; Whitfield (1995).
+
+@@TABLE@@
+Stage|pH|CO₂ (mg/L)|NH₃-N (mg/L)|Ω calcite|β (mg/L CaCO₃/pH)|Alk target (mg/L)
+{% for s in farm.stages %}{{ s.name }}|{{ (s.pH|round(2)) if s.pH else '—' }}|{{ (s.co2Conc|round(1)) if s.co2Conc else '—' }}|{{ (s.nh3n|round(4)) if s.nh3n else '—' }}|{{ (s.omega|round(2)) if s.omega else '—' }}|{{ (s.beta|round(0)) if s.beta else '—' }}|{{ (s.alkTarget|round(0)) if s.alkTarget else '—' }}
+{% endfor %}@@END_TABLE@@
+
+@@P@@These are daily-average steady-state (chronic-exposure) values: the post-feeding transient is damped by alkalinity buffering (β) and bounded by the peak-sized CO₂ stripper, unlike dissolved oxygen, which is reported at the post-feeding peak. The CO₂ limit is species- and salinity-aware (salmonids &lt; 15 mg/L, the Norwegian smolt standard; other freshwater &lt; 20; marine &lt; 15) and the NH₃-N limit is per species (fry stages apply a ×0.5 safety factor).
+
+@@P@@<strong>Carbon-dioxide load basis.</strong> The total CO₂ load used to size the stripper combines fish respiration and nitrification (≈ 0.5 g CO₂ per g feed). This is higher than the metabolic total-inorganic-carbon figure (≈ 0.345 g/g) sometimes quoted in the literature, and the two are not directly comparable: the design figure is the strippable load that governs equipment selection and pH control, not the metabolic carbon alone.
 
 @@H2@@5.5 Process design summary
 
@@ -2761,6 +2773,7 @@ function buildContext() {
       const psFlow = ps.flow || {};
       const psLoad = ps.load || {};
       const psFarm = ps.farm || {};
+      const psWQ = ps.waterQuality || {};
       // back out single-tank diameter: D = sqrt(4V / (π × H × tank count))
       const poolCount = (s.subSystemCount || 1) * (s.poolsPerSet || 1);
       const poolDepth = s.poolDepth_m || s.recDepth_m || 1.5;
@@ -2795,7 +2808,18 @@ function buildContext() {
         FCR:            s.FCR || 0,    // v1.5 Bug 30 fix: the field is FCR (uppercase), not fcr
         protein:        s.protein || 0,
         feedRate:       s.feedRate || 0,
-        mortality:      s.mortality || 0
+        mortality:      s.mortality || 0,
+        // v1.9: modelled steady-state carbonate water quality (per stage)
+        pH:             psWQ.pH != null ? psWQ.pH : null,
+        co2Conc:        psWQ.CO2 != null ? psWQ.CO2 : null,
+        nh3n:           psWQ.NH3_N != null ? psWQ.NH3_N : null,
+        omega:          psWQ.omega != null ? psWQ.omega : null,
+        beta:           psWQ.beta != null ? psWQ.beta : null,
+        alkTarget:      psWQ.alkTarget != null ? psWQ.alkTarget : null,
+        alkRequired:    psWQ.alkRequired != null ? psWQ.alkRequired : null,
+        pHMode:         psWQ.pHMode || 'alk',
+        co2Limit:       psWQ.CO2_threshold != null ? psWQ.CO2_threshold : null,
+        nh3Limit:       psWQ.NH3_threshold != null ? psWQ.NH3_threshold : null
       };
     }),
     designStage:        d.results.summary.designStage || '',
@@ -2837,6 +2861,11 @@ function buildContext() {
       farm.dischargeNO3_mg_L = 0;
     }
     farm.dischargeM3Y = farm.dischargeM3D * 365;
+  }
+  // v1.9: design-stage modelled carbonate water quality (representative, same stage basis as discharge)
+  {
+    const _dPs = (d.results.perStage || [])[d.results.summary.designStageIdx || (d.results.perStage || []).length - 1] || {};
+    farm.designWQ = _dPs.waterQuality || null;
   }
   // v1.5.1: facility weighted FCR (weighted by daily feed, reflecting average feed efficiency)
   //   stage FCR varies widely (fry 0.8–1.0, market size 1.2–1.4); feed-weighting avoids bias from small stages
@@ -3000,8 +3029,8 @@ function buildContext() {
   // ------- meta namespace -------
   const meta = {
     generatedAt:     new Date().toISOString(),
-    irasVersion:     d.irasVersion || '1.5',
-    templateVersion: 'v1.8-eu-1',
+    irasVersion:     d.irasVersion || '1.9.0',
+    templateVersion: 'v1.9-eu-1',
     reportNumber:    `iRAS-${d.species}-${d.yieldTons}t-${new Date().toISOString().slice(0,10).replace(/-/g,'')}`
   };
 

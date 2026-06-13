@@ -47,7 +47,7 @@
   "applicationCategory": "EngineeringApplication",
   "applicationSubCategory": "Aquaculture Engineering Design",
   "operatingSystem": "Any (Web Browser)",
-  "softwareVersion": "1.8.0",
+  "softwareVersion": "1.9.0",
   "datePublished": "2026-05-16",
   "inLanguage": "en",
   "license": "https://www.gnu.org/licenses/agpl-3.0.html",
@@ -658,7 +658,7 @@
         <button type="button" id="btnOpenFinance" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40 shrink-0" title="Open the financial evaluation page in a new window (NPV/IRR/sensitivity + Excel export)">💰 Financial evaluation</button>
         <button type="button" id="btnOpenReport" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40 shrink-0" title="Open the feasibility-report generator in a new window (structured .docx report)">📄 Feasibility report</button>
         <button type="button" id="btnPrint" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40 shrink-0" title="Print / choose &quot;Save as PDF&quot; in the print dialog to export PDF">🖨️ Print</button>
-        <button type="button" id="btnManual" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40 shrink-0" title="Open the iRAS RAS Engineering Design Technical Manual (v1.8 PDF) in a new tab">📖 Technical manual</button>
+        <button type="button" id="btnManual" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40 shrink-0" title="Open the iRAS RAS Engineering Design Technical Manual (v1.9 PDF) in a new tab">📖 Technical manual</button>
         <button type="button" id="btnHelp" class="no-print text-[10px] px-2 py-1 rounded border border-slate-600 text-slate-300 hover:bg-slate-700/40">? Help</button>
       </div>
     </div>
@@ -674,7 +674,7 @@
 <main id="mainContent" class="max-w-[1600px] mx-auto px-4 py-6 space-y-6">
 
   <div class="no-print rounded-lg border border-emerald-500/40 bg-emerald-950/30 px-4 py-2 flex items-center gap-3 text-sm">
-    <span class="font-bold text-emerald-300">iRAS v1.8.0</span>
+    <span class="font-bold text-emerald-300">iRAS v1.9.0</span>
     <span class="text-slate-400">Europe-calibrated build — equipment & feed prices in EUR (Nordic baseline)</span>
   </div>
 
@@ -919,12 +919,12 @@
 
   <footer class="text-center text-xs text-slate-500 py-6 space-y-1">
     <div>
-      <span class="text-slate-300 font-semibold">iRAS</span> v1.8 · RAS Engineering Design Platform · Open source · <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" class="text-cyan-400 hover:text-cyan-300 underline">AGPL v3</a>
+      <span class="text-slate-300 font-semibold">iRAS</span> v1.9 · RAS Engineering Design Platform · Open source · <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" class="text-cyan-400 hover:text-cyan-300 underline">AGPL v3</a>
       · <a href="https://github.com/chengsunmail/iras-en" target="_blank" class="text-cyan-400 hover:text-cyan-300 underline">GitHub</a>
       · <a href="#" id="btnAbout" class="text-cyan-400 hover:text-cyan-300 underline no-print">About</a>
     </div>
     <div>
-      © 2026 Cheng Sun · Polarlys Innovation AS (Norway)
+      © 2026 Cheng Sun · Polarlys Innovation AS (Norway) · <a href="mailto:polarlysinnovation@gmail.com" class="text-cyan-400 hover:text-cyan-300 underline">polarlysinnovation@gmail.com</a>
     </div>
     <div class="text-slate-600">
       <a href="https://github.com/chengsunmail/iras-en" target="_blank" class="text-slate-500 hover:text-cyan-300">GitHub</a> · Results are for concept-estimate reference only · Real projects require on-site monitoring, pilot data and professional judgment
@@ -944,7 +944,7 @@
       <div class="space-y-4 text-xs text-slate-300 leading-relaxed">
         <div>
           <div class="text-cyan-400 font-bold mb-1">Version</div>
-          <div>Version: v1.8.0 · Released: 2026-06-04</div>
+          <div>Version: v1.9.0 · Released: 2026-06-13</div>
           <div>Author: Cheng Sun · Polarlys Innovation AS (Norway)</div>
           <div>License: AGPL v3</div>
         </div>
@@ -958,6 +958,7 @@
             <li>Hybrid mainline-series + bypass (skimmer/AOP/denitrification) modeling</li>
             <li>Location-based O₂ allocation (tank LOX + independent BF coarse aeration)</li>
             <li>Salinity handling: DO-saturation correction + nitrification-efficiency correction + seawater ozone warning</li>
+            <li>Carbonate equilibrium (Millero 2010, S=0–50): pH (free scale) + un-ionised NH₃-N toxicity (per-species, fry ×0.5) + buffer intensity β + calcite Ω; forward (hold-alkalinity) &amp; inverse (hold-pH → required alkalinity) modes</li>
             <li>8 species presets + custom mode + freely add/remove stages</li>
             <li>Investment estimate (equipment × multiplier) + operating cost</li>
           </ul>
@@ -983,6 +984,8 @@
             <li>Summerfelt et al. (2009). Ozonation in RAS. <i>Aquacultural Engineering</i>.</li>
             <li>Mateju et al. (1992). Biological water denitrification. <i>Enzyme Microb. Tech.</i></li>
             <li>Rusten et al. (2006). Nitrification in saline water. <i>Aquacultural Engineering</i>.</li>
+            <li>Millero (2010). Carbonate constants for estuarine waters. <i>Mar. Freshwater Res.</i></li>
+            <li>Clegg & Whitfield (1995). Ammonia/ammonium equilibrium in natural waters. <i>Geochim. Cosmochim. Acta</i>.</li>
           </ol>
         </div>
 
@@ -1055,6 +1058,236 @@
 </div>
 
 <script>
+/* ===== iRAS carbonate equilibrium core (v1.9) — inlined; canonical source: carbonate.js (PyCO2SYS-validated) ===== */
+/* ============================================================================
+ *  iRAS carbonate equilibrium core  (v1.9 — Phases 1-3)
+ *
+ *  Steady-state carbonate speciation for RAS design.
+ *  Forward (default): total alkalinity (held by NaHCO3 dosing to a setpoint)
+ *    + aqueous CO2 (set by respiration + nitrification production and stripper
+ *    removal) => pH is the emergent third variable.
+ *  Inverse (solveAlk): target pH + aqueous CO2 => the alkalinity setpoint
+ *    required to hold that pH (direct/algebraic, no iteration).
+ *
+ *  Equilibrium constants ported VERBATIM from PyCO2SYS 1.8.3 (opt_k_carbonic = 14):
+ *    K1,K2  Millero (2010), Mar.Freshw.Res. 61:139-142      [SWS scale, S=0-50]
+ *    K0     Weiss (1974)                                     [CO2 solubility]
+ *    KW     Millero (1979)                                   [SWS]
+ *    KB     Dickson (1990b), Total -> SWS via SWStoTOT
+ *    TB     Uppstrom (1974); TS Morris-Riley (1966); TF Riley (1965)
+ *    KS     Dickson (1990a) free; KF Dickson-Riley (1979) free
+ *    fH     Takahashi et al. (1982)                          [SWS <-> NBS]
+ *    NH3 Ka Clegg & Whitfield (1995), GCA 59(12):2403, eq.18 [Total -> SWS]
+ *    Ca     Riley & Tongudai (1967);  Ksp(calcite) Mucci (1983, 1 atm)  [for omega]
+ *
+ *  pH SCALE: internal solve is on the SWS scale; the PRIMARY reported pH is the
+ *    FREE / concentration scale (pH_free = pH_sws - log10(SWStoFREE); free > sws
+ *    in seawater). At S=0 free = SWS = the freshwater NBS-probe reading, so the
+ *    free scale avoids the fH artifact that makes "NBS" read ~0.15 high at S=0.
+ *    pH_sws and pH_nbs are also returned for reference. (A sign error in this
+ *    free<->sws conversion — invisible at S=0 and to internal round-trips, only
+ *    caught against PyCO2SYS on the free scale — was fixed in v1.9.)
+ *
+ *  UNITS: concentrations are mol/kg-SW (match PyCO2SYS); the RAS engine wrapper
+ *    converts mg/L <-> mol/kg via a simple salinity density (rho = 1 + 8e-4*S).
+ *
+ *  API (global.iRASCarbonate):
+ *    solve(TA, CO2aq, Tc, S)        forward -> {pH(=free), pH_free, pH_sws, pH_nbs,
+ *                                    H_sws, CO2aq, HCO3, CO3, DIC, omega_calcite, ...}
+ *    solveAlk(pH_free, CO2aq, Tc, S) inverse -> required total alkalinity (mol/kg)
+ *    nh3Fraction(H_sws, Tc, S)      un-ionised NH3 fraction Ka/(Ka+H), SWS
+ *    bufferBeta(TA, CO2aq, Tc, S)   Van Slyke buffer intensity (mg/L CaCO3 per pH)
+ *    Ca_RT67(S) / Ksp_calcite_M83(Tc,S)   calcite saturation inputs
+ *
+ *  VALIDATION vs PyCO2SYS (opt_k_carbonic=14, S=0-35, T=12-28):
+ *    forward pH (free & NBS) max|dpH| = 1e-5; inverse TA = 0.083 umol/kg;
+ *    omega_calcite 0.006%; NH3 fraction 1.5e-16.
+ * ========================================================================== */
+(function (global) {
+  'use strict';
+  const ln = Math.log, exp = Math.exp, log10 = Math.log10, sqrt = Math.sqrt, pow = Math.pow;
+
+  // ---- salt totals (mol/kg-SW) ----
+  function ionicStrength(S) { return 19.924 * S / (1000 - 1.005 * S); }        // DOE94
+  function boronTotal(S)   { return 0.0004157 * S / 35; }                       // Uppström 1974
+  function sulfateTotal(S) { return (0.14 / 96.062) * S / 1.80655; }            // Morris-Riley 1966
+  function fluorideTotal(S){ return (0.000067 / 18.998) * S / 1.80655; }        // Riley 1965
+
+  // ---- equilibrium constants (TempK, S) ----
+  function K0_W74(T, S) {                                                       // Weiss 1974, mol/kg/atm
+    const t = T / 100;
+    return exp(-60.2409 + 93.4517 / t + 23.3585 * ln(t)
+      + S * (0.023517 - 0.023656 * t + 0.0047036 * t * t));
+  }
+  function K1K2_M10(T, S) {                                                     // Millero 2010, SWS
+    const pK10 = -126.34048 + 6320.813 / T + 19.568224 * ln(T);
+    const A1 = 13.4038 * pow(S, 0.5) + 0.03206 * S - 5.242e-5 * S * S;
+    const B1 = -530.659 * pow(S, 0.5) - 5.8210 * S;
+    const C1 = -2.0664 * pow(S, 0.5);
+    const pK1 = pK10 + A1 + B1 / T + C1 * ln(T);
+    const pK20 = -90.18333 + 5143.692 / T + 14.613358 * ln(T);
+    const A2 = 21.3728 * pow(S, 0.5) + 0.1218 * S - 3.688e-4 * S * S;
+    const B2 = -788.289 * pow(S, 0.5) - 19.189 * S;
+    const C2 = -3.374 * pow(S, 0.5);
+    const pK2 = pK20 + A2 + B2 / T + C2 * ln(T);
+    return [pow(10, -pK1), pow(10, -pK2)];
+  }
+  function KW_M79(T, S) {                                                       // Millero 1979, SWS
+    return exp(148.9802 - 13847.26 / T - 23.6521 * ln(T)
+      + (-79.2447 + 3298.72 / T + 12.0408 * ln(T)) * sqrt(S) - 0.019813 * S);
+  }
+  function KB_TOT_D90b(T, S) {                                                  // Dickson 1990b, Total
+    const sq = sqrt(S);
+    const top = -8966.9 - 2890.53 * sq - 77.942 * S + 1.728 * sq * S - 0.0996 * S * S;
+    const lnKB = top / T + 148.0248 + 137.1942 * sq + 1.62142 * S
+      + (-24.4344 - 25.085 * sq - 0.2474 * S) * ln(T) + 0.053105 * sq * T;
+    return exp(lnKB);
+  }
+  function KS_FREE_D90a(T, S) {                                                 // Dickson 1990a, free
+    const I = ionicStrength(S), L = ln(T);
+    const lnKS = -4276.1 / T + 141.328 - 23.093 * L
+      + (-13856 / T + 324.57 - 47.986 * L) * sqrt(I)
+      + (35474 / T - 771.54 + 114.723 * L) * I
+      + (-2698 / T) * sqrt(I) * I + (1776 / T) * I * I;
+    return exp(lnKS) * (1 - 0.001005 * S);
+  }
+  function KF_FREE_DR79(T, S) {                                                 // Dickson-Riley 1979, free
+    const I = ionicStrength(S);
+    return exp(1590.2 / T - 12.641 + 1.525 * sqrt(I)) * (1 - 0.001005 * S);
+  }
+  function fH_TWB82(T, S) {                                                     // Takahashi 1982, SWS<->NBS
+    return 1.2948 - 0.002036 * T + (0.0004607 - 0.000001475 * T) * S * S;
+  }
+  function Ka_NH3_CW95_TOT(T, S) {                                              // Clegg-Whitfield 1995, Total, S=0-40
+    let pK = 9.244605 - 2729.33 * (1 / 298.15 - 1 / T);
+    pK += (0.04203362 - 11.24742 / T) * pow(S, 0.25);
+    pK += (-13.6416 + 1.176949 * sqrt(T) - 0.02860785 * T + 545.4834 / T) * pow(S, 0.5);
+    pK += (-0.1462507 + 0.0090226468 * sqrt(T) - 0.0001471361 * T + 10.5425 / T) * pow(S, 1.5);
+    pK += (0.004669309 - 0.0001691742 * sqrt(T) - 0.5677934 / T) * S * S;
+    pK += (-2.354039e-05 + 0.009698623 / T) * pow(S, 2.5);
+    return pow(10, -pK) * (1 - 0.001005 * S);                                   // Total scale, mol/kg-SW
+  }
+  // SWS-scale NH3 Ka (for use with [H+]_SWS): Total -> SWS via SWStoTOT0
+  function Ka_NH3_SWS(T, S) {
+    if (S <= 0) return Ka_NH3_CW95_TOT(T, S);   // free=tot=sws at S=0
+    const TS = sulfateTotal(S), KS = KS_FREE_D90a(T, S);
+    const TF = fluorideTotal(S), KF = KF_FREE_DR79(T, S);
+    const SWStoTOT0 = (1 + TS / KS) / (1 + TS / KS + TF / KF);
+    return Ka_NH3_CW95_TOT(T, S) / SWStoTOT0;
+  }
+
+  // SWS-scale KB: convert Total -> SWS via SWStoTOT0 = (1+TS/KS)/(1+TS/KS+TF/KF)
+  function KB_SWS(T, S) {
+    if (S <= 0) return 0;                       // no borate in freshwater
+    const TS = sulfateTotal(S), KS = KS_FREE_D90a(T, S);
+    const TF = fluorideTotal(S), KF = KF_FREE_DR79(T, S);
+    const SWStoTOT0 = (1 + TS / KS) / (1 + TS / KS + TF / KF);
+    return KB_TOT_D90b(T, S) / SWStoTOT0;
+  }
+
+  /* ---- core solver: (total alkalinity, aqueous CO2) -> pH ----
+   * TA, CO2aq in mol/kg-SW; T in degC; S in psu.
+   * Solves on SWS scale, returns pH on NBS scale + speciation. */
+  function solve(TA, CO2aq, Tc, S) {
+    const T = Tc + 273.15;
+    const [K1, K2] = K1K2_M10(T, S);
+    const KW = KW_M79(T, S);
+    const KB = KB_SWS(T, S), TB = boronTotal(S);
+    const fH = fH_TWB82(T, S);
+
+    // TA(H) on SWS scale; bisection on pH_SWS in [2,12]
+    const taOf = (H) =>
+      K1 * CO2aq / H + 2 * K1 * K2 * CO2aq / (H * H)   // HCO3 + 2 CO3
+      + (KB > 0 ? KB * TB / (KB + H) : 0)              // B(OH)4-
+      + KW / H - H - TA;                               // OH- - H+ - TA
+    let lo = pow(10, -12), hi = pow(10, -2), Hm = 0;   // [H+] range (pH 2..12)
+    // taOf is monotonic decreasing in H over the bracket
+    for (let i = 0; i < 100; i++) {
+      Hm = sqrt(lo * hi);                              // geometric bisection (H spans orders of magnitude)
+      const f = taOf(Hm);
+      if (f > 0) lo = Hm; else hi = Hm;
+    }
+    const H_sws = Hm;
+    const pH_sws = -log10(H_sws);
+    const pH_nbs = pH_sws - log10(fH);
+    // free scale: at S=0 free=SWS; at seawater pH_free = pH_sws + log10(SWStoFREE)
+    let SWStoFREE = 1;
+    if (S > 0) {
+      const TS = sulfateTotal(S), KS = KS_FREE_D90a(T, S);
+      const TF = fluorideTotal(S), KF = KF_FREE_DR79(T, S);
+      SWStoFREE = 1 / (1 + TS / KS + TF / KF);
+    }
+    const pH_free = pH_sws - log10(SWStoFREE);   // [H+]_free = [H+]_sws*SWStoFREE (<1) => pH_free > pH_sws
+
+    const HCO3 = K1 * CO2aq / H_sws;
+    const CO3 = K1 * K2 * CO2aq / (H_sws * H_sws);
+    const DIC = CO2aq + HCO3 + CO3;
+    const omega = (S > 0) ? (Ca_RT67(S) * CO3 / Ksp_calcite_M83(T, S)) : null;  // calcite saturation (marine)
+    return {
+      pH: pH_free, pH_free, pH_sws, pH_nbs, H_sws, fH,
+      CO2aq, HCO3, CO3, DIC, omega_calcite: omega,
+      K1, K2, KW, KB, KH: K0_W74(T, S)
+    };
+  }
+
+  // calcium (Riley-Tongudai 1967) and calcite solubility (Mucci 1983, 1 atm) for saturation index
+  function Ca_RT67(S) { return 0.02128 / 40.087 * S / 1.80655; }                // mol/kg-SW
+  function Ksp_calcite_M83(Tc, S) {                                             // (mol/kg-SW)^2, 1 atm
+    const T = (typeof Tc === 'number' && Tc < 200) ? Tc + 273.15 : Tc;         // accept degC or K
+    let lg = -171.9065 - 0.077993 * T + 2839.319 / T + 71.595 * log10(T)
+      + (-0.77712 + 0.0028426 * T + 178.34 / T) * sqrt(S)
+      - 0.07711 * S + 0.0041249 * sqrt(S) * S;
+    return pow(10, lg);
+  }
+
+  // Van Slyke buffer intensity (operational): mg/L CaCO3 alkalinity change per unit pH, at fixed CO2(aq).
+  //   higher = stiffer (more dosing needed to move pH = more stable against acid loads). Finite difference.
+  function bufferBeta(TA, CO2aq, Tc, S) {
+    const d = 1e-4;                                  // +0.1 mmol/kg alkalinity perturbation
+    const p0 = solve(TA, CO2aq, Tc, S).pH;
+    const p1 = solve(TA + d, CO2aq, Tc, S).pH;
+    const dpH = p1 - p0;
+    if (!isFinite(dpH) || Math.abs(dpH) < 1e-9) return null;
+    return (d / dpH) * 50043;                         // mol/kg per pH -> mg/L CaCO3 per pH
+  }
+
+
+  // ---- inverse: target pH (free scale) + aqueous CO2 -> required total alkalinity (mol/kg-SW) ----
+  //   Direct/algebraic (no iteration): [H+] is fixed by the target pH, so each carbonate/borate/water
+  //   term is explicit and TA is their sum. Returns <=0 when the target pH is unreachable on the low
+  //   side even at zero alkalinity (i.e. the CO2 alone already gives a higher pH).
+  function solveAlk(pH_free, CO2aq, Tc, S) {
+    const T = Tc + 273.15;
+    const [K1, K2] = K1K2_M10(T, S);
+    const KW = KW_M79(T, S);
+    const KB = KB_SWS(T, S), TB = boronTotal(S);
+    let SWStoFREE = 1;
+    if (S > 0) {
+      const TS = sulfateTotal(S), KS = KS_FREE_D90a(T, S);
+      const TF = fluorideTotal(S), KF = KF_FREE_DR79(T, S);
+      SWStoFREE = 1 / (1 + TS / KS + TF / KF);
+    }
+    const pH_sws = pH_free + log10(SWStoFREE);   // inverse of pH_free = pH_sws - log10(SWStoFREE)
+    const H = pow(10, -pH_sws);
+    return K1 * CO2aq / H + 2 * K1 * K2 * CO2aq / (H * H)
+      + (KB > 0 ? KB * TB / (KB + H) : 0) + KW / H - H;       // mol/kg-SW
+  }
+
+  // un-ionized ammonia fraction f = [NH3]/TAN = Ka/(Ka+[H+]_SWS), using SWS Ka & H
+  function nh3Fraction(H_sws, Tc, S) {
+    const Ka = Ka_NH3_SWS(Tc + 273.15, S);   // CW95, SWS scale; physical fraction is scale-invariant
+    return Ka / (Ka + H_sws);
+  }
+
+  const api = {
+    solve, solveAlk, nh3Fraction, bufferBeta, Ca_RT67, Ksp_calcite_M83,
+    K0_W74, K1K2_M10, KW_M79, KB_SWS, KB_TOT_D90b, KS_FREE_D90a, KF_FREE_DR79,
+    fH_TWB82, Ka_NH3_CW95_TOT, Ka_NH3_SWS, boronTotal, sulfateTotal, fluorideTotal, ionicStrength
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  global.iRASCarbonate = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
 /* ============================================================================
    iRAS - Recirculating Aquaculture System engineering design core
    ============================================================================ */
@@ -1063,7 +1296,7 @@
 const IRAS_META = {
   name: 'iRAS',
   fullName: 'RAS Engineering Design Platform',
-  version: '1.8.0',
+  version: '1.9.0',
   releaseDate: '2026-06-04',
   author: 'Cheng Sun',
   email: '',
@@ -1105,7 +1338,7 @@ const SPECIES_DB = {
   salmon: {
     name: '三文鱼 Salmon', icon: '🐟', subtitle: '冷水 · 淡→海水 · 总周期24月', name_en: 'Atlantic Salmon', subtitle_en: 'Coldwater · fresh→seawater · 24-mo cycle',
     tanCoef: 0.092,
-    o2BaseFactor: 0.32, o2Q10: 2.0, metabRefTemp: 15,
+    o2BaseFactor: 0.2263, o2Q10: 2.0, metabRefTemp: 15,
     stages: [
       { name: '苗种期', name_en: 'Fry/Fingerling', weightStart: 0.1,  weightEnd: 50,   months: 6, FCR: 1.0, protein: 0.50, feedRate: 0.03, peakFactor: 1.5, tempOpt: 12, density: 30, mortality: 0.15, turnover: 4.0, exchangeDaily: 8, feedPrice: 1.9, salinity: 0 , DOmin_satRatio: 0.75, DOmin_abs: 6.0, o2FishFactor: 0.2, recDepth_m: 1.5 },
       { name: '幼鱼期', name_en: 'Juvenile', weightStart: 50,   weightEnd: 500,  months: 8, FCR: 1.1, protein: 0.45, feedRate: 0.015, peakFactor: 1.5, tempOpt: 14, density: 50, mortality: 0.08, turnover: 3.0, exchangeDaily: 6, feedPrice: 1.7, salinity: 0 , DOmin_satRatio: 0.75, DOmin_abs: 6.0, recDepth_m: 3.0 },
@@ -1116,7 +1349,7 @@ const SPECIES_DB = {
   turbot: {
     name: '大菱鲆 Turbot', icon: '🐠', subtitle: '冷温水 · 海水 · 总周期18月', name_en: 'Turbot', subtitle_en: 'Cool-temperate · seawater · 18-mo cycle',
     tanCoef: 0.092,
-    o2BaseFactor: 0.28, o2Q10: 2.0, metabRefTemp: 15,
+    o2BaseFactor: 0.1980, o2Q10: 2.0, metabRefTemp: 15,
     // Densities tuned to industrial measurements (flatfish in shallow benthic
     //         tanks measured 50-70 kg/m³; European Stolt Sea Farm 100 kg/m² floor
     //         area ≈ 200-300 kg/m³ by floor area). New 25/50/60 matches mainstream RAS.
@@ -1129,7 +1362,7 @@ const SPECIES_DB = {
   tilapia: {
     name: '罗非鱼 Tilapia', icon: '🐡', subtitle: '温水 · 淡水 · 总周期8月', name_en: 'Tilapia', subtitle_en: 'Warmwater · freshwater · 8-mo cycle',
     tanCoef: 0.085,
-    o2BaseFactor: 0.16, o2Q10: 2.0, metabRefTemp: 28,
+    o2BaseFactor: 0.2786, o2Q10: 2.0, metabRefTemp: 28,
     stages: [
       { name: '苗种期', name_en: 'Fry/Fingerling', weightStart: 1,   weightEnd: 30,  months: 2, FCR: 1.1, protein: 0.40, feedRate: 0.035, peakFactor: 1.5, tempOpt: 28, density: 50, mortality: 0.10, turnover: 6.0, exchangeDaily: 10, feedPrice: 1.4, salinity: 0 , DOmin_satRatio: 0.6, DOmin_abs: 4.0, o2FishFactor: 0.3, recDepth_m: 1.5 },
       { name: '中鱼期', name_en: 'Grow-out (mid)', weightStart: 30,  weightEnd: 200, months: 3, FCR: 1.35, protein: 0.35, feedRate: 0.018, peakFactor: 1.5, tempOpt: 28, density: 70, mortality: 0.05, turnover: 6.0, exchangeDaily: 8, feedPrice: 1.1, salinity: 0 , DOmin_satRatio: 0.6, DOmin_abs: 4.0, recDepth_m: 2.0 },
@@ -1139,7 +1372,7 @@ const SPECIES_DB = {
   grouper: {
     name: '石斑鱼 Grouper', icon: '🪸', subtitle: '温水 · 海水 · 总周期12月', name_en: 'Grouper', subtitle_en: 'Warmwater · seawater · 12-mo cycle',
     tanCoef: 0.110,
-    o2BaseFactor: 0.18, o2Q10: 2.0, metabRefTemp: 27,
+    o2BaseFactor: 0.2924, o2Q10: 2.0, metabRefTemp: 27,
     stages: [
       { name: '苗种期', name_en: 'Fry/Fingerling', weightStart: 1,   weightEnd: 50,   months: 3, FCR: 1.1, protein: 0.55, feedRate: 0.03, peakFactor: 1.5, tempOpt: 27, density: 25, mortality: 0.20, turnover: 4.0, exchangeDaily: 10, feedPrice: 2.6, salinity: 30 , DOmin_satRatio: 0.7, DOmin_abs: 5.0, o2FishFactor: 0.32, recDepth_m: 1.5 },
       { name: '幼鱼期', name_en: 'Juvenile', weightStart: 50,  weightEnd: 300,  months: 5, FCR: 1.3, protein: 0.50, feedRate: 0.018, peakFactor: 1.5, tempOpt: 27, density: 40, mortality: 0.10, turnover: 3.0, exchangeDaily: 8, feedPrice: 2.3, salinity: 30 , DOmin_satRatio: 0.7, DOmin_abs: 5.0, recDepth_m: 2.0 },
@@ -1149,7 +1382,7 @@ const SPECIES_DB = {
   bass: {
     name: '加州鲈 Largemouth Bass', icon: '🎣', subtitle: '温水 · 淡水 · 总周期10月', name_en: 'Largemouth Bass', subtitle_en: 'Warmwater · freshwater · 10-mo cycle',
     tanCoef: 0.092,
-    o2BaseFactor: 0.19, o2Q10: 2.0, metabRefTemp: 25,
+    o2BaseFactor: 0.2687, o2Q10: 2.0, metabRefTemp: 25,
     stages: [
       { name: '苗种期', name_en: 'Fry/Fingerling', weightStart: 1,   weightEnd: 50,  months: 2, FCR: 0.9, protein: 0.50, feedRate: 0.035, peakFactor: 1.5, tempOpt: 25, density: 25, mortality: 0.12, turnover: 4.0, exchangeDaily: 10, feedPrice: 2.0, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, o2FishFactor: 0.28, recDepth_m: 1.5 },
       { name: '中鱼期', name_en: 'Grow-out (mid)', weightStart: 50,  weightEnd: 250, months: 4, FCR: 1.1, protein: 0.46, feedRate: 0.018, peakFactor: 1.5, tempOpt: 25, density: 40, mortality: 0.05, turnover: 3.0, exchangeDaily: 6, feedPrice: 1.7, salinity: 0 , DOmin_satRatio: 0.65, DOmin_abs: 5.0, recDepth_m: 2.0 },
@@ -1159,7 +1392,7 @@ const SPECIES_DB = {
   eel: {
     name: '鳗鲡 Eel', icon: '🐍', subtitle: '温水 · 淡水 · 总周期12月', name_en: 'Eel', subtitle_en: 'Warmwater · freshwater · 12-mo cycle',
     tanCoef: 0.092,
-    o2BaseFactor: 0.13, o2Q10: 2.0, metabRefTemp: 26,
+    o2BaseFactor: 0.1970, o2Q10: 2.0, metabRefTemp: 26,
     // Eel uses powder feed (not pellets), more leftover, higher TSS/DOM; the TSS
     // coefficient 0.30 here is generic (eel may be 0.35-0.40); compensate via exchange/RDF.
     stages: [
@@ -1171,7 +1404,7 @@ const SPECIES_DB = {
   mandarin: {
     name: '鳜鱼 Mandarin Fish', icon: '🏅', subtitle: '温水 · 淡水 · 配合饲料 · 总周期8月', name_en: 'Mandarin Fish', subtitle_en: 'Warmwater · freshwater · formulated feed · 8-mo cycle',
     tanCoef: 0.100,
-    o2BaseFactor: 0.18, o2Q10: 2.0, metabRefTemp: 25,
+    o2BaseFactor: 0.2546, o2Q10: 2.0, metabRefTemp: 25,
     // ⚠️ This preset is for pellet-fed mandarin fish, not live-bait culture
     // Mandarin fish is piscivorous, high protein demand (48-55%), large TAN production
     // Low density (territorial), should not exceed 35 kg/m³
@@ -1183,7 +1416,7 @@ const SPECIES_DB = {
   shrimp: {
     name: '南美白对虾 L.vannamei', icon: '🦐', subtitle: '温水 · 清水RAS · 总周期4月', name_en: 'Whiteleg Shrimp (L. vannamei)', subtitle_en: 'Warmwater · clearwater RAS · 4-mo cycle',
     tanCoef: 0.092,
-    o2BaseFactor: 0.31, o2Q10: 1.3, metabRefTemp: 28,
+    o2BaseFactor: 0.30, o2Q10: 1.3, metabRefTemp: 28,  // O2:feed at 28C, central estimate; comparable spp 0.17-0.30 (perch 0.17-0.19, general 0.2-0.3), still conservative for sizing. Was 0.38, trimmed toward literature.
     // ⚠️ This preset is only for clear-water RAS (drum filter + biofilter) shrimp
     // Not for Biofloc (BFT): BFT has no biofilter, treats TAN via heterotrophic flocs
     // Shrimp traits: very short cycle (3-4 months), low density (by kg/m³), high feed rate (fry 10-15%)
@@ -1197,7 +1430,7 @@ const SPECIES_DB = {
   custom: {
     name: '自定义鱼种 Custom', icon: '🧪', subtitle: '单阶段 · 自由模拟', name_en: 'Custom Species', subtitle_en: 'Single stage · free simulation',
     tanCoef: 0.092,
-    o2BaseFactor: 0.18, o2Q10: 2.0, metabRefTemp: 25,
+    o2BaseFactor: 0.2546, o2Q10: 2.0, metabRefTemp: 25,
     stages: [
       { name: '自定义阶段', name_en: 'Custom stage', weightStart: 100, weightEnd: 1000, months: 6, FCR: 1.3, protein: 0.40, feedRate: 0.015, peakFactor: 1.5, tempOpt: 22, density: 50, mortality: 0.05, turnover: 3.0, exchangeDaily: 5, feedPrice: 1.5, salinity: 0 , DOmin_satRatio: 0.7, DOmin_abs: 5.0, recDepth_m: 2.0 }
     ]
@@ -1264,6 +1497,8 @@ const PROCESS_DEFAULTS = {
   // Bypass-pump efficiency (%)
   o2BypassPumpEta: 60,
   alkTarget: 150,
+  pHControlMode: 'alk',          // 'alk' = hold alkalinity (pH emerges); 'ph' = hold target pH (alkalinity solved)
+  pHTarget: 7.0,                 // target pH (free scale) used when pHControlMode = 'ph'
   alkSource: 100,
   VTR20: 500,
   VDR20: 800,
@@ -1643,7 +1878,28 @@ const WATER_LIMITS = {
   tankDO_satRatio: 0.70,        // fallback relative saturation floor (neutral, used when the species has no built-in)
   // CO2 limit split by fresh/seawater
   tankCO2_max_freshwater: 20,   // freshwater fish CO2 limit (mg/L)
-  tankCO2_max_marine: 15        // seawater fish CO2 limit (mg/L; seawater CO2 buffering is weak, fish more sensitive)
+  tankCO2_max_marine: 15,       // seawater fish CO2 limit (mg/L; seawater CO2 buffering is weak, fish more sensitive)
+  tankNH3_max_default: 0.05,    // fallback un-ionised NH3-N limit (mg/L) when species not in NH3_MAX_BY_SPECIES
+  pH_min_fresh: 6.5,            // freshwater: nitrifier activity drops sharply below ~6.5
+  pH_min_marine: 7.0           // seawater: carbonate buffer + nitrifiers prefer >=7.0
+};
+
+// Per-species design limit for un-ionised ammonia NH3-N (mg/L), chronic/sub-lethal design targets (not LC50).
+//   Fry/early life stages get a x0.5 safety factor applied at runtime (stageRole=='fry').
+const NH3_MAX_BY_SPECIES = {
+  salmon: 0.0125,  // coldwater salmonid, most sensitive
+  turbot: 0.05, grouper: 0.07, bass: 0.06, perch: 0.06,
+  mandarin: 0.05, tilapia: 0.10, eel: 0.08, shrimp: 0.06,
+  custom: 0.05
+};
+
+// Per-species CO2 limit (mg/L) for species more/less CO2-sensitive than the salinity proxy implies.
+// Listed species override the salinity fallback (freshwater 20 / seawater 15); others use the fallback.
+//   salmon 15: Norwegian smolt standard <15 (FOR 2004; Bergheim et al. 2009); growth effects from
+//   ~12 mg/L and nephrocalcinosis ~16 (Fivelstad). Its freshwater fry/smolt stages (salinity 0)
+//   would otherwise wrongly get the freshwater 20.
+const CO2_MAX_BY_SPECIES = {
+  salmon: 15
 };
 
 // ---------- Per-unit equipment caps by band (adaptive to stage single-module flow modFlow) ----------
@@ -1816,7 +2072,7 @@ function calcStageLoad(stageFarm, stage, tanCoef) {
   // Fish respiratory O2 coefficient, four-level lookup:
   // 1. proc.o2FishFactor (user-set in UI, highest priority)
   // 2. stage.o2FishFactor (explicit species-DB override, e.g. fry stage)
-  // 3. stage.o2BaseFactor × Q10^((tempOpt-20)/10) (computed by formula)
+  // 3. stage.o2BaseFactor × Q10^((tempOpt-metabRefTemp)/10) — o2BaseFactor = O2:feed at metabRefTemp, same Q10 reference as the thermal model
   // 4. 0.25 (fallback)
   let o2FishFactor;
   if (stage.proc && stage.proc.o2FishFactor != null && !isNaN(stage.proc.o2FishFactor)) {
@@ -1825,7 +2081,7 @@ function calcStageLoad(stageFarm, stage, tanCoef) {
     o2FishFactor = stage.o2FishFactor;
   } else if (stage.o2BaseFactor != null) {
     const q10 = stage.o2Q10 || 2.0;
-    o2FishFactor = stage.o2BaseFactor * Math.pow(q10, (stage.tempOpt - 20) / 10);
+    o2FishFactor = stage.o2BaseFactor * Math.pow(q10, (stage.tempOpt - (stage.metabRefTemp != null ? stage.metabRefTemp : 20)) / 10);
   } else {
     o2FishFactor = 0.25;
   }
@@ -1837,7 +2093,10 @@ function calcStageLoad(stageFarm, stage, tanCoef) {
   const o2DOMDaily    = feedMax * o2DOMfactor;                // kg/d
   const o2DailyTotal  = o2FishDaily + o2NitriDaily + o2DOMDaily;  // kg/d
   const o2BFDaily     = o2NitriDaily + o2DOMDaily;            // kg/d (BF aeration)
-  const co2Daily      = o2FishDaily * 1.375;                  // kg/d (RQ≈1, respiration only)
+  // CO2 = fish respiration (RQ≈1) + nitrification (NH4+ + 2HCO3- + 2O2 -> NO3- + 2CO2; 2×44.01/14.01 = 6.286 g CO2/g TAN-N).
+  // BF_CO2_STRIP = in-biofilter stripping credit (0 in v1.9 Phase 1: all nitrification CO2 reaches the main loop, conservative for stripper sizing).
+  const CO2_PER_TANN = 6.286, BF_CO2_STRIP = 0;
+  const co2Daily      = o2FishDaily * 1.375 + tanDaily * CO2_PER_TANN * (1 - BF_CO2_STRIP);  // kg/d (respiration + nitrification)
 
   // ==== [Hourly peak - equipment-sizing basis, includes peakFactor] ====
   // Physics: hourly peak within the 2-4h post-feeding metabolic window
@@ -1868,7 +2127,7 @@ function calcStageLoad(stageFarm, stage, tanCoef) {
   const o2DOMDailyAvg   = feedAvg * o2DOMfactor;     // same coefficient, consistent peak/avg
   const o2DailyTotalAvg = o2FishDailyAvg + o2NitriDailyAvg + o2DOMDailyAvg;
   const o2BFDailyAvg    = o2NitriDailyAvg + o2DOMDailyAvg;
-  const co2DailyAvg     = o2FishDailyAvg * 1.375;
+  const co2DailyAvg     = o2FishDailyAvg * 1.375 + tanDailyAvg * CO2_PER_TANN * (1 - BF_CO2_STRIP);
 
   return {
     biomass, stageYears: stage.months/12,
@@ -2623,7 +2882,16 @@ function simulateWaterQualityProcess(load, flowData, sp, proc, V_systemTotal) {
   //     C_tank = Δ_per_day / (Q × 24 × η_co2 + V_replace)
   //   but V_replace (a few hundred m³/d) ≪ Q×24×η_co2 (hundreds of thousands m³/d × 0.75), deviation < 1%, negligible.
   //   Not strictly consistent with TAN/TSS/DOM/NO3 (which use the dilutionPerCycle recursion), but within accuracy.
-  const co2_tank = load.co2Daily * 1e6 / Math.max(flowData.flowM3h * 24 * 1000 * eta_co2, 1);
+  // Denitrification's NET effect on strippable CO2 (rigorous carbon+alkalinity balance):
+  //   Nitrification CO2 (already in load.co2Daily) = alkConsumed x 0.880  (each eq of acid converts 1 HCO3- -> CO2; 44.01/50.04 = 0.880).
+  //   Denitrification recovers alkalinity; per g CaCO3 recovered it (a) reconverts free CO2 -> HCO3- at -0.880, and
+  //   (b) co-oxidises methanol to CO2 at +0.733 (catabolic 6 H+ : 5 CO2 -> 5/6 mol CO2/eq x 44.01/50.04). Net = -0.147 g CO2/g CaCO3.
+  //   => denitrification slightly REDUCES strippable CO2 (it does NOT add free CO2; its carbon ends up as bicarbonate/alkalinity,
+  //      already credited in calcAlkalinity). Same nitrified/denitrified basis as calcAlkalinity (steady-state fallback: 95% of TAN-N).
+  const _denitriActive   = (denitriFlowRatio > 0 && eta_denitri > 0);
+  const _alkRecovered_kg = _denitriActive ? load.tanDaily * 0.95 * ((proc.denitriAlkRecovery) || 2.8) : 0;  // kg CaCO3/d
+  const co2DenitriAdj    = -_alkRecovered_kg * 0.1466;                                                       // kg CO2/d (net reduction)
+  const co2_tank = (load.co2Daily + co2DenitriAdj) * 1e6 / Math.max(flowData.flowM3h * 24 * 1000 * eta_co2, 1);
 
   // ---- Exact loop equation ----
   // Loop steady state: C_in = (C_in + Δ) × R → C_in = Δ×R/(1-R), C_out = Δ/(1-R)
@@ -2672,12 +2940,39 @@ function simulateWaterQualityProcess(load, flowData, sp, proc, V_systemTotal) {
   const tankDO = Math.max(DO_sat_target - deltaDOperCycle, 0);
   const tankDONote = `T=${sp.tempOpt}°C${S > 0 ? ' · S=' + S + '‰' : ''} · DO sat≈${DO_sat.toFixed(1)}`;
 
+  // ---- carbonate equilibrium: total alkalinity (held by NaHCO3 dosing to alkTarget)
+  //      + aqueous CO2 (co2_tank) => pH (free/concentration scale) + un-ionised ammonia.
+  //      Constants Millero (2010), S=0-50; validated vs PyCO2SYS. NH3 fraction is scale-invariant. ----
+  let pH_tank, nh3n_tank, fNH3_tank, omega_tank, beta_tank, alkReq_tank, phMode_tank;
+  if (typeof iRASCarbonate !== 'undefined' && iRASCarbonate) {
+    try {
+      const rho = 1 + 0.0008 * S;                                  // kg/L (simple salinity density; T effect negligible for pH)
+      const CO2_molkg = co2_tank / 44010 / rho;                    // mg/L CO2 -> mol/kg-SW
+      phMode_tank = (proc.pHControlMode === 'ph');                 // inverse mode: hold target pH, solve alkalinity
+      let TA_molkg;
+      if (phMode_tank) {
+        TA_molkg = iRASCarbonate.solveAlk(proc.pHTarget || 7.0, CO2_molkg, T, S);
+        alkReq_tank = Math.max(TA_molkg, 0) * 50043 * rho;         // required alkalinity setpoint (mg/L CaCO3) to hold the target pH
+      } else {
+        TA_molkg = (proc.alkTarget || 150) / 50043 / rho;          // forward mode: alkalinity setpoint given
+      }
+      const cb = iRASCarbonate.solve(Math.max(TA_molkg, 1e-9), CO2_molkg, T, S);
+      pH_tank   = cb.pH;                                           // free/concentration scale (= target in pH mode)
+      fNH3_tank = iRASCarbonate.nh3Fraction(cb.H_sws, T, S);
+      nh3n_tank = tanOut * fNH3_tank;                              // mg/L NH3-N = tank TAN x un-ionised fraction
+      omega_tank = cb.omega_calcite;                              // calcite saturation (marine; null in freshwater)
+      beta_tank  = iRASCarbonate.bufferBeta(Math.max(TA_molkg, 1e-9), CO2_molkg, T, S);  // buffer intensity, mg/L CaCO3 per pH
+    } catch (e) { /* leave undefined on failure */ }
+  }
+
   let s = {
     id: 'tank', name: 'Fish tank', icon: '🐟',
     desc: 'Outlet (highest concentration in the loop)',
     TAN: tanOut, TSS: tssOut, NO3: no3Out,
     DOM: domOut, Geosmin: geoOut,
     DO: tankDO, CO2: co2_tank,
+    pH: pH_tank, NH3_N: nh3n_tank, fNH3: fNH3_tank, omega: omega_tank, beta: beta_tank,
+    alkRequired: alkReq_tank, pHMode: phMode_tank, pHTarget: phMode_tank ? (proc.pHTarget || 7.0) : undefined,
     notes: tankDONote
   };
   stages.push({...s});
@@ -2833,10 +3128,12 @@ function simulateWaterQualityProcess(load, flowData, sp, proc, V_systemTotal) {
   const DO_satRatio = sp.DOmin_satRatio || (WATER_LIMITS.tankDO_satRatio || 0.70);
   const DO_abs = sp.DOmin_abs || (WATER_LIMITS.tankDO_min || 5.0);
   const DO_threshold = Math.max(DO_abs, DO_sat * DO_satRatio);
-  // CO2 limit by salinity (freshwater 20, seawater 15)
-  const CO2_threshold = (sp.salinity || 0) >= 5
-    ? WATER_LIMITS.tankCO2_max_marine
-    : WATER_LIMITS.tankCO2_max_freshwater;
+  // CO2 limit: per-species override (e.g. salmonids 15) takes priority; else salinity fallback (freshwater 20 / seawater 15)
+  const CO2_threshold = (sp.co2Max != null)
+    ? sp.co2Max
+    : ((sp.salinity || 0) >= 5
+        ? WATER_LIMITS.tankCO2_max_marine
+        : WATER_LIMITS.tankCO2_max_freshwater);
 
   return {
     stages, DO_sat, DO_sat_target, eta_uv_system,
@@ -4631,7 +4928,7 @@ function loadStagesFromDB(key) {
       //   the old global currentTanCoef meant every stage's input box actually shared one value,
       //   preventing different tanCoef across fresh/seawater stages (e.g. salmon fry freshwater / grow-out seawater)
       tanCoef: s.tanCoef != null ? s.tanCoef : sp.tanCoef,
-      proc: {...PROCESS_DEFAULTS, o2SatTarget: o2Sat},
+      proc: {...PROCESS_DEFAULTS, o2SatTarget: o2Sat, alkTarget: (s.salinity || 0) >= 5 ? 200 : 150},
       feedPrice: (typeof s.feedPrice === 'number' && Number.isFinite(s.feedPrice)) ? s.feedPrice : 1.5
     };
   });
@@ -4757,6 +5054,8 @@ function readStageProcFromInputs(idx, fallbackProc) {
     o2BypassPumpHead_m: getNumClamped('o2BypassPumpHead_m', fallbackProc.o2BypassPumpHead_m != null ? fallbackProc.o2BypassPumpHead_m : 20, 5, 40),
     o2BypassPumpEta: getNumClamped('o2BypassPumpEta', fallbackProc.o2BypassPumpEta != null ? fallbackProc.o2BypassPumpEta : 60, 30, 85),
     alkTarget: getNum('alkTarget', fallbackProc.alkTarget),
+    pHControlMode: getStr('pHControlMode', fallbackProc.pHControlMode || 'alk'),
+    pHTarget: getNum('pHTarget', fallbackProc.pHTarget || 7.0),
     alkSource: getNum('alkSource', fallbackProc.alkSource),
     VTR20: getNum('VTR20', fallbackProc.VTR20),
     VDR20: getNum('VDR20', fallbackProc.VDR20),
@@ -4922,7 +5221,9 @@ function renderStageBlock(idx, stage) {
       <div data-aeration-o2 data-o2-topo-mainline><label class="text-[10px] text-slate-400" title="Mainline cone added head (m) — mainline only&#10;Range: 0-15&#10;Default: 3 m (LHO)&#10;2 m = low-head oxygenator&#10;3 m = LHO + outlet back-pressure (default)&#10;5 m = Speece cone standard&#10;10 m = Speece high-pressure&#10;15 m = Linde SOLVOX cone 110 (3 bar)&#10;Pump head = mainPumpHead_m + this (mainline) or mainPumpHead_m (bypass)">Cone head loss(m)</label><input data-proc-stage="${idx}" data-proc-field="o2ConeHeadLoss_m" type="number" step="0.5" min="0" max="15" value="${stage.proc.o2ConeHeadLoss_m!=null?stage.proc.o2ConeHeadLoss_m:3}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
       <div data-aeration-o2 data-o2-topo-bypass><label class="text-[10px] text-slate-400" title="Bypass flow ratio (%) — bypass only&#10;Range: 5-30&#10;Default: 10%&#10;Draws 10% through the cone, supersaturated (200-500% sat) then blended back&#10;Raise to 15-20% at high density / high O₂ demand&#10;Affects cone sizing, bypass-pump flow, outlet saturation">Bypass ratio(%)</label><input data-proc-stage="${idx}" data-proc-field="o2BypassRatio" type="number" step="1" min="5" max="30" value="${stage.proc.o2BypassRatio!=null?stage.proc.o2BypassRatio:10}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
       <div data-aeration-o2 data-o2-topo-bypass><label class="text-[10px] text-slate-400" title="Cone bypass-pump head (m) — bypass only&#10;v1.7: three presets for three common cones&#10;  GRP cone 20 m (2 bar) — Pentair AES Speece standard&#10;  SOLVOX std 25 m (2.5 bar) — Linde SOLVOX cone 60&#10;  SOLVOX HE 30 m (3 bar) — Linde SOLVOX cone 110 / high-pressure PPC&#10;head = cone pressure + outlet back-pressure (5-10 m) + friction (2-3 m)">Cone bypass pump</label><select data-proc-stage="${idx}" data-proc-field="o2BypassPumpHead_m" class="stg-proc-select input-ind !py-1 !text-xs"><option value="20" ${(stage.proc.o2BypassPumpHead_m||20)==20?'selected':''}>GRP 20 m (2 bar)</option><option value="25" ${stage.proc.o2BypassPumpHead_m==25?'selected':''}>SOLVOX 25 m (2.5 bar)</option><option value="30" ${stage.proc.o2BypassPumpHead_m==30?'selected':''}>SOLVOX 30 m (3 bar)</option></select></div>
-      <div data-common><label class="text-[10px] text-slate-400" title="Target tank alkalinity (mg/L CaCO₃)&#10;Range: 100-200&#10;Default: 150&#10;Target alkalinity for pH stability, maintained by NaHCO₃ dosing&#10;Tune: seawater ≥150, freshwater 100-150">Alk. target(mg/L)</label><input data-proc-stage="${idx}" data-proc-field="alkTarget" type="number" step="10" value="${stage.proc.alkTarget}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
+      <div data-common><label class="text-[10px] text-slate-400" title="Target tank alkalinity (mg/L CaCO₃)&#10;Range: 100-200&#10;Default: freshwater 150 / seawater 200&#10;Held by NaHCO₃ dosing; higher alkalinity lowers CO₂, stabilises pH and aids nitrification (Letelier-Gordo 2024)&#10;Tune: soft-water freshwater 100-150, seawater/high-load 175-200">Alk. target(mg/L)</label><input data-proc-stage="${idx}" data-proc-field="alkTarget" type="number" step="10" value="${stage.proc.alkTarget}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
+      <div data-common><label class="text-[10px] text-slate-400" title="pH control mode&#10;Hold alkalinity: you set alkalinity, pH emerges (forward)&#10;Hold pH: you set a target pH, the model solves the required alkalinity setpoint (inverse)">pH control</label><select data-proc-stage="${idx}" data-proc-field="pHControlMode" class="stg-proc-select input-ind !py-1 !text-xs"><option value="alk" ${(stage.proc.pHControlMode||'alk')==='alk'?'selected':''}>Hold alkalinity</option><option value="ph" ${stage.proc.pHControlMode==='ph'?'selected':''}>Hold pH</option></select></div>
+      <div data-common><label class="text-[10px] text-slate-400" title="Target pH (free/concentration scale) when 'Hold pH' is selected&#10;The model computes the alkalinity setpoint needed to hold this pH at the steady-state CO₂&#10;Typical: freshwater 6.8-7.2, seawater 7.5-7.9">Target pH</label><input data-proc-stage="${idx}" data-proc-field="pHTarget" type="number" step="0.1" value="${stage.proc.pHTarget}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
       <div><label class="text-[10px] text-slate-400" title="Source-water alkalinity (mg/L CaCO₃)&#10;Range: 50-200&#10;Default: 100&#10;Alkalinity of source/makeup water&#10;Tune: seawater 150-200, soft water 50-80">Source alk.(mg/L)</label><input data-proc-stage="${idx}" data-proc-field="alkSource" type="number" step="10" value="${stage.proc.alkSource}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
       <div><label class="text-[10px] text-slate-400" title="Reference VTR @ 20°C, g TAN/(m³·d)&#10;Range: 300-800 g/(m³·d)&#10;Default: 500&#10;Biofilter reference TAN removal rate (20°C, freshwater)&#10;Tune: high-surface MBBR 600-800, standard K1 400-600">VTR₂₀ g/(m³·d)</label><input data-proc-stage="${idx}" data-proc-field="VTR20" type="number" step="50" value="${stage.proc.VTR20}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
       <div><label class="text-[10px] text-slate-400" title="Reference VDR @ 20°C (g/m³·d)&#10;Range: 500-1200&#10;Default: 800&#10;Denitrification reference NO₃⁻ removal rate&#10;Tune: fixed-bed 600-1000, fluidized-bed 1000-1200">VDR₂₀(g/m³·d)</label><input data-proc-stage="${idx}" data-proc-field="VDR20" type="number" step="50" value="${stage.proc.VDR20}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
@@ -5161,7 +5462,11 @@ function renderFlow(idx, sim) {
           <div class="param-row flex justify-between py-0.5"><span class="text-slate-400">DOM</span><span class="${(st.DOM||0)>20?'badge-warn':'badge-info'} px-1.5 rounded font-mono">${fmt(st.DOM||0,1)}</span></div>
           <div class="param-row flex justify-between py-0.5"><span class="text-slate-400">Geosmin</span><span class="${(st.Geosmin||0)>10?'badge-danger':'badge-ok'} px-1.5 rounded font-mono">${fmt(st.Geosmin||0,2)}</span></div>
           <div class="param-row flex justify-between py-0.5" title="DO threshold ${(sim.DO_threshold||WATER_LIMITS.tankDO_min).toFixed(2)} mg/L = max(absolute floor ${WATER_LIMITS.tankDO_min}, saturation × species ratio)"><span class="text-slate-400">DO</span><span class="${st.DO<(sim.DO_threshold||WATER_LIMITS.tankDO_min)?'badge-danger':'badge-ok'} px-1.5 rounded font-mono">${fmt(st.DO,1)}</span></div>
-          <div class="param-row flex justify-between py-0.5" title="CO₂ threshold ${sim.CO2_threshold||WATER_LIMITS.tankCO2_max_freshwater} mg/L (freshwater 20 / seawater 15, by salinity)"><span class="text-slate-400">CO₂</span><span class="${st.CO2>(sim.CO2_threshold||WATER_LIMITS.tankCO2_max_freshwater)?'badge-warn':'badge-ok'} px-1.5 rounded font-mono">${fmt(st.CO2,1)}</span></div>
+          <div class="param-row flex justify-between py-0.5" title="CO₂ threshold ${sim.CO2_threshold||WATER_LIMITS.tankCO2_max_freshwater} mg/L (salmonids 15; otherwise freshwater 20 / seawater 15 by salinity). CO₂/pH/NH₃ are daily-average steady-state (chronic exposure); the post-feeding transient is damped by alkalinity buffering (see β) and bounded by the peak-sized CO₂ stripper, unlike DO which is shown at the post-feeding peak."><span class="text-slate-400">CO₂</span><span class="${st.CO2>(sim.CO2_threshold||WATER_LIMITS.tankCO2_max_freshwater)?'badge-warn':'badge-ok'} px-1.5 rounded font-mono">${fmt(st.CO2,1)}</span></div>
+          ${st.pH!==undefined?`<div class="param-row flex justify-between py-0.5" title="Steady-state pH (free/concentration scale), from carbonate equilibrium: alkalinity + CO₂.${st.beta!==undefined?` Buffer intensity ≈${st.beta.toFixed(0)} mg/L CaCO₃ per pH (higher=stiffer).`:''}"><span class="text-slate-400">pH</span><span class="${st.pH<6.5?'badge-warn':'badge-ok'} px-1.5 rounded font-mono">${fmt(st.pH,2)}</span></div>`:''}
+          ${st.NH3_N!==undefined?`<div class="param-row flex justify-between py-0.5" title="Un-ionised ammonia NH₃-N (mg/L); limit ${sim.NH3_threshold!==undefined?sim.NH3_threshold.toFixed(4):'—'} mg/L (species, fry x0.5)"><span class="text-slate-400">NH₃-N</span><span class="${(sim.NH3_threshold!==undefined&&st.NH3_N>sim.NH3_threshold)?'badge-danger':'badge-ok'} px-1.5 rounded font-mono">${fmt(st.NH3_N,4)}</span></div>`:''}
+          ${(st.omega!==undefined&&st.omega!==null)?`<div class="param-row flex justify-between py-0.5" title="Calcite saturation Ω (marine): >1 supersaturated (scaling risk), <1 undersaturated. Ca from salinity, CO₃²⁻ from equilibrium."><span class="text-slate-400">Ω calcite</span><span class="badge-info px-1.5 rounded font-mono">${fmt(st.omega,2)}</span></div>`:''}
+          ${(st.alkRequired!==undefined)?`<div class="param-row flex justify-between py-0.5" title="Inverse (Hold pH) mode: alkalinity setpoint needed to hold the target pH ${st.pHTarget!==undefined?st.pHTarget.toFixed(1):''} at the steady-state CO₂. Set your alkalinity controller to this value; the ongoing NaHCO₃ dosing rate is nitrification-driven (unchanged)."><span class="text-slate-400">Alk req</span><span class="${(st.alkRequired>600||st.alkRequired<=10)?'badge-warn':'badge-ok'} px-1.5 rounded font-mono">${fmt(st.alkRequired,0)}</span></div>`:''}
         </div>
       </div>
     `;
@@ -5645,7 +5950,29 @@ function renderStageWarnings(idx, load, stage, stageFarm, eq, sim) {
       const co2On = stage.proc && stage.proc.co2StripperEnabled !== false;
       warns.push({
         level: 'danger',
-        text: `🌫️ Steady-state tank CO₂ ${tank.CO2.toFixed(1)} mg/L exceeds the ${sal>=5?'seawater':'freshwater'} threshold ${sim.CO2_threshold} mg/L. ${co2On ? 'Raise stripping efficiency or the G:L ratio' : '⚠️ CO₂ stripper is disabled; enable it'}.`
+        text: `🌫️ Steady-state tank CO₂ ${tank.CO2.toFixed(1)} mg/L exceeds the CO₂ threshold ${sim.CO2_threshold} mg/L. ${co2On ? 'Raise stripping efficiency or the G:L ratio' : '⚠️ CO₂ stripper is disabled; enable it'}.`
+      });
+    }
+    // Un-ionised ammonia (NH3-N) threshold — the actual toxic species; strongly pH-dependent
+    if (tank.NH3_N !== undefined && sim.NH3_threshold !== undefined && tank.NH3_N > sim.NH3_threshold) {
+      warns.push({
+        level: 'danger',
+        text: `🧪 Steady-state un-ionised ammonia NH₃-N ${tank.NH3_N.toFixed(4)} mg/L exceeds the species limit ${sim.NH3_threshold.toFixed(4)} mg/L${tank.pH!==undefined?` (pH ${tank.pH.toFixed(2)})`:''}. Raise biofilter nitrification capacity, reduce feed load, or lower pH/temperature.`
+      });
+    }
+    // Low pH — nitrification slows below ~6.5 (carbonate equilibrium output)
+    // inverse-mode feasibility: target pH unreachable at a sane alkalinity
+    if (tank.pHMode && tank.alkRequired !== undefined && (tank.alkRequired > 600 || tank.alkRequired <= 10)) {
+      warns.push({
+        level: 'warn',
+        text: `⚖️ Target pH ${tank.pHTarget!==undefined?tank.pHTarget.toFixed(1):''} needs an alkalinity setpoint of ${tank.alkRequired.toFixed(0)} mg/L CaCO₃ — ${tank.alkRequired>600?'impractically high. Lower the steady-state CO₂ first (raise stripping efficiency / G:L) so the target pH is reachable at a normal alkalinity (100-200)':'effectively unreachable at this CO₂ level; the water already sits above the target pH'}.`
+      });
+    }
+    const pHmin = (sal >= 5) ? WATER_LIMITS.pH_min_marine : WATER_LIMITS.pH_min_fresh;
+    if (tank.pH !== undefined && tank.pH < pHmin) {
+      warns.push({
+        level: 'warn',
+        text: `🧪 Tank pH ${tank.pH.toFixed(2)} is low — below the ${sal>=5?'seawater':'freshwater'} floor ~${pHmin}; nitrifier activity falls off. Raise alkalinity (NaHCO₃ dosing / higher alkTarget) or improve CO₂ stripping.${tank.beta!==undefined?` Buffer intensity ≈${tank.beta.toFixed(0)} mg/L CaCO₃ per pH.`:''}`
       });
     }
     // TAN warning
@@ -6443,6 +6770,8 @@ function rebuildStages() {
       if (Number.isNaN(idx)) return;
       // Reset to default proc
       stagesState[idx].proc = {...PROCESS_DEFAULTS};
+      // alkalinity default is salinity-aware (seawater needs higher buffering): freshwater 150 / seawater 200
+      stagesState[idx].proc.alkTarget = (stagesState[idx].salinity || 0) >= 5 ? 200 : 150;
       // Do not rebuildStages (would collapse the details); just refresh the input values to defaults
       const defaults = PROCESS_DEFAULTS;
       Object.keys(defaults).forEach(field => {
@@ -6454,6 +6783,9 @@ function rebuildStages() {
           el.value = defaults[field];
         }
       });
+      // alkTarget input must reflect the salinity-aware default, not the flat PROCESS_DEFAULTS value
+      const alkEl = document.querySelector(`[data-proc-stage="${idx}"][data-proc-field="alkTarget"]`);
+      if (alkEl) alkEl.value = stagesState[idx].proc.alkTarget;
       // The process-params details also hold two stage-level fields: turnover / exchangeDaily
       // reset them to species-DB defaults too (else users think the button does nothing)
       const sp = SPECIES_DB[currentSpecies];
@@ -6575,6 +6907,7 @@ function recomputeAll() {
       tempOpt: stage.tempOpt,
       protein: stage.protein,
       salinity: stage.salinity || 0,
+      co2Max: CO2_MAX_BY_SPECIES[currentSpecies],   // per-species CO2 limit; undefined -> salinity fallback
       DOmin_satRatio: stage.DOmin_satRatio,
       DOmin_abs: stage.DOmin_abs
     };
@@ -6600,6 +6933,9 @@ function recomputeAll() {
     let V_total = eq.systemVolume ? eq.systemVolume.V_total : flowData.volume;
     // Pass 2: recompute sim/alk/thermal with the exact V_total + eq
     sim = simulateWaterQualityProcess(load, flowData, sp, proc, V_total);
+    // per-species un-ionised ammonia limit; fry stage x0.5 (early life stages are ~2x more NH3-sensitive)
+    sim.NH3_threshold = (NH3_MAX_BY_SPECIES[currentSpecies] || WATER_LIMITS.tankNH3_max_default)
+                      * (stageRole(stage) === 'fry' ? 0.5 : 1);
     sim.alk = calcAlkalinity(load, flowData, proc, sim, V_total);
     sim.thermal = calcThermalLoad(flowData, proc, stage, V_total, load, eq);
     // Pass 3: recompute eq with the updated sim after pass 2
@@ -7203,6 +7539,24 @@ function buildPIDExport() {
         tempOpt: stage.tempOpt,
         salinity: stage.salinity || 0
       },
+      // v1.9: modelled steady-state tank carbonate water quality (for report ch05 water-quality section)
+      waterQuality: (function(){
+        const tank = (sim && sim.stages) ? sim.stages.find(x => x.id === 'tank') : null;
+        if (!tank) return null;
+        return {
+          pH:            tank.pH != null ? tank.pH : null,
+          CO2:           tank.CO2 != null ? tank.CO2 : null,             // mg/L aqueous
+          NH3_N:         tank.NH3_N != null ? tank.NH3_N : null,         // mg/L un-ionised
+          omega:         tank.omega != null ? tank.omega : null,        // calcite saturation (null in freshwater)
+          beta:          tank.beta != null ? tank.beta : null,          // buffer intensity, mg/L CaCO3 per pH
+          pHMode:        tank.pHMode ? 'ph' : 'alk',
+          pHTarget:      tank.pHTarget != null ? tank.pHTarget : null,
+          alkTarget:     (stage.proc && stage.proc.alkTarget != null) ? stage.proc.alkTarget : null,
+          alkRequired:   tank.alkRequired != null ? tank.alkRequired : null,
+          CO2_threshold: sim.CO2_threshold != null ? sim.CO2_threshold : null,
+          NH3_threshold: sim.NH3_threshold != null ? sim.NH3_threshold : null
+        };
+      })(),
       equipment: {
         rdf:       { tag: 'F-201', flow: eq.rdfFlow, tssEff: stage.proc.rdfTSS },
         bf:        { tag: 'B-301', volume: eq.bioVolume, tanEff: stage.proc.biofilterTAN, designTAN: eq.bioDesignTAN, fillRatio: stage.proc.bfFillRatio, vtrAtT: eq.vtr_T, vdrAtT: eq.vdr_T },
@@ -7946,7 +8300,7 @@ function hideHelp() {
   document.getElementById('btnHelp').textContent = tr('help');
 }
 document.getElementById('btnManual')?.addEventListener('click', () => {
-  window.open('iRAS_Technical_Manual_v1.8_EN.pdf', '_blank');
+  window.open('iRAS_Technical_Manual_v1.9_EN.pdf', '_blank');
 });
 document.getElementById('btnHelp').addEventListener('click', () => {
   if (document.getElementById('helpPage').style.display === 'block') hideHelp();

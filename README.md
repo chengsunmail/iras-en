@@ -3,7 +3,7 @@
 > An open-source engineering design platform for Recirculating Aquaculture Systems (RAS)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-![Version](https://img.shields.io/badge/version-1.8.0-green.svg)
+![Version](https://img.shields.io/badge/version-1.9.0-green.svg)
 ![Status](https://img.shields.io/badge/status-stable-brightgreen.svg)
 
 **iRAS** is an open-source engineering tool for designing Recirculating Aquaculture Systems, built for **aquaculture engineers, design firms, and academic researchers**. It covers the full workflow: **process design → P&ID generation → equipment schedule → investment & financial evaluation**.
@@ -25,7 +25,8 @@ RAS design couples biology, water chemistry, thermodynamics, and capital cost in
 ### Process design & engineering
 - **Multi-stage production scale-up** (tailwater mass conservation + Little's Law)
 - **Eight built-in species presets**: Atlantic salmon, turbot, grouper, largemouth bass, mandarin fish, tilapia, eel, whiteleg shrimp (plus a custom-species mode)
-- **Steady-state water-quality simulation** via exact recycle equations (TAN / TSS / DOM / NO₃ / DO / CO₂)
+- **Steady-state water-quality simulation** via exact recycle equations (TAN / TSS / DOM / NO₃ / DO / CO₂ / pH)
+- **Carbonate-equilibrium water chemistry** — per-stage pH, CO₂ speciation, un-ionised ammonia (NH₃-N), buffer intensity (β) and calcite saturation (Ω), validated against PyCO₂SYS; species- and salinity-aware CO₂ and alkalinity limits
 - **Hybrid mainline-series + bypass-parallel modeling** (protein skimmer / denitrification / AOP)
 - **Salinity correction** (DO saturation + nitrification efficiency + seawater ozone bromate warning)
 - **Equipment specification & selection** (drum filter / biofilter / UV / CO₂ stripper / protein skimmer / AOP / denitrification / oxygenation / pumps)
@@ -72,6 +73,8 @@ cd iras-en
 
 The engineering models — process principles and literature calibration, equipment design formulas and default parameters, climate-scenario cost baselines, the investment & financial evaluation methodology, the oxygen-cone mainline/bypass model, and the two-node thermal balance — are documented inline in the source as function-level technical notes, including the governing equations, coefficients, and literature references.
 
+A standalone **Engineering Design Technical Manual** (34 chapters, English) covers the same models in narrative form, including the carbonate-equilibrium water-chemistry chapter and its PyCO₂SYS validation.
+
 ---
 
 ## When to use iRAS
@@ -95,7 +98,7 @@ If you use iRAS in academic work, engineering reports, or commercial projects, p
 
 ```
 Sun, C. (2026). iRAS: A Platform for Recirculating Aquaculture System
-Engineering Design (Version 1.8.0). https://github.com/chengsunmail/iras-en
+Engineering Design (Version 1.9.0). https://github.com/chengsunmail/iras-en
 ```
 
 BibTeX:
@@ -104,7 +107,7 @@ BibTeX:
 @software{iras2026,
   author    = {Sun, Cheng},
   title     = {iRAS: A Platform for Recirculating Aquaculture System Engineering Design},
-  version   = {1.8.0},
+  version   = {1.9.0},
   year      = {2026},
   url       = {https://github.com/chengsunmail/iras-en}
 }
@@ -137,6 +140,8 @@ Developed with AI assistance. The physical models are calibrated against public 
 ## Provenance
 
 iRAS (English edition) v1.7.0 is the first public release of the English edition. It was initially ported from the original Chinese edition at version 1.7, which had reached that version through eight prior iterations covering steady-state concentration modeling, the physics framework and CAPEX/OPEX, global climate and two-node thermal balance, parallel multi-module design with P&ID, investment & financial evaluation, document export, site-level equipment, and the v1.7 oxygen-cone topology and system-discharge rework. Version 1.8 is the first public release of the English edition. Building on the v1.7 port, it recalibrates all equipment unit prices, consumable costs (oxygen, methanol, sodium bicarbonate), and species feed prices from the original Chinese-market basis to the European (Nordic) market, and reorients the CAPEX regional factor so that 1.0 represents the Nordic baseline (lower-cost regions below 1.0). From this release onward, the English edition is developed independently and will not track the Chinese edition's version line.
+
+Version 1.9 adds a carbonate-equilibrium water-chemistry module — per-stage pH, CO₂ speciation, un-ionised ammonia, buffer intensity and (in seawater) calcite saturation, solved from total alkalinity and aqueous CO₂ and validated against PyCO₂SYS — and surfaces these results in the feasibility report. It also refines several load coefficients: the strippable CO₂ load now includes the nitrification term, CO₂ limits and alkalinity targets are species- and salinity-aware (salmonids held to 15 mg/L per the Norwegian smolt standard; seawater alkalinity default raised to 200 mg/L CaCO₃), the denitrification CO₂ and alkalinity terms are reconciled, and fish O₂ demand is Q₁₀-scaled from each species' metabolic reference temperature, consistent with the thermal model.
 
 ---
 
