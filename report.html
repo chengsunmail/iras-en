@@ -19,7 +19,7 @@
   You should have received a copy of the GNU AGPL v3 License along with this program.
   If not, see <https://www.gnu.org/licenses/agpl-3.0.html>.
 
-  Contact: 6881509@qq.com
+  Contact: info@yis.no
 -->
 <html lang="en">
 <head>
@@ -314,7 +314,7 @@ The total-investment cash flow evaluates the return on the project itself, befor
 {% if finance.indicators.irrTotal > finance.params.discount %}
 The total-investment IRR exceeds the discount rate of {{ (finance.params.discount*100)|round(1) }}% and the NPV is positive, indicating the project is financially feasible on an investment basis.
 {% else %}
-The total-investment IRR is below the discount rate of {{ (finance.params.discount*100)|round(1) }}% and the NPV is negative, indicating insufficient feasibility on an investment basis; price, cost or investment scale should be optimized.
+The total-investment IRR is below the discount rate of {{ (finance.params.discount*100)|round(1) }}% and the NPV is negative, indicating insufficient feasibility on an investment basis; price, cost or investment scale should be optimised.
 {% endif %}
 
 @@IMG@@id=cashflow|caption=Figure 12-1 Cumulative net cash flow (solid: total investment; dashed: equity)|w=560|h=290@@
@@ -383,10 +383,10 @@ Break-even point|{{ finance.indicators.bepPct|round(1) }}% of capacity|{{ 'Large
 {% if finance.indicators.irrTotal >= finance.params.discount and finance.indicators.npvTotal >= 0 %}
 @@P@@Conclusion: the project's financial indicators are sound overall — the total-investment IRR exceeds the discount rate, the NPV is positive, the payback period is reasonable, and the break-even point {% if finance.indicators.bepPct < 75 %}leaves a comfortable safety margin{% else %}is within a manageable range{% endif %}. On a financial-feasibility basis, the project is suitable for investment.
 {% else %}
-@@P@@Conclusion: the project's financial indicators are weak and do not meet the required rate of return. The following should be optimized and the project re-evaluated:
+@@P@@Conclusion: the project's financial indicators are weak and do not meet the required rate of return. The following should be optimised and the project re-evaluated:
 @@LIST@@
 - Raise pricing or add higher-value product lines
-- Optimize equipment investment (current CAPEX {{ capex.fixedAsset|eur }} EUR)
+- Optimise equipment investment (current CAPEX {{ capex.fixedAsset|eur }} EUR)
 - Reduce operating cost (current annual OPEX {{ opex.totalExclDep|eur }} EUR)
 - Adjust scale (currently {{ farm.yieldTons }} t/yr)
 @@END_LIST@@
@@ -879,7 +879,7 @@ The process uses a hybrid "series mainline + parallel bypass" architecture; the 
 @@LIST@@
 - <strong>Protein-skimmer branch</strong>: diverts about {{ workflow.skimmer.flowPct|round(0) if workflow.skimmer.enabled else 0 }}% of the recirculation flow to remove dissolved organic matter (DOM) and fine TSS{% if workflow.skimmer.enabled and workflow.skimmer.mode == 'ozone' %}, with ozone enhancement{% endif %}
 - <strong>Denitrification branch</strong>: {% if workflow.denitri.enabled %}diverts about {{ workflow.denitri.flowPct|round(0) }}% of the flow, reducing NO₃ to N₂ with methanol under anoxic conditions to cut water exchange{% else %}not used in this project; NO₃ build-up is controlled by 5–10% daily water exchange{% endif %}
-- <strong>AOP (advanced oxidation) branch</strong>: {% if workflow.aop.enabled %}diverts about {{ workflow.aop.flowPct|round(0) }}% of the flow, using ozone+UV to oxidize geosmin/2-MIB (off-flavor compounds) and residual DOM{% else %}not used in this project{% endif %}
+- <strong>AOP (advanced oxidation) branch</strong>: {% if workflow.aop.enabled %}diverts about {{ workflow.aop.flowPct|round(0) }}% of the flow, using ozone+UV to oxidise geosmin/2-MIB (off-flavour compounds) and residual DOM{% else %}not used in this project{% endif %}
 @@END_LIST@@
 
 @@P@@The detailed P&ID is provided as an appendix figure (generated automatically by iRAS).
@@ -913,7 +913,7 @@ Backwash source|filtered clean water (integral to the RDF; backwash returns to t
 
 @@H3@@5.3.3 MBBR biofilter
 
-The biofilter (MBBR, Moving Bed Biofilm Reactor) is the core unit, oxidizing TAN (NH₄) to NO₃ via nitrifiers on the surface of suspended media — the key to ammonia removal. Design parameters:
+The biofilter (MBBR, Moving Bed Biofilm Reactor) is the core unit, oxidising TAN (NH₄) to NO₃ via nitrifiers on the surface of suspended media — the key to ammonia removal. Design parameters:
 
 @@TABLE@@
 Parameter|Value
@@ -990,7 +990,7 @@ Methanol dose|{{ workflow.denitri.methanolKgD|round(2) }} kg/d (stoichiometric 2
 {% if workflow.aop.enabled %}
 @@H3@@5.3.8 Advanced oxidation (AOP)
 
-AOP (Advanced Oxidation Process) combines ozone + UV to generate hydroxyl radicals (·OH), removing off-flavor compounds such as geosmin and 2-MIB along with residual DOM.
+AOP (Advanced Oxidation Process) combines ozone + UV to generate hydroxyl radicals (·OH), removing off-flavour compounds such as geosmin and 2-MIB along with residual DOM.
 
 @@TABLE@@
 Parameter|Value
@@ -1244,7 +1244,7 @@ Lighting + office + other|approx. {{ ((opex.totalExclDep * 0.20) / energyPrice /
 - <strong>Fresh-air system</strong>: the culture hall has fresh-air supply at 6–10 air changes/h to prevent ammonia build-up
 @@END_LIST@@
 
-@@P@@The detailed HVAC design should be optimized for local climate, water-source conditions and energy prices to find the most economical solution.
+@@P@@The detailed HVAC design should be optimised for local climate, water-source conditions and energy prices to find the most economical solution.
 
 @@H2@@7.6 Automation and control
 
@@ -1978,7 +1978,7 @@ Policy|<strong>Low</strong>|tighter environmental rules|reserved upgrade capacit
 {% elif finance.indicators.irrTotal >= finance.params.discount %}
 @@P@@<strong>Overall assessment</strong>: at {{ (finance.indicators.irrTotal*100)|round(2) }}%, the IRR is only slightly above the discount rate of {{ (finance.params.discount*100)|round(1) }}% (a margin of {{ ((finance.indicators.irrTotal - finance.params.discount)*100)|round(2) }}%), giving limited resilience; the mitigation measures must be enforced rigorously or adverse factors could push the project below the benchmark.
 {% else %}
-@@P@@<strong>Overall assessment</strong>: at {{ (finance.indicators.irrTotal*100)|round(2) }}%, the IRR is below the discount rate of {{ (finance.params.discount*100)|round(1) }}% and does not meet the financial benchmark. The design should be optimized before implementation is considered.
+@@P@@<strong>Overall assessment</strong>: at {{ (finance.indicators.irrTotal*100)|round(2) }}%, the IRR is below the discount rate of {{ (finance.params.discount*100)|round(1) }}% and does not meet the financial benchmark. The design should be optimised before implementation is considered.
 {% endif %}
 
 @@P@@Key risk-control recommendations appear in Chapter 14 (Conclusion & Recommendation).
@@ -2009,7 +2009,7 @@ Break-even point|{{ finance.indicators.bepPct|round(1) }}% of capacity|≤ 75%|{
 {% if finance.indicators.irrTotal >= finance.params.discount and finance.indicators.npvTotal >= 0 %}
 @@P@@<strong>Conclusion: financially feasible.</strong> Profitability is good, the payback period is reasonable, resilience is strong, and the required rate of return is met.
 {% else %}
-@@P@@<strong>Conclusion: financial feasibility is insufficient.</strong> Price, investment scale or operating cost should be optimized and the project re-evaluated.
+@@P@@<strong>Conclusion: financial feasibility is insufficient.</strong> Price, investment scale or operating cost should be optimised and the project re-evaluated.
 {% endif %}
 
 @@H3@@14.1.3 Social and environmental feasibility
@@ -2025,7 +2025,7 @@ Break-even point|{{ finance.indicators.bepPct|round(1) }}% of capacity|≤ 75%|{
 {% set top1 = finance.tables.sensitivity[0] %}
 @@P@@The sensitivity analysis shows the project is most sensitive to <strong>{{ top1.label }}</strong>, with an IRR swing of {{ (top1.irrSwing*100)|round(1) }}%. {% if 'price' in top1.label or 'Sales' in top1.label %}If the actual price is 20% below expectation, the IRR falls from {{ (finance.indicators.irrTotal*100)|round(1) }}% to {{ (top1.irrLow*100)|round(1) }}%, potentially below the discount rate, leaving the project only marginally feasible.
 
-@@P@@<strong>Recommendation</strong>: before execution, the owner should prioritize <strong>3–5 year supply agreements</strong> with core customers (supermarkets, restaurant chains, exporters), locking in base volume and a price floor to hedge market volatility. In parallel, pursue mid-to-high-end branding, raising unit price through organic certification, geographical indication and eco-label premiums.{% endif %}
+@@P@@<strong>Recommendation</strong>: before execution, the owner should prioritise <strong>3–5 year supply agreements</strong> with core customers (supermarkets, restaurant chains, exporters), locking in base volume and a price floor to hedge market volatility. In parallel, pursue mid-to-high-end branding, raising unit price through organic certification, geographical indication and eco-label premiums.{% endif %}
 
 @@H3@@14.2.2 Biofilter start-up is critical to delivery
 
@@ -2058,7 +2058,7 @@ Break-even point|{{ finance.indicators.bepPct|round(1) }}% of capacity|≤ 75%|{
 - UV lamps: 100% spare-lamp stock
 @@END_LIST@@
 
-@@H3@@14.2.4 Prioritize biosecurity
+@@H3@@14.2.4 Prioritise biosecurity
 
 @@P@@A closed RAS is inherently fairly biosecure, but once a pathogen enters it spreads quickly through the loop. A full biosecurity SOP should be established:
 
@@ -2102,17 +2102,17 @@ Break-even point|{{ finance.indicators.bepPct|round(1) }}% of capacity|≤ 75%|{
 @@END_LIST@@
 
 {% else %}
-@@P@@<strong>1. Defer approval and optimize first.</strong> The project is technically feasible, but the financial indicators do not yet support an investment decision. Optimization should focus on:
+@@P@@<strong>1. Defer approval and optimise first.</strong> The project is technically feasible, but the financial indicators do not yet support an investment decision. Optimisation should focus on:
 
 @@LIST@@
 - Raising the price: through branding, quality and differentiation (current price {{ finance.params.price }} EUR/kg)
-- Reducing investment: simplify non-essential units and optimize equipment selection (current fixed-asset investment {{ capex.fixedAsset|eur }} EUR)
+- Reducing investment: simplify non-essential units and optimise equipment selection (current fixed-asset investment {{ capex.fixedAsset|eur }} EUR)
 - Improving ramp efficiency: reach full capacity faster to reduce capital tied up during construction
 - Seeking grants: national innovation / green-transition schemes (e.g. Innovation Norway, Enova, EU funding instruments)
-- Optimizing the financing structure: a higher equity ratio / lower-rate loans
+- Optimising the financing structure: a higher equity ratio / lower-rate loans
 @@END_LIST@@
 
-@@P@@<strong>2. Re-evaluate</strong>: after optimization, recompute the financial indicators in iRAS and proceed only if the IRR exceeds the discount rate and the NPV is positive.
+@@P@@<strong>2. Re-evaluate</strong>: after optimisation, recompute the financial indicators in iRAS and proceed only if the IRR exceeds the discount rate and the NPV is positive.
 {% endif %}
 
 @@P@@— End of report —

@@ -924,7 +924,7 @@
       · <a href="#" id="btnAbout" class="text-cyan-400 hover:text-cyan-300 underline no-print">About</a>
     </div>
     <div>
-      © 2026 Cheng Sun · Polarlys Innovation AS (Norway) · <a href="mailto:polarlysinnovation@gmail.com" class="text-cyan-400 hover:text-cyan-300 underline">polarlysinnovation@gmail.com</a>
+      © 2026 Cheng Sun · Polarlys Innovation AS (Norway) · <a href="mailto:info@yis.no" class="text-cyan-400 hover:text-cyan-300 underline">info@yis.no</a>
     </div>
     <div class="text-slate-600">
       <a href="https://github.com/chengsunmail/iras-en" target="_blank" class="text-slate-500 hover:text-cyan-300">GitHub</a> · Results are for concept-estimate reference only · Real projects require on-site monitoring, pilot data and professional judgment
@@ -955,7 +955,7 @@
           <ul class="mt-1 ml-3 list-disc space-y-0.5 text-slate-400">
             <li>Multi-stage RAS design (tailwater mass conservation + Little's Law)</li>
             <li>Steady-state water-quality simulation via exact recycle equations (TAN/TSS/DOM/NO₃/DO/CO₂)</li>
-            <li>Hybrid mainline-series + bypass (skimmer/AOP/denitrification) modeling</li>
+            <li>Hybrid mainline-series + bypass (skimmer/AOP/denitrification) modelling</li>
             <li>Location-based O₂ allocation (tank LOX + independent BF coarse aeration)</li>
             <li>Salinity handling: DO-saturation correction + nitrification-efficiency correction + seawater ozone warning</li>
             <li>Carbonate equilibrium (Millero 2010, S=0–50): pH (free scale) + un-ionised NH₃-N toxicity (per-species, fry ×0.5) + buffer intensity β + calcite Ω; forward (hold-alkalinity) &amp; inverse (hold-pH → required alkalinity) modes</li>
@@ -1031,7 +1031,7 @@
       <h2 class="text-xl font-bold text-cyan-400 border-b border-slate-700 pb-2">Key concepts</h2>
       <ul class="mt-2 list-disc list-inside space-y-1">
         <li><b>Multi-stage scale-up</b> — upstream stage sizes are derived from the final yield using tailwater mass conservation and Little’s Law.</li>
-        <li><b>Process topology</b> — mainline-series treatment with optional bypass loops (protein skimmer / AOP / denitrification), plus mainline/bypass oxygen-cone modeling.</li>
+        <li><b>Process topology</b> — mainline-series treatment with optional bypass loops (protein skimmer / AOP / denitrification), plus mainline/bypass oxygen-cone modelling.</li>
         <li><b>Investment estimate</b> — equipment purchase × project multiplier, with a regional factor and a scale-effect (Lang) exponent. Accuracy is roughly ±40%.</li>
         <li><b>Redundancy</b> — parallel modules with N+1 sparing; site-level equipment (LOX tank, genset, transformer) is shared plant-wide.</li>
       </ul>
@@ -1420,7 +1420,7 @@ const SPECIES_DB = {
     // ⚠️ This preset is only for clear-water RAS (drum filter + biofilter) shrimp
     // Not for Biofloc (BFT): BFT has no biofilter, treats TAN via heterotrophic flocs
     // Shrimp traits: very short cycle (3-4 months), low density (by kg/m³), high feed rate (fry 10-15%)
-    // Molting debris adds TSS; bottom-drain management is key (not modeled separately here)
+    // Molting debris adds TSS; bottom-drain management is key (not modelled separately here)
     stages: [
       { name: '苗种期', name_en: 'Fry/Fingerling',   weightStart: 0.01, weightEnd: 1,  months: 1,   FCR: 1.0, protein: 0.45, feedRate: 0.1, peakFactor: 1.5, tempOpt: 30, density: 2,  mortality: 0.30, turnover: 2.0, exchangeDaily: 15, feedPrice: 1.5, salinity: 15 , DOmin_satRatio: 0.6, DOmin_abs: 4.0, recDepth_m: 1.0 },
       { name: '养成前期', name_en: 'Early grow-out', weightStart: 1,    weightEnd: 10, months: 1.5, FCR: 1.3, protein: 0.42, feedRate: 0.05, peakFactor: 1.5, tempOpt: 30, density: 8,  mortality: 0.15, turnover: 2.5, exchangeDaily: 10, feedPrice: 1.2, salinity: 15 , DOmin_satRatio: 0.6, DOmin_abs: 4.0, recDepth_m: 1.2 },
@@ -1519,10 +1519,10 @@ const PROCESS_DEFAULTS = {
   // Heterotrophic O2 coefficient (kg O₂ / kg feed)
   // Physics: O2 for heterotrophic breakdown of leftover feed + feces, supplied by coarse-bubble aeration in the BF
   // Refs (Boyd 2018, Lekang 2020):
-  //   theoretical upper limit (all feed carbon oxidized in water) ≈ 0.45 kg O₂/kg
+  //   theoretical upper limit (all feed carbon oxidised in water) ≈ 0.45 kg O₂/kg
   //   measured (RAS with RDF removing 70-80% TSS, some organics discharged): 0.10-0.20
   //   default 0.10 (conservative engineering value)
-  // Adjust per project: eel powder feed / shrimp leftovers → 0.15-0.20; optimized RDF + skimmer → 0.08-0.10
+  // Adjust per project: eel powder feed / shrimp leftovers → 0.15-0.20; optimised RDF + skimmer → 0.08-0.10
   o2DOMfactor: 0.10,
   sourceSS: 10,
   sourcePH: 7.5,
@@ -1564,7 +1564,7 @@ const PROCESS_DEFAULTS = {
                                  // (ScienceDirect 2023, "HRT has only minor effect on efficiency")
                                  // (older 4 min was 100% too high)
   ozoneDose: 0.010,              // g O3/g feed (typically 0.005-0.015, literature median ~0.01)
-  // Advanced oxidation (AOP) branch - mainly removes off-flavor compounds
+  // Advanced oxidation (AOP) branch - mainly removes off-flavour compounds
   aopEnabled: true,
   aopType: 'integrated',         // AOP type
                                  // 'integrated' (UV+O3 combined reactor, ULTRAAQUA mainstream), HRT 1-3 min
@@ -1963,7 +1963,7 @@ const EQUIP_PRICES_DEFAULTS = {
 /* ============================================================================
    Function: calcProductionLoad
    Purpose: Back-calculate system feed load and daily waste production from
-            annual yield — modeling continuous staggered production
+            annual yield — modelling continuous staggered production
 
    [Key concept]
    A farm does not "raise one batch and sell it"; batches are staggered so that
@@ -2088,7 +2088,7 @@ function calcStageLoad(stageFarm, stage, tanCoef) {
   const o2FishDaily   = feedMax * o2FishFactor;               // kg/d
   const o2NitriDaily  = tanDaily * 4.57;                      // kg/d
   // o2DOM coefficient read from proc, default 0.10 (Boyd 2018 RAS median)
-  // eel powder feed / shrimp leftover → 0.15-0.20; optimized RDF + skimmer → 0.08-0.10
+  // eel powder feed / shrimp leftover → 0.15-0.20; optimised RDF + skimmer → 0.08-0.10
   const o2DOMfactor   = (stage.proc && stage.proc.o2DOMfactor != null) ? stage.proc.o2DOMfactor : 0.10;
   const o2DOMDaily    = feedMax * o2DOMfactor;                // kg/d
   const o2DailyTotal  = o2FishDaily + o2NitriDaily + o2DOMDaily;  // kg/d
@@ -2659,13 +2659,13 @@ function calcThermalLoad(flowData, proc, stage, V_systemTotal, load, eq) {
    [Reaction stoichiometry]
    Nitrification (Sharma & Ahlert, 1977):
      NH₄⁺ + 2 HCO₃⁻ + 2 O₂ → NO₃⁻ + 2 CO₂ + 3 H₂O
-     → Each g of TAN-N oxidized consumes 7.14 g CaCO₃ alkalinity
+     → Each g of TAN-N oxidised consumes 7.14 g CaCO₃ alkalinity
    Denitrification (methanol as carbon source):
      5 CH₃OH + 6 NO₃⁻ → 3 N₂ + 5 CO₂ + 7 H₂O + 6 OH⁻
      → Theoretical limit: each g of NO₃-N reduced recovers 3.57 g CaCO₃
        alkalinity (half of nitrification)
      → Engineering practice: default 2.8 g CaCO₃/g N (Mateju 1992, Henze 1991)
-        Reason for the gap: some methanol is competitively oxidized by aerobic
+        Reason for the gap: some methanol is competitively oxidised by aerobic
         heterotrophs / consumed for denitrifier biomass synthesis
 
    [System alkalinity balance]
@@ -2721,7 +2721,7 @@ function calcAlkalinity(load, flowData, proc, sim, V_systemTotal) {
   // Alkalinity budget (kg CaCO₃/d)
   // Denitrification alkalinity recovery uses 2.8 (engineering practice) rather
   //   than 3.57 (theoretical limit). Reason for the gap: some methanol is
-  //   competitively oxidized by aerobic heterotrophs (no OH⁻ produced), and
+  //   competitively oxidised by aerobic heterotrophs (no OH⁻ produced), and
   //   denitrifier biomass synthesis consumes part of the carbon source.
   //   Refs: Mateju 1992, Henze 1991, Crittenden MWH 2012.
   //   Theoretical limit 3.57 = 1 equivalent OH⁻ / mol N; measured 2.5-3.0, median 2.8.
@@ -2760,7 +2760,7 @@ function calcAlkalinity(load, flowData, proc, sim, V_systemTotal) {
             vendor-internal parameter and does not affect system-level discharge
             (most of it returns to the main flow via the sludge settling tank).
 
-   [Nitrogen-cycle modeling]
+   [Nitrogen-cycle modelling]
    Feed protein → fish excretes TAN → biofilter nitrification → NO₃⁻ (steady accumulation)
      Nitrification: TAN → NO₂⁻ → NO₃⁻ (aerobic, by nitrifiers)
      Denitrification: NO₃⁻ → N₂↑ (anoxic, by denitrifiers in the branch)
@@ -3524,7 +3524,7 @@ function calcEquipmentSpec(load, flowData, proc, sim, stage) {
   const V_RDF       = Q * rdfHRT_min / 60;
   // BF tank water volume = bioVolume / fillRatio
   // Physics: bioVolume is net media volume, V_BF is total tank volume (media + water + top air)
-  //       'how big to build the tank' uses total volume; the whole tank participates in RAS volume modeling
+  //       'how big to build the tank' uses total volume; the whole tank participates in RAS volume modelling
   //       fillRatio=50% (Rusten 2006 industrial convention) → V_BF = 2 × bioVolume
   //       fillRatio=70% (high-density packing)              → V_BF = 1.43 × bioVolume
   const fillRatio = Math.max((proc.bfFillRatio || 50) / 100, 0.20);    // guard against too low
@@ -4608,7 +4608,7 @@ function calcCapex(eq, sim, flowData, eqPrices) {
   // 12. Heat pump (if temperature control is needed)
   if (sim.thermal && sim.thermal.needsThermal && sim.thermal.heatPumpKWh > 0) {
     // Sized by the larger of the winter/summer extremes (sizes capacity), not the current scenario
-    // Utilization hours and the shared-hall heat-sharing factor read from globalThermalConfig
+    // Utilisation hours and the shared-hall heat-sharing factor read from globalThermalConfig
     // CAPEX on running-installed basis, no N+1 standby. Consistent with main/branch pumps.
     //   modular.totalCounts.heatPump stores the plant value incl. standby, but CAPEX does not use it (standby pumps / heat pumps
     //   are a redundancy design option, not in the main CAPEX line; otherwise inconsistent with the main-pump basis and unlike real projects).
@@ -4849,8 +4849,8 @@ const GLOBAL_THERMAL_DEFAULTS = Object.freeze({
   // Default 0.75 (empirical, range 0.6-0.9)
   // Also applied to heat-pump installed CAPEX for physical consistency (not only OPEX)
   thermalSharingFactor: 0.75,
-  // Heat-pump sizing utilization hours (old /16 hardcoded, implying 67% utilization)
-  //   cold-water farms commonly run 24h in winter; default /22 (92% utilization, leaving a maintenance window)
+  // Heat-pump sizing utilisation hours (old /16 hardcoded, implying 67% utilisation)
+  //   cold-water farms commonly run 24h in winter; default /22 (92% utilisation, leaving a maintenance window)
   //   range: 8-24, 8 ≈ peak + standby capacity, 24 ≈ full-load continuous
   heatPumpUtilHours: 22
 });
@@ -5217,7 +5217,7 @@ function renderStageBlock(idx, stage) {
       <div data-common><label class="text-[10px] text-slate-400">Aeration mode</label><select data-proc-stage="${idx}" data-proc-field="aerationMode" class="stg-proc-select input-ind !py-1 !text-xs"><option value="o2" ${stage.proc.aerationMode==='o2'?'selected':''}>Pure O₂ (≥40 kg/m³)</option><option value="air" ${stage.proc.aerationMode==='air'?'selected':''}>Air aeration (&lt;40)</option></select></div>
       <div data-common data-aeration-o2 data-aeration-o2-allow><label class="text-[10px] text-slate-400" title="Target DO saturation (%)&#10;Range: 95-180&#10;Default: 130 (locked to 95 in air mode)&#10;DO saturation after oxygenation&#10;Tune: salmon 165, warm seawater 140, warm freshwater 110-125, tilapia/shrimp 100-115">DO target(%)</label><input data-proc-stage="${idx}" data-proc-field="o2SatTarget" type="number" step="5" min="100" max="200" value="${stage.proc.o2SatTarget||130}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
       <div data-aeration-o2><label class="text-[10px] text-slate-400" title="Oxygen absorption efficiency (%)&#10;Range: 70-95&#10;Default: 85&#10;O₂ absorption of the cone/PPC&#10;Tune: low-pressure cone 80-88, high-pressure PPC 90-95">O₂ absorption(%)</label><input data-proc-stage="${idx}" data-proc-field="o2AbsorptionEff" type="number" step="5" min="70" max="99" value="${stage.proc.o2AbsorptionEff||85}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
-      <div data-aeration-o2><label class="text-[10px] text-slate-400" title="Oxygen-cone topology — modeled since v1.7&#10;mainline: cone in series after main pump, full-flow (pump must overcome o2ConeHeadLoss_m)&#10;          uniform DO, large cone, higher cost (large RAS)&#10;bypass: 5-30% flow through a high-pressure cone, supersaturated then blended (pump bypasses cone, energy-saving)&#10;          small cone, lower cost, less uniform DO&#10;          common in mid-size international RAS (PR Aqua / Linde SOLVOX)">Cone topology</label><select data-proc-stage="${idx}" data-proc-field="o2ConeTopology" class="stg-proc-select input-ind !py-1 !text-xs"><option value="mainline" ${(stage.proc.o2ConeTopology||'mainline')==='mainline'?'selected':''}>Mainline (after pump)</option><option value="bypass" ${stage.proc.o2ConeTopology==='bypass'?'selected':''}>Bypass (energy-saving)</option></select></div>
+      <div data-aeration-o2><label class="text-[10px] text-slate-400" title="Oxygen-cone topology — modelled since v1.7&#10;mainline: cone in series after main pump, full-flow (pump must overcome o2ConeHeadLoss_m)&#10;          uniform DO, large cone, higher cost (large RAS)&#10;bypass: 5-30% flow through a high-pressure cone, supersaturated then blended (pump bypasses cone, energy-saving)&#10;          small cone, lower cost, less uniform DO&#10;          common in mid-size international RAS (PR Aqua / Linde SOLVOX)">Cone topology</label><select data-proc-stage="${idx}" data-proc-field="o2ConeTopology" class="stg-proc-select input-ind !py-1 !text-xs"><option value="mainline" ${(stage.proc.o2ConeTopology||'mainline')==='mainline'?'selected':''}>Mainline (after pump)</option><option value="bypass" ${stage.proc.o2ConeTopology==='bypass'?'selected':''}>Bypass (energy-saving)</option></select></div>
       <div data-aeration-o2 data-o2-topo-mainline><label class="text-[10px] text-slate-400" title="Mainline cone added head (m) — mainline only&#10;Range: 0-15&#10;Default: 3 m (LHO)&#10;2 m = low-head oxygenator&#10;3 m = LHO + outlet back-pressure (default)&#10;5 m = Speece cone standard&#10;10 m = Speece high-pressure&#10;15 m = Linde SOLVOX cone 110 (3 bar)&#10;Pump head = mainPumpHead_m + this (mainline) or mainPumpHead_m (bypass)">Cone head loss(m)</label><input data-proc-stage="${idx}" data-proc-field="o2ConeHeadLoss_m" type="number" step="0.5" min="0" max="15" value="${stage.proc.o2ConeHeadLoss_m!=null?stage.proc.o2ConeHeadLoss_m:3}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
       <div data-aeration-o2 data-o2-topo-bypass><label class="text-[10px] text-slate-400" title="Bypass flow ratio (%) — bypass only&#10;Range: 5-30&#10;Default: 10%&#10;Draws 10% through the cone, supersaturated (200-500% sat) then blended back&#10;Raise to 15-20% at high density / high O₂ demand&#10;Affects cone sizing, bypass-pump flow, outlet saturation">Bypass ratio(%)</label><input data-proc-stage="${idx}" data-proc-field="o2BypassRatio" type="number" step="1" min="5" max="30" value="${stage.proc.o2BypassRatio!=null?stage.proc.o2BypassRatio:10}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
       <div data-aeration-o2 data-o2-topo-bypass><label class="text-[10px] text-slate-400" title="Cone bypass-pump head (m) — bypass only&#10;v1.7: three presets for three common cones&#10;  GRP cone 20 m (2 bar) — Pentair AES Speece standard&#10;  SOLVOX std 25 m (2.5 bar) — Linde SOLVOX cone 60&#10;  SOLVOX HE 30 m (3 bar) — Linde SOLVOX cone 110 / high-pressure PPC&#10;head = cone pressure + outlet back-pressure (5-10 m) + friction (2-3 m)">Cone bypass pump</label><select data-proc-stage="${idx}" data-proc-field="o2BypassPumpHead_m" class="stg-proc-select input-ind !py-1 !text-xs"><option value="20" ${(stage.proc.o2BypassPumpHead_m||20)==20?'selected':''}>GRP 20 m (2 bar)</option><option value="25" ${stage.proc.o2BypassPumpHead_m==25?'selected':''}>SOLVOX 25 m (2.5 bar)</option><option value="30" ${stage.proc.o2BypassPumpHead_m==30?'selected':''}>SOLVOX 30 m (3 bar)</option></select></div>
@@ -5231,7 +5231,7 @@ function renderStageBlock(idx, stage) {
       <div><label class="text-[10px] text-slate-400" title="Nitrification temperature-correction coefficient&#10;Range: 1.06-1.12&#10;Default: 1.10&#10;Arrhenius θ; VTR scales as θ^(ΔT/10)&#10;Rarely changed">θ_nit</label><input data-proc-stage="${idx}" data-proc-field="thetaNit" type="number" step="0.01" value="${stage.proc.thetaNit}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
       <div><label class="text-[10px] text-slate-400" title="Denitrification temperature-correction coefficient&#10;Range: 1.05-1.10&#10;Default: 1.08&#10;Arrhenius θ for denitrification&#10;Rarely changed">θ_den</label><input data-proc-stage="${idx}" data-proc-field="thetaDen" type="number" step="0.01" value="${stage.proc.thetaDen}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
       <div><label class="text-[10px] text-slate-400" title="Fish respiratory O₂ coefficient (kg O₂/kg feed)&#10;Range: 0.18-0.45&#10;Default: auto (base × Q10^((T-20)/10))&#10;Species metabolic O₂ coefficient&#10;Enter manually for unusual species; leave blank for auto">Fish O₂ demand</label><input data-proc-stage="${idx}" data-proc-field="o2FishFactor" type="number" step="0.01" min="0.10" max="0.60" placeholder="auto" value="${(stage.proc.o2FishFactor!=null && !isNaN(stage.proc.o2FishFactor)) ? stage.proc.o2FishFactor : ''}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
-      <div><label class="text-[10px] text-slate-400" title="Heterotrophic O₂ coefficient (kg O₂/kg feed)&#10;Range: 0.05-0.20&#10;Default: 0.10&#10;O₂ for breakdown of waste feed + faeces, supplied by the BF blower&#10;Tune: optimized 0.08, eel/shrimp 0.15-0.20">Heterotroph O₂</label><input data-proc-stage="${idx}" data-proc-field="o2DOMfactor" type="number" step="0.01" min="0.03" max="0.30" value="${stage.proc.o2DOMfactor||0.10}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
+      <div><label class="text-[10px] text-slate-400" title="Heterotrophic O₂ coefficient (kg O₂/kg feed)&#10;Range: 0.05-0.20&#10;Default: 0.10&#10;O₂ for breakdown of waste feed + faeces, supplied by the BF blower&#10;Tune: optimised 0.08, eel/shrimp 0.15-0.20">Heterotroph O₂</label><input data-proc-stage="${idx}" data-proc-field="o2DOMfactor" type="number" step="0.01" min="0.03" max="0.30" value="${stage.proc.o2DOMfactor||0.10}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
       <div><label class="text-[10px] text-slate-400" title="Source-water TSS (mg/L)&#10;Range: 0-50&#10;Default: 10&#10;Suspended solids in source water&#10;Tune: clean well water 5-10, surface/seawater 20-50">Source SS(mg/L)</label><input data-proc-stage="${idx}" data-proc-field="sourceSS" type="number" step="1" value="${stage.proc.sourceSS}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
       <div><label class="text-[10px] text-slate-400" title="Source-water pH&#10;Range: 6.5-8.5&#10;Default: 7.5&#10;pH of source/makeup water&#10;Tune: per measured water quality">Source pH</label><input data-proc-stage="${idx}" data-proc-field="sourcePH" type="number" step="0.1" value="${stage.proc.sourcePH}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
       <div><label class="text-[10px] text-slate-400" title="Source-water temperature (°C)&#10;Range: 5-30&#10;Default: 18&#10;Annual mean source-water temperature">Source T(°C)</label><input data-proc-stage="${idx}" data-proc-field="sourceTemp" type="number" step="0.5" value="${stage.proc.sourceTemp}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
@@ -5267,9 +5267,9 @@ function renderStageBlock(idx, stage) {
       <div><label class="text-[10px] text-slate-400" title="Ozone dose (g O₃/g feed)&#10;Range: 0.005-0.015&#10;Default: 0.010&#10;Skimmer ozone dosing ratio&#10;Tune: seawater ≤0.010, freshwater 0.012-0.015">O₃ dose(g/g feed)</label><input data-proc-stage="${idx}" data-proc-field="ozoneDose" type="number" step="0.005" value="${stage.proc.ozoneDose}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
       <div data-common><label class="text-[10px] text-slate-400" title="Enable/disable AOP (advanced oxidation)">AOP</label><select data-proc-stage="${idx}" data-proc-field="aopEnabled" class="stg-proc-select input-ind !py-1 !text-xs"><option value="true" ${stage.proc.aopEnabled?'selected':''}>Enabled</option><option value="false" ${!stage.proc.aopEnabled?'selected':''}>Disabled</option></select></div>
       <div><label class="text-[10px] text-slate-400" title="AOP type&#10;Integrated: combined UV+O₃ reactor (e.g. ULTRAAQUA), HRT 1-3 min&#10;Separated: O₃ contact tank + UV reactor, HRT 5-10 min (large projects)&#10;Switching auto-resets the HRT default">AOP type</label><select data-proc-stage="${idx}" data-proc-field="aopType" class="stg-proc-select input-ind !py-1 !text-xs"><option value="integrated" ${(stage.proc.aopType||'integrated')==='integrated'?'selected':''}>Integrated (UV+O₃)</option><option value="separated" ${stage.proc.aopType==='separated'?'selected':''}>Separated (O₃+UV)</option></select></div>
-      <div><label class="text-[10px] text-slate-400" title="AOP bypass flow ratio (%)&#10;Range: 3-15&#10;Default: 5&#10;Share of total recycle flow&#10;Tune: strong off-flavor→10-15">AOP Q ratio(%)</label><input data-proc-stage="${idx}" data-proc-field="aopFlowPct" type="number" step="1" value="${stage.proc.aopFlowPct}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
-      <div><label class="text-[10px] text-slate-400" title="AOP geosmin removal (%)&#10;Range: 85-95&#10;Default: 90&#10;Single-pass removal of geosmin/2-MIB (off-flavor)&#10;Set by equipment; rarely changed">AOP geosmin↓(%)</label><input data-proc-stage="${idx}" data-proc-field="aopGeosminEff" type="number" step="1" value="${stage.proc.aopGeosminEff}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
-      <div><label class="text-[10px] text-slate-400" title="AOP DOM removal (%)&#10;Range: 5-15&#10;Default: 5 (conservative)&#10;Single-pass total-DOM removal&#10;Tune: optimized AOP→10-15">AOP DOM↓(%)</label><input data-proc-stage="${idx}" data-proc-field="aopDOMRemoval" type="number" step="1" min="0" max="20" value="${stage.proc.aopDOMRemoval||5}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
+      <div><label class="text-[10px] text-slate-400" title="AOP bypass flow ratio (%)&#10;Range: 3-15&#10;Default: 5&#10;Share of total recycle flow&#10;Tune: strong off-flavour→10-15">AOP Q ratio(%)</label><input data-proc-stage="${idx}" data-proc-field="aopFlowPct" type="number" step="1" value="${stage.proc.aopFlowPct}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
+      <div><label class="text-[10px] text-slate-400" title="AOP geosmin removal (%)&#10;Range: 85-95&#10;Default: 90&#10;Single-pass removal of geosmin/2-MIB (off-flavour)&#10;Set by equipment; rarely changed">AOP geosmin↓(%)</label><input data-proc-stage="${idx}" data-proc-field="aopGeosminEff" type="number" step="1" value="${stage.proc.aopGeosminEff}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
+      <div><label class="text-[10px] text-slate-400" title="AOP DOM removal (%)&#10;Range: 5-15&#10;Default: 5 (conservative)&#10;Single-pass total-DOM removal&#10;Tune: optimised AOP→10-15">AOP DOM↓(%)</label><input data-proc-stage="${idx}" data-proc-field="aopDOMRemoval" type="number" step="1" min="0" max="20" value="${stage.proc.aopDOMRemoval||5}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
       <div><label class="text-[10px] text-slate-400" title="AOP reactor HRT (min)&#10;Integrated default: 2&#10;Separated default: 8&#10;Ref: Schrader 2010, 1 min contact, geosmin removal 86-92%&#10;Auto-resets when AOP type changes; manually tunable">AOP HRT(min)</label><input data-proc-stage="${idx}" data-proc-field="aopHRT_min" type="number" step="0.5" min="1" max="30" value="${stage.proc.aopHRT_min||((stage.proc.aopType||'integrated')==='separated'?8:2)}" class="stg-proc-input input-ind !py-1 !text-xs"></div>
       <div class="proc-section-divider">🌫️ <b>CO₂ stripper</b> (independent unit + adjustable blower parameters)</div>
       <div data-common><label class="text-[10px] text-emerald-300" title="Enable/disable the CO₂ stripper. When off, CO₂ is removed only by water exchange and can greatly exceed limits at high density">CO₂ stripper</label><select data-proc-stage="${idx}" data-proc-field="co2StripperEnabled" class="stg-proc-select input-ind !py-1 !text-xs"><option value="true" ${stage.proc.co2StripperEnabled!==false?'selected':''}>Enabled</option><option value="false" ${stage.proc.co2StripperEnabled===false?'selected':''}>Disabled</option></select></div>
@@ -5313,7 +5313,7 @@ function renderStageBlock(idx, stage) {
         <div data-panel="skimmer-${idx}" class="grid grid-cols-2 gap-2 text-xs"></div>
       </div>
       <div class="rounded-lg border border-dashed border-lime-500/50 bg-lime-900/10 p-3">
-        <div class="flex items-center gap-2 mb-2"><span class="text-xl">⚡</span><div class="text-sm font-bold text-lime-300">AOP off-flavor</div></div>
+        <div class="flex items-center gap-2 mb-2"><span class="text-xl">⚡</span><div class="text-sm font-bold text-lime-300">AOP off-flavour</div></div>
         <div data-panel="aop-${idx}" class="grid grid-cols-2 gap-2 text-xs"></div>
       </div>
     </div>
@@ -5668,8 +5668,8 @@ function renderThermalV12(t, stage, stageFarm, prices, scenarios) {
   const condenseAlert = (t.m_condense_kg_d||0) > 100;
 
   // === A: Installed capacity + specific energy (key metrics, more telling than OPEX share) ===
-  // Installed: design-day peak hour ≈ heatPumpKWh / 16h (67% utilization, engineering convention)
-  //   heat-pump sizing = 'design-day 24h energy / utilization hours'
+  // Installed: design-day peak hour ≈ heatPumpKWh / 16h (67% utilisation, engineering convention)
+  //   heat-pump sizing = 'design-day 24h energy / utilisation hours'
   //   16h is typical for RAS engineering (includes the nighttime feeding peak)
   const hpCapacityKw = (t.heatPumpKWh || 0) / 16;
   // Specific energy: denominator is the stage's annual throughput (not the steady-state amount)
@@ -5705,7 +5705,7 @@ function renderThermalV12(t, stage, stageFarm, prices, scenarios) {
         <div class="font-bold" style="color:${pumpDirColor}">${(t.heatPumpKWh||0).toFixed(0)} kWh/d</div>
         <div class="text-[9px] text-slate-500">COP=${(t.COP||0).toFixed(2)}</div>
       </div>
-      <div class="metric-chip px-2 py-1.5" style="border-color:${pumpDirColor}50" title="Installed capacity (kW): design-day 24h energy / 16h utilization. Drives heat-pump sizing + CAPEX">
+      <div class="metric-chip px-2 py-1.5" style="border-color:${pumpDirColor}50" title="Installed capacity (kW): design-day 24h energy / 16h utilisation. Drives heat-pump sizing + CAPEX">
         <div class="text-[10px] text-slate-400">⚙️ Installed capacity</div>
         <div class="font-bold" style="color:${pumpDirColor}">${hpCapacityKw.toFixed(0)} kW</div>
         <div class="text-[9px] text-slate-500">~${(hpCapacityKw * 2000 / 1e3).toFixed(0)}k EUR</div>
@@ -5925,7 +5925,7 @@ function renderStageWarnings(idx, load, stage, stageFarm, eq, sim) {
     if (skimOzone) {
       warns.push({
         level: 'danger',
-        text: `☣️ Seawater (${sal}‰) + ozone skimmer → bromate (BrO₃⁻) risk! Ozone oxidizes bromide in seawater into a carcinogen. Switch the skimmer to air mode or strictly keep ORP < 350 mV.`
+        text: `☣️ Seawater (${sal}‰) + ozone skimmer → bromate (BrO₃⁻) risk! Ozone oxidises bromide in seawater into a carcinogen. Switch the skimmer to air mode or strictly keep ORP < 350 mV.`
       });
     }
   }
@@ -6981,7 +6981,7 @@ function recomputeAll() {
       const sharingFactor = (globalThermalConfig && globalThermalConfig.thermalSharingFactor != null)
         ? globalThermalConfig.thermalSharingFactor
         : 0.75;
-      // Utilization hours (user-adjustable in globalThermalConfig.heatPumpUtilHours, default 22h)
+      // Utilisation hours (user-adjustable in globalThermalConfig.heatPumpUtilHours, default 22h)
       const hpUtilHours = (globalThermalConfig && globalThermalConfig.heatPumpUtilHours != null)
         ? Math.max(8, Math.min(24, globalThermalConfig.heatPumpUtilHours))
         : 22;
